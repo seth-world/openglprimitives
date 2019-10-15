@@ -143,13 +143,8 @@ ZObject::createGL_ObjectArray(ZShader *pShader,  uint8_t pShaderSetupOpt )
     glBufferData(GL_ARRAY_BUFFER, vertices.usedSize(), vertices.data(), GL_STATIC_DRAW);
 
 /* point position */
-    int wPosition=(GLuint)glGetAttribLocation(pShader->getShaderId(),"aPosition");
-    if (wPosition<0)
-        GLDescriptor->PositionAttribArray= cst_defaultPositionLocation;
-    else
-        GLDescriptor->PositionAttribArray=(GLuint)wPosition;
 
-   glVertexAttribPointer(GLDescriptor->PositionAttribArray, 3, GL_FLOAT, GL_FALSE, (GLsizei)getStride(), (void*)verticeOffset);
+   glVertexAttribPointer(GLDescriptor->getPositionAttribute(pShader), 3, GL_FLOAT, GL_FALSE, (GLsizei)getStride(), (void*)verticeOffset);
    glEnableVertexAttribArray(GLDescriptor->PositionAttribArray);
 
 /* normals */
@@ -158,17 +153,12 @@ ZObject::createGL_ObjectArray(ZShader *pShader,  uint8_t pShaderSetupOpt )
         if (havetoComputeNormals())
                     this->computeNormals();
 
-        int wNormal=(GLuint)glGetAttribLocation(pShader->getShaderId(),"aNormal");
-        if (wNormal<0)
-            GLDescriptor->NormalAttribArray= cst_defaultNormalLocation;
-        else
-            GLDescriptor->NormalAttribArray=(GLuint)wNormal;
 /* debug */
         zbs::ZArray<Vertice_type> wNormals=toFlatNormals();
         glGenBuffers(1, &GLDescriptor->NormVBO);
         glBindBuffer(GL_ARRAY_BUFFER, GLDescriptor->NormVBO);
         glBufferData(GL_ARRAY_BUFFER, wNormals.usedSize(), wNormals.data(), GL_STATIC_DRAW);
-        glVertexAttribPointer(GLDescriptor->NormalAttribArray, 3, GL_FLOAT, GL_FALSE, (GLsizei)sizeof(Vertice_type), (void*)0);
+        glVertexAttribPointer(GLDescriptor->getNormalAttribute(pShader), 3, GL_FLOAT, GL_FALSE, (GLsizei)sizeof(Vertice_type), (void*)0);
         glEnableVertexAttribArray(GLDescriptor->NormalAttribArray);
 /* end debug */
 //        glVertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, (GLsizei)getStride(), (void*)normalOffset);
@@ -181,17 +171,12 @@ ZObject::createGL_ObjectArray(ZShader *pShader,  uint8_t pShaderSetupOpt )
         {
         if (havetoComputeTexCoords())
                     this->computeTexCoords();
-        int wTextCoords=(GLuint)glGetAttribLocation(pShader->getShaderId(),"aTexCoords");
-        if (wTextCoords<0)
-            GLDescriptor->TexCoordsAttribArray= cst_defaultTexCoordsLocation;
-        else
-            GLDescriptor->TexCoordsAttribArray=(GLuint)wTextCoords;
         /* debug */
             zbs::ZArray<TextCoords_type> wTexCoords=toFlatTexCoords();
             glGenBuffers(1, &GLDescriptor->TexVBO);
             glBindBuffer(GL_ARRAY_BUFFER, GLDescriptor->TexVBO);
             glBufferData(GL_ARRAY_BUFFER, wTexCoords.usedSize(), wTexCoords.data(), GL_STATIC_DRAW);
-            glVertexAttribPointer(GLDescriptor->TexCoordsAttribArray, 3, GL_FLOAT, GL_FALSE, (GLsizei)sizeof(TextCoords_type), (void*)0);
+            glVertexAttribPointer(GLDescriptor->getTexCoordsAttribute(pShader), 3, GL_FLOAT, GL_FALSE, (GLsizei)sizeof(TextCoords_type), (void*)0);
             glEnableVertexAttribArray(GLDescriptor->TexCoordsAttribArray);
         /* end debug */
 
@@ -706,7 +691,7 @@ ZObject::computeNormals()
            wTriangle[1]=vertices[wi+1].point;
            wTriangle[2]=vertices[wi+2].point;
 
-           Vertice_type wNormal= glm::normalize(glm::cross(wTriangle[2] - wTriangle[0], wTriangle[1] - wTriangle[0]));
+           wNormal= glm::normalize(glm::cross(wTriangle[2] - wTriangle[0], wTriangle[1] - wTriangle[0]));
      //      wNormal=CalculateSurfaceNormal(wTriangle);
            } // switch
        vertices[wi].normal=wNormal;

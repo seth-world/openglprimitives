@@ -347,6 +347,8 @@ int main()
                    GL_TRIANGLES);
     wArcStripsLeft.setupGLNormalVisu(&lampShader);
 
+    wArcStripsLeft.print();
+
  //   wArcStripsLeft.print();
 
 //#endif // __COMMENT__
