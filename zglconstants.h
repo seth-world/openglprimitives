@@ -37,4 +37,7 @@ const Vertice_type ZModelOrigin=Vertice_type(0.0,0.0,0.0);
 
 
 
+
+
+
 #endif // ZGLCONSTANTS_H

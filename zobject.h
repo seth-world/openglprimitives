@@ -129,7 +129,7 @@ public:
 
 
 
-class ZObject {
+class ZObject {  
 public:
 
     enum Direction : int
@@ -173,7 +173,10 @@ public:
     static constexpr Vertice_type NDirBottom = Vertice_type(0.0f,-1.0f,0.0f);
     static constexpr Vertice_type NDirLeft = Vertice_type(-1.0f,0.0f,0.0f);
     static constexpr Vertice_type NDirRight = Vertice_type(1.0f,0.0f,0.0f);
-
+private:
+    friend class zbs::ZArray<ZObject>;
+    ZObject() {}
+public:
     ZObject(const char* pName) ;
 
     ZObject(const ZObject&pObject)
@@ -318,7 +321,7 @@ public:
     void setUseDefaultColor(bool pOnOff) {GLDescriptor->useDefaultColor(pOnOff);}
     void setUseDefaultAlpha(bool pOnOff) {GLDescriptor->useDefaultAlpha(pOnOff);}
 
- //   void setShader(ZShader* pShader) {Shader=pShader;}
+   void setShader(ZShader* pShader) {Shader=pShader;}
 
     size_t getStride() {return sizeof(ZVertice);}
 
@@ -347,7 +350,7 @@ public:
     ZGLObjDescriptor*            GLNormVisuDesc=nullptr;
     ZGLObjDescriptor*            GLShapeDesc=nullptr;
 
-//    ZShader* Shader=nullptr;
+    ZShader* Shader=nullptr;
     const char*Name=nullptr;
 
     /* position within model where object is initially positionned using first translation for model's origin */
@@ -369,7 +372,6 @@ public:
     float NormalVisuSize=0.04;
     zbs::ZArray<Vertice_type>       ZANormVisu;
     zbs::ZArray<GLuint>             ShapeIndices;
-
 };
 
 #endif // ZOBJECT_H

@@ -17,6 +17,8 @@ SOURCES += \
         zboxcomponents.cpp \
 #        zcandy.cpp \
 #        zmetaobject.cpp \
+    zcandy.cpp \
+    zmetaobject.cpp \
         zresource.cpp \
         zshader.cpp \
         zsphere.cpp \
@@ -48,8 +50,10 @@ HEADERS += \
     Bmp.h \
     zboxcomponents.h \
 #    zcandy.h \
+    zcandy.h \
     zglconstants.h \
 #    zmetaobject.h \
+    zmetaobject.h \
     zresource.h \
     zsphere.h \
     glad/include/glad/glad.h \

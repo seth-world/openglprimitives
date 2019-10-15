@@ -2,7 +2,7 @@
 #include <stb_image.h>
 #include <zresource.h>
 #include <zboxcomponents.h>
-//#include <zcandy.h>
+#include <zcandy.h>
 
 /* compute a triangle's surface normal vec3 vector */
 
@@ -1200,7 +1200,7 @@ ZObject pObject(pName);
     return pObject;
 }//openboxIndexedSetup
 
-#ifdef __COMMENT__
+//#ifdef __COMMENT__
 //ZMetaObject
 ZCandy
 generateCandy (const float pHigh,
@@ -1302,7 +1302,7 @@ ZBoxComponents pComponents;
     return wCandy;
 }//Candyboxsetup
 
-#endif // __COMMENT__
+//#endif // __COMMENT__
 
 
 ZObject
