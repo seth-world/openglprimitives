@@ -4,7 +4,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
+#include <stdio.h>
 #include <vector>
 
 #include <zvertice.h>
@@ -15,6 +15,8 @@ enum Camera_Movement {
     BACKWARD,
     LEFT,
     RIGHT ,
+    UP,
+    DOWN,
 
     LIGHTFORWARD,
     LIGHTBACKWARD,
@@ -22,8 +24,17 @@ enum Camera_Movement {
     LIGHTRIGHT,
     LIGHTHIGH,
     LIGHTLOW,
-    POLYGONLINES,
-    POLYGONFILL
+    LIGHTORIGIN,
+
+    TOGGLE_GAMMA,
+
+    TOGGLE_POLYGONLINES,
+    TOGGLE_NORMALVECTORS,
+    TOGGLE_MOUSE,
+
+    RESET_POSITION
+
+
 };
 
 // Default camera values
@@ -58,7 +69,7 @@ public:
     bool        redrawRequest = true;
 
     glm::vec3   LightPosition=glm::vec3 (1.0f, 1.0f, 1.0f) ;
-    glm::vec3   DefaultLightPosition ;
+    glm::vec3   DefaultLightPosition=LightPosition ;
 
     glm::vec3   RotationAxis=glm::vec3(0.0f);
     float       RotationAngle=0.0f;
@@ -69,16 +80,46 @@ public:
             usePolygonLines=pOnOff;
             scheduleRedraw();
             }
+    inline void togglePolygonLines()
+            {
+            setPolygonLines(!usePolygonLines);
+            }
+    bool        useNormalVectors=false;
+    inline void setNormalVectors(bool pOnOff)
+            {
+            useNormalVectors=pOnOff;
+            scheduleRedraw();
+            }
+    inline void toggleNormalVectors()
+            {
+            setNormalVectors(!useNormalVectors);
+            }
     bool        useGammaCorrection=false;
     inline void setGammaCorrection(bool pOnOff)  /*generates glEnable(GL_FRAMEBUFFER_SRGB); or glDisable(GL_FRAMEBUFFER_SRGB); */
             {
             useGammaCorrection=pOnOff;
             scheduleRedraw();
             }
+    inline void toggleGammaCorrection()  /*generates glEnable(GL_FRAMEBUFFER_SRGB); or glDisable(GL_FRAMEBUFFER_SRGB); */
+            {
+            useGammaCorrection=!useGammaCorrection;
+            scheduleRedraw();
+            }
+    inline void toggleMouse()  /*generates glEnable(GL_FRAMEBUFFER_SRGB); or glDisable(GL_FRAMEBUFFER_SRGB); */
+            {
+            FollowMouse=!FollowMouse;
+            }
+    inline void resetPositions()
+    {
+       LightPosition=DefaultLightPosition;
+       CameraPosition=DefaultCameraPosition;
+       updateCameraVectors();
+       scheduleRedraw();
+    }
 
     float       LightMove=0.1f;
 
-    bool FollowMouse=true;
+    bool FollowMouse=false;
     bool ShiftOn=false;
     bool Rotation=false;
 
@@ -105,6 +146,7 @@ public:
     Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
     {
         CameraPosition = glm::vec3(posX, posY, posZ);
+        DefaultCameraPosition = CameraPosition;
         WorldUp = glm::vec3(upX, upY, upZ);
         Yaw = yaw;
         Pitch = pitch;
@@ -144,17 +186,10 @@ public:
     }
     bool redrawRequested() {return  redrawRequest;}
 
-#include <stdio.h>
+
     // Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
     void ProcessKeyboard(Camera_Movement direction, float delta)
     {
-/*        printf ("Kbd key <%s> : position <%g> Front <%g> Movement speed <%g> delta time <%g>",
-                decodeCameraMovement(direction),
-                Position,
-                Front,
-                MovementSpeed,
-                deltaTime
-                );*/
         KeyAccelerator += delta;
         if (KeyAccelerator>0.5)
                     KeyAccelerator=0.5;
@@ -162,19 +197,36 @@ public:
         float velocity = MovementSpeed * KeyAccelerator;
          switch (direction)
         {
+/* Camera movements */
         case FORWARD:
-            CameraPosition += Front * velocity;
+             ProcessMouseScroll(0.1f);
+//            CameraPosition += Front * velocity;
             return;
         case BACKWARD:
-            CameraPosition -= Front * velocity;
+             ProcessMouseScroll(-0.1f);
+//            CameraPosition -= Front * velocity;
             return;
         case LEFT:
             CameraPosition -= Right * velocity;
+            scheduleRedraw();
             return;
         case RIGHT:
-            CameraPosition += Right * velocity;
-            return;
 
+            CameraPosition += Right * velocity;
+            scheduleRedraw();
+            return;
+         case UP:
+//             CameraPosition += Front * velocity;
+              CameraPosition += Up * velocity;
+             scheduleRedraw();
+             return;
+         case DOWN:
+//             CameraPosition -= Front * velocity;
+              CameraPosition -= Up * velocity;
+             scheduleRedraw();
+
+             return;
+/* Light movements */
         case LIGHTFORWARD:
             LightPosition.z += LightMove * velocity;
             return;
@@ -194,38 +246,32 @@ public:
         case LIGHTHIGH:
             LightPosition.y += LightMove * velocity;
             return;
-        case POLYGONLINES:
-            setPolygonLines(true) ;
+
+
+        case TOGGLE_POLYGONLINES:
+            togglePolygonLines() ;
             return;
-        case POLYGONFILL:
-            setPolygonLines(false) ;
-            scheduleRedraw();
-            return;
+
+         case TOGGLE_GAMMA:
+             toggleGammaCorrection();
+             return;
+         case TOGGLE_NORMALVECTORS:
+             toggleNormalVectors();
+             return;
+         case TOGGLE_MOUSE:
+             toggleMouse();
+             return;
+//         case RESET_POSITION:
+//             resetPosition();
+             return;
 
         }// swich
 
-        if (direction == FORWARD)
-            CameraPosition += Front * velocity;
-        else
-        if (direction == BACKWARD)
-            CameraPosition -= Front * velocity;
-        else
-        if (direction == LEFT)
-            CameraPosition -= Right * velocity;
-        else
-        if (direction == RIGHT)
-            CameraPosition += Right * velocity;
-
-
-
-/*        printf ("position after <%g> \n",
-                Position
-                );*/
         scheduleRedraw();
         return;
     }
 
-    void setMouseOnOff()
+    void toggleMouseTracking()
     {
         FollowMouse=!FollowMouse;
     }
@@ -335,16 +381,16 @@ public:
             Zoom = 1.0f;
         if (Zoom >= 45.0f)
             Zoom = 45.0f;
-/*        printf ("Zoom after <%g> \n ",
-                Zoom
-                );*/
+
         scheduleRedraw();
         return;
     }
+
     void ResetPositions()
     {
         LightPosition=DefaultLightPosition;
         CameraPosition=DefaultCameraPosition;
+        scheduleRedraw();
     }
 
 public:

@@ -6,6 +6,7 @@ ICU_SRCi18n = /home/gerard/Development/icu/source/i18n
 
 OPENGL_BASE = $$DEVELOPMENT_BASE/opengl
 
+
 TEMPLATE = app
 CONFIG += console c++17
 CONFIG -= app_bundle
@@ -13,6 +14,9 @@ CONFIG -= qt
 
 SOURCES += \
         Bmp.cpp \
+        zboxcomponents.cpp \
+#        zcandy.cpp \
+#        zmetaobject.cpp \
         zresource.cpp \
         zshader.cpp \
         zsphere.cpp \
@@ -42,7 +46,10 @@ LIBS +=  -lglfw -ldl -lpthread -lGL -lglut
 HEADERS += \
     ../opengl/LearnOpenGL-master/includes/stb_image.h \
     Bmp.h \
+    zboxcomponents.h \
+#    zcandy.h \
     zglconstants.h \
+#    zmetaobject.h \
     zresource.h \
     zsphere.h \
     glad/include/glad/glad.h \
@@ -55,15 +62,23 @@ HEADERS += \
     zvertice.h
 
 DISTFILES += \
-    material.fs \
-    zbasic_lighting.fs \
-    zbasic_lighting.vs \
-    zbasic_lighting_copy.fs \
-    zbasic_lighting_copy.vs \
-    zlamp.fs \
-    zlamp.vs \
-    zlighting.fs \
-    zlighting.vs \
-    zlighting_material.fs \
-    zsphere.fs \
-    zsphere.vs
+    ./shaders/material.fs \
+    ./shaders/zcolor_lighting.fs \
+    ./shaders/zbasic_lighting.vs \
+    ./shaders/zbasic_lighting_copy.fs \
+    ./shaders/zbasic_lighting_copy.vs \
+    ./shaders/zlamp.fs \
+    ./shaders/zlamp.vs \
+    ./shaders/zlighting.fs \
+    ./shaders/zlighting.vs \
+    ./shaders/zmaterial_lighting.fs \
+    ./shaders/zsphere.fs \
+    ./shaders/zsphere.vs \
+    shaders/geometry.gs \
+    shaders/normalvisu.fs \
+    shaders/normalvisu.gs \
+    shaders/normalvisu.vs \
+    shaders/sphereshader.vs \
+    shaders/znormvisu.fs \
+    shaders/znormvisu.vs \
+    shaders/ztexture_initial.fs

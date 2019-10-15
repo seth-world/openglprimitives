@@ -19,7 +19,7 @@ public:
     GLuint ID;
     const char* Name=nullptr;
     int setErrorCount=0;
-    const int MaxErrorDisplay=50;
+    const int MaxErrorDisplay=15;
     // constructor generates the shader on the fly
     // ------------------------------------------------------------------------
     ZShader(const char* pVertexPath, const char* pFragmentPath, const char* pName );

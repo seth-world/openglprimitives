@@ -11,8 +11,8 @@ class ZObject;
 class ZGLResource
 {
 public:
-    static constexpr  const char * ShaderRootPath ="/home/gerard/Development/TestOpenGl/";
-    static constexpr const char * TextureRootPath ="/home/gerard/Development/TestOpenGl/";
+    static constexpr  const char * ShaderRootPath ="/home/gerard/Development/TestOpenGl/shaders/";
+    static constexpr const char * TextureRootPath ="/home/gerard/Development/TestOpenGl/shaders/";
 
     static std::string getShaderPath (const char*pName)
     {

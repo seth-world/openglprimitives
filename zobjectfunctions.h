@@ -5,10 +5,22 @@
 #include <ztoolset/zarray.h>
 #include <glm/glm.hpp>
 #include <zobject.h>
+#include <zboxcomponents.h>
 
 unsigned int loadTexture(char const * path);
 
-Vertice_type CalculateSurfaceNormal (Vertice_type* pTriangle);
+Vertice_type calculateSurfaceNormal (Vertice_type* pTriangle);
+const Vertice_type calculateCenter(Vertice_type* pTriangle);
+inline const Vertice_type calculateCenter(Vertice_type &pTriangle1,
+                                    Vertice_type &pTriangle2,
+                                    Vertice_type &pTriangle3)
+{
+    Vertice_type wTriangle[3];
+    wTriangle[0]=pTriangle1;
+    wTriangle[1]=pTriangle2;
+    wTriangle[2]=pTriangle3;
+    return calculateCenter(wTriangle);
+}
 
 zbs::ZArray<Vertice_type>  generateVNormal(zbs::ZArray<Vertice_type> &wVertex,
                                            zbs::ZArray<ZObject::NormalDirection> &pNormDir);
@@ -16,20 +28,37 @@ zbs::ZArray<Vertice_type>  generateVNormal(zbs::ZArray<Vertice_type> &wVertex,
 ZObject boxIndexSetup (const float pHigh,
                        const float pWidth,
                        const float pDepth,
-                       zbs::ZArray<Vertice_type>* pMids=nullptr,
-                       const char*pName=nullptr);
-ZObject boxSetup (const Color_type &pColor,
-                  const float pHigh,
+                       const char* pName);
+
+
+ZObject boxIndexSetup (const float pHigh,
+                       const float pWidth,
+                       const float pDepth,
+                       ZBoxComponents& pBoxComponents,
+                       const char* pName);
+
+ZObject boxSetup (const float pHigh,
+                       const float pWidth,
+                       const float pDepth,
+                       const char* pName);
+
+ZObject boxSetup (const float pHigh,
                   const float pWidth,
                   const float pDepth,
-                  zbs::ZArray<Vertice_type>* pMids=nullptr,
-                  const char*pName=nullptr);
+                  ZBoxComponents& pComponents,
+                  const char*pName);
 
-ZObject openboxSetup(const float pHigh,
-                     const float pWidth,
-                     const float pDepth,
-                     zbs::ZArray<Vertice_type>* pMids=nullptr,
-                     const char*pName=nullptr);
+ZObject openboxSetup (const float pHigh,
+                       const float pWidth,
+                       const float pDepth,
+                      ZBoxComponents& pComponents,
+                      const char *pName);
+
+ZObject openboxSetup (const float pHigh,
+                       const float pWidth,
+                       const float pDepth,
+                      const char *pName);
+
 
 
 zbs::ZArray<Vertice_type> perfect_arc_right(Vertice_type pCenter,float pRadiusLen,  int pNumber);

@@ -7,33 +7,51 @@
 ZObject::ZObject(const char *pName)
 {
     Name=pName;
-    isMinMaxInit=false;
+//    isMinMaxInit=false;
+
     GLResources->registerObject(this);
 }
 
-void ZObject::copy(const ZObject&pObject)
+void ZObject::cloneFrom(const ZObject&pIn)
 {
-    GLResources->registerObject(this);
-    Name=pObject.Name;
-    for (int wi=0;wi<pObject.vertices.size();wi++)
-        vertices.push_back(pObject.vertices[wi]);
-    for (int wi=0;wi<pObject.VName.size();wi++)
-        VName.push_back(pObject.VName[wi]);
-    for (int wi=0;wi<pObject.Indices.size();wi++)
-        Indices.push_back(pObject.Indices[wi]);
 
-    for (int wi=0;wi<pObject.VNormalDir.size();wi++)
-        VNormalDir.push_back(pObject.VNormalDir[wi]);
+    Name=pIn.Name;
+    for (int wi=0;wi<pIn.vertices.size();wi++)
+        vertices.push_back(pIn.vertices[wi]);
+    for (int wi=0;wi<pIn.VName.size();wi++)
+        VName.push_back(pIn.VName[wi]);
+    for (int wi=0;wi<pIn.Indices.size();wi++)
+        Indices.push_back(pIn.Indices[wi]);
 
-    if (pObject.GLDescriptor)
-            GLDescriptor=new ZGLObjDescriptor(pObject.GLDescriptor);
+    for (int wi=0;wi<pIn.VNormalDir.size();wi++)
+        VNormalDir.push_back(pIn.VNormalDir[wi]);
+    for (int wi=0;wi<pIn.ShapeIndices.size();wi++)
+        ShapeIndices.push_back(pIn.ShapeIndices[wi]);
+    for (int wi=0;wi<pIn.ZANormVisu.size();wi++)
+        ZANormVisu.push_back(pIn.ZANormVisu[wi]);
+    if (pIn.GLDescriptor)
+            GLDescriptor=new ZGLObjDescriptor(pIn.GLDescriptor);
     else {
             GLDescriptor=nullptr;
          }
+    if (pIn.GLNormVisuDesc)
+            GLNormVisuDesc=new ZGLObjDescriptor(pIn.GLNormVisuDesc);
+    else {
+            GLNormVisuDesc=nullptr;
+         }
+    if (pIn.GLShapeDesc)
+            GLShapeDesc=new ZGLObjDescriptor(pIn.GLShapeDesc);
+    else {
+            GLShapeDesc=nullptr;
+         }
+//    ShapeIndices=pIn.ShapeIndices;
+//    ZANormVisu=pIn.ZANormVisu;
+
+//    GLResources->registerObject(this);
 }
-void ZObject::copy(const ZObject&&pObject)
+void ZObject::cloneFrom(const ZObject&&pObject)
 {
-    copy(pObject);
+    cloneFrom(pObject);
 }
 
 
@@ -62,7 +80,7 @@ ZObject::addVertice(Vertice_type pInput, const char* pName)
     VName.push_back(pName);
 
     /* compute min and max for x and y to further compute texture coords */
-    if (!isMinMaxInit)
+ /*   if (!isMinMaxInit)
             {
             XMin=XMax=pInput.x;
             YMin=YMax=pInput.y;
@@ -75,7 +93,7 @@ ZObject::addVertice(Vertice_type pInput, const char* pName)
     if (YMin>pInput.y)
             YMin= pInput.y;
     if (YMax<pInput.y)
-            YMax= pInput.y;
+            YMax= pInput.y;*/
     return;
 }//addVertice
 
@@ -96,15 +114,6 @@ ZObject::computeTexCoords()
     float wXDividor = xmax-xmin;
     float wYDividor = ymax-ymin;
 
-/*    printf (" xmin %f xmax %f ymin %f ymax %f wXDividor %f wYDividor %f\n",
-            xmin,
-            xmax,
-            ymin,
-            ymax,
-            wXDividor,
-            wYDividor
-            );*/
-
     for (long wi=0;wi<vertices.size();wi++)
     {
         vertices[wi].textcoords.x = (vertices[wi].point.x - xmin) / wXDividor;
@@ -116,14 +125,11 @@ ZObject::computeTexCoords()
 
 
 void
-ZObject::createGL_ObjectArray(  uint8_t pShaderSetupOpt )
+ZObject::createGL_ObjectArray(ZShader *pShader,  uint8_t pShaderSetupOpt )
         //unsigned int pShaderVerticePosition,
         //                        int pShaderNormalPosition)
 {
-
-
-
-    Shader->use();
+    pShader->use();
 
 /* GL buffers setup */
 
@@ -137,14 +143,12 @@ ZObject::createGL_ObjectArray(  uint8_t pShaderSetupOpt )
     glBufferData(GL_ARRAY_BUFFER, vertices.usedSize(), vertices.data(), GL_STATIC_DRAW);
 
 /* point position */
-    {
-    int wPosition=(GLuint)glGetAttribLocation(Shader->getShaderId(),"aPosition");
+    int wPosition=(GLuint)glGetAttribLocation(pShader->getShaderId(),"aPosition");
     if (wPosition<0)
         GLDescriptor->PositionAttribArray= cst_defaultPositionLocation;
     else
         GLDescriptor->PositionAttribArray=(GLuint)wPosition;
 
-    }
    glVertexAttribPointer(GLDescriptor->PositionAttribArray, 3, GL_FLOAT, GL_FALSE, (GLsizei)getStride(), (void*)verticeOffset);
    glEnableVertexAttribArray(GLDescriptor->PositionAttribArray);
 
@@ -154,7 +158,7 @@ ZObject::createGL_ObjectArray(  uint8_t pShaderSetupOpt )
         if (havetoComputeNormals())
                     this->computeNormals();
 
-        int wNormal=(GLuint)glGetAttribLocation(Shader->getShaderId(),"aNormal");
+        int wNormal=(GLuint)glGetAttribLocation(pShader->getShaderId(),"aNormal");
         if (wNormal<0)
             GLDescriptor->NormalAttribArray= cst_defaultNormalLocation;
         else
@@ -177,7 +181,7 @@ ZObject::createGL_ObjectArray(  uint8_t pShaderSetupOpt )
         {
         if (havetoComputeTexCoords())
                     this->computeTexCoords();
-        int wTextCoords=(GLuint)glGetAttribLocation(Shader->getShaderId(),"aTexCoords");
+        int wTextCoords=(GLuint)glGetAttribLocation(pShader->getShaderId(),"aTexCoords");
         if (wTextCoords<0)
             GLDescriptor->TexCoordsAttribArray= cst_defaultTexCoordsLocation;
         else
@@ -204,49 +208,41 @@ ZObject::createGL_ObjectArray(  uint8_t pShaderSetupOpt )
 // unbind
     glBindVertexArray(0);
 
-    Shader->release();
+    pShader->release();
 } // createGL_ObjectArray
 
 void
-ZObject::createGL_ObjectElement(  uint8_t pShaderSetupOpt )
+ZObject::createGL_ObjectElement(ZShader* pShader,  uint8_t pShaderSetupOpt )
 {
+  // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s)
+    pShader->use();
 
-    Shader->use();
-
-        glGenVertexArrays(1, &GLDescriptor->VAO);
-        glGenBuffers(1, &GLDescriptor->VBO);
-        glGenBuffers(1, &GLDescriptor->EBO);
+    glGenVertexArrays(1, &GLDescriptor->VAO);
+    glGenBuffers(1, &GLDescriptor->VBO);
+    glGenBuffers(1, &GLDescriptor->EBO);
 
 // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-        glBindVertexArray(GLDescriptor->VAO);
+    glBindVertexArray(GLDescriptor->VAO);
 
-        glBindBuffer(GL_ARRAY_BUFFER, GLDescriptor->VBO);
-        glBufferData(GL_ARRAY_BUFFER, vertices.usedSize(), vertices.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, GLDescriptor->VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.usedSize(), vertices.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLDescriptor->EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, Indices.usedSize(),Indices.data(), GL_STATIC_DRAW); // same indices as vertices
 
+    // remember: do NOT unbind the EBO while a VAO is active as the
 /* point position */
-        {
-        int wPosition=(GLuint)glGetAttribLocation(Shader->getShaderId(),"aPosition");
-        if (wPosition<0)
-            GLDescriptor->PositionAttribArray= cst_defaultPositionLocation;
-        else
-            GLDescriptor->PositionAttribArray=(GLuint)wPosition;
 
-        }
-       glVertexAttribPointer(GLDescriptor->PositionAttribArray, 3, GL_FLOAT, GL_FALSE, (GLsizei)getStride(), (void*)verticeOffset);
-       glEnableVertexAttribArray(GLDescriptor->PositionAttribArray);
+    glVertexAttribPointer(GLDescriptor->getPositionAttribute(pShader), 3, GL_FLOAT, GL_FALSE, (GLsizei)getStride(), (void*)verticeOffset);
+    glEnableVertexAttribArray(GLDescriptor->PositionAttribArray);
+
 
 /* normals */
     if (pShaderSetupOpt&setupNormals)
             {
             if (havetoComputeNormals())
                     this->computeNormals();
-            int wNormal=(GLuint)glGetAttribLocation(Shader->getShaderId(),"aNormal");
-            if (wNormal<0)
-                GLDescriptor->NormalAttribArray= cst_defaultNormalLocation;
-            else
-                GLDescriptor->NormalAttribArray=(GLuint)wNormal;
 
-            glVertexAttribPointer(GLDescriptor->NormalAttribArray, 3, GL_FLOAT, GL_FALSE, (GLsizei)getStride(), (void*)normalOffset);
+            glVertexAttribPointer(GLDescriptor->getNormalAttribute(pShader), 3, GL_FLOAT, GL_FALSE, (GLsizei)getStride(), (void*)normalOffset);
             glEnableVertexAttribArray(GLDescriptor->NormalAttribArray);
             }
 /* texture coordinates */
@@ -254,20 +250,11 @@ ZObject::createGL_ObjectElement(  uint8_t pShaderSetupOpt )
             {
             if (havetoComputeNormals())
                         this->computeTexCoords();
-            int wTextCoords=(GLuint)glGetAttribLocation(Shader->getShaderId(),"aTexCoord");
-            if (wTextCoords<0)
-                GLDescriptor->TexCoordsAttribArray= cst_defaultTexCoordsLocation;
-            else
-                GLDescriptor->TexCoordsAttribArray=(GLuint)wTextCoords;
 
-            glVertexAttribPointer(GLDescriptor->TexCoordsAttribArray, 3, GL_FLOAT, GL_FALSE, (GLsizei)getStride(), (void*)textureOffset);
+            glVertexAttribPointer(GLDescriptor->getTexCoordsAttribute(pShader), 3, GL_FLOAT, GL_FALSE, (GLsizei)getStride(), (void*)textureOffset);
             glEnableVertexAttribArray(GLDescriptor->TexCoordsAttribArray);
             }
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLDescriptor->EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, Indices.usedSize(),Indices.data(), GL_STATIC_DRAW); // same indices as vertices
-
-    // remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
     //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
@@ -278,7 +265,7 @@ ZObject::createGL_ObjectElement(  uint8_t pShaderSetupOpt )
 
     // unbind
         glBindVertexArray(0);
-        Shader->release();
+        pShader->release();
 } // createGL_ObjectElement
 
 ZTexture*
@@ -329,7 +316,7 @@ ZObject::setupGL(ZShader* pShader,
             delete GLDescriptor;
     GLDescriptor=new ZGLObjDescriptor;
 
-    Shader=pShader;
+//    Shader=pShader;
 //    setDefaultAlpha(pAlpha);
 //    setDefaultColor(pColor);
     setDrawFigure(pMode);
@@ -338,24 +325,25 @@ ZObject::setupGL(ZShader* pShader,
             setTexture(pTexture);
 
     if (hasIndices())
-        createGL_ObjectElement(pShaderSetupOpt);
+        createGL_ObjectElement(pShader,pShaderSetupOpt);
     else
-        createGL_ObjectArray(pShaderSetupOpt);
+        createGL_ObjectArray(pShader,pShaderSetupOpt);
     return;
-}
+}//setupGL
 
 void
-ZObject::drawGL(unsigned int pDrawFigure)
+ZObject::drawGL(ZShader* pShader,unsigned int pDrawFigure)
 {
-    if (Shader==nullptr)
+    if (pShader==nullptr)
         {
         fprintf (stderr,"ZObject::drawGL-F-MissShader   Shader definition is missing for ZObject <%s>\n",Name);
         abort();
         }
-    Shader->use();
-    Shader->setVec3("InColor",DefaultColor);
-    Shader->setFloat("InAlpha",DefaultAlpha);
-
+    pShader->use();
+/*
+    pShader->setVec3("InColor",DefaultColor);
+    pShader->setFloat("InAlpha",DefaultAlpha);
+*/
     if (GLDescriptor->hasTexture())
         {
         GLDescriptor->Texture->bind();
@@ -381,102 +369,115 @@ ZObject::drawGL(unsigned int pDrawFigure)
 
     if (hasIndices())
     {
-        glBindBuffer(GL_ARRAY_BUFFER, GLDescriptor->VBO);
-        glEnableVertexAttribArray(GLDescriptor->PositionAttribArray);
-        if (GLDescriptor->NormVBO!=0)
-            {
-            glBindBuffer(GL_ARRAY_BUFFER, GLDescriptor->NormVBO);
-            glEnableVertexAttribArray(GLDescriptor->NormalAttribArray);
-            }
-        if (GLDescriptor->TexVBO!=0)
-            {
-            glBindBuffer(GL_ARRAY_BUFFER, GLDescriptor->TexVBO);
-            glEnableVertexAttribArray(GLDescriptor->TexCoordsAttribArray);
-            }
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLDescriptor->EBO);
         glBindVertexArray(GLDescriptor->VAO);
 
         glDrawElements(pDrawFigure, Indices.count(), GL_UNSIGNED_INT, 0);
-
     }
     else
     {
-        glBindBuffer(GL_ARRAY_BUFFER, GLDescriptor->VBO);
-        if (GLDescriptor->NormVBO!=0)
-            glBindBuffer(GL_ARRAY_BUFFER, GLDescriptor->NormVBO);
-        if (GLDescriptor->TexVBO!=0)
-            glBindBuffer(GL_ARRAY_BUFFER, GLDescriptor->TexVBO);
-        glBindVertexArray(GLDescriptor->VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-        // activate attrib arrays
-        glEnableVertexAttribArray(GLDescriptor->PositionAttribArray); /* there is at least PositionAttribArray to activate */
-        if (GLDescriptor->NormalAttribArray>0)
-                glEnableVertexAttribArray(GLDescriptor->NormalAttribArray);
-        if (GLDescriptor->TexCoordsAttribArray>0)
-                glEnableVertexAttribArray(GLDescriptor->TexCoordsAttribArray);
+        glBindVertexArray(GLDescriptor->VAO);
         glDrawArrays(pDrawFigure, 0 , vertices.count());
     }
     return;
 } // drawGL
 
 void
-ZObject::drawGLLines()
+ZObject::setupGLNormalVisu(ZShader* pShader)
 {
+    if (GLNormVisuDesc!=nullptr)
+            delete GLNormVisuDesc;
+    GLNormVisuDesc=new ZGLObjDescriptor;
+    pShader->use();
 
-    if (Shader==nullptr)
+    generateNormVisu();
+
+
+    glGenVertexArrays(1, &GLNormVisuDesc->VAO);
+    glGenBuffers(1, &GLNormVisuDesc->VBO);
+
+// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+    glBindVertexArray(GLNormVisuDesc->VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, GLNormVisuDesc->VBO);
+    glBufferData(GL_ARRAY_BUFFER, ZANormVisu.usedSize(), ZANormVisu.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(GLNormVisuDesc->getPositionAttribute(pShader), 3, GL_FLOAT, GL_FALSE, (GLsizei)sizeof(Vertice_type), (void*)verticeOffset);
+    glEnableVertexAttribArray(GLNormVisuDesc->PositionAttribArray);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+// unbind
+    glBindVertexArray(0);
+    pShader->release();
+}
+
+void
+ZObject::drawGLNormalVisu(ZShader* pShader)
+{
+    if (pShader==nullptr)
         {
         fprintf (stderr,"ZObject::drawGL-F-MissShader   Shader definition is missing for ZObject <%s>\n",Name);
         abort();
         }
-    Shader->use();
-    Shader->setVec3("InColor",DefaultColor);
-    Shader->setFloat("InAlpha",DefaultAlpha);
-    glDisable(GL_TEXTURE_2D);
-    if (hasIndices())
-    {
-        glBindVertexArray(GLDescriptor->VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, GLDescriptor->VBO);
-        if (GLDescriptor->NormVBO!=0)
-            glBindBuffer(GL_ARRAY_BUFFER, GLDescriptor->NormVBO);
+    pShader->use();
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLDescriptor->EBO);
-        glDrawElements(GL_LINES, Indices.count(), GL_UNSIGNED_INT, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, GLNormVisuDesc->VBO);
+    glBindVertexArray(GLNormVisuDesc->VAO);
+    glDrawArrays(GL_LINES, 0 , ZANormVisu.count());
 
-    }
-    else
-    {
-        if (GLDescriptor->hasTexture())
-             GLDescriptor->Texture->bind();
-        glBindVertexArray(GLDescriptor->VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-        glBindBuffer(GL_ARRAY_BUFFER, GLDescriptor->VBO);
-        if (GLDescriptor->NormVBO!=0)
-            glBindBuffer(GL_ARRAY_BUFFER, GLDescriptor->NormVBO);
-
-
-        glDrawArrays(GL_LINES, 0 , vertices.count());
-    }
     return;
-} // drawGL
+} // drawGLNormalVisu
 
-/*
-zbs::ZArray<Color_type>
-ZObject::toFlatColors()
+void
+ZObject::setupGLShape(ZShader* pShader)
 {
-    zbs::ZArray<Color_type> wFlat;
-    if (hasIndices())
-    {
-        for (size_t wi=0;wi<Indices.size();wi++)
+    if (GLShapeDesc!=nullptr)
+            delete GLShapeDesc;
+    GLShapeDesc=new ZGLObjDescriptor;
+// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s)
+  pShader->use();
+
+    glGenVertexArrays(1, &GLShapeDesc->VAO);
+    glGenBuffers(1, &GLShapeDesc->VBO);
+    glGenBuffers(1, &GLShapeDesc->EBO);
+
+// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+    glBindVertexArray(GLShapeDesc->VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, GLShapeDesc->VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.usedSize(), vertices.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLShapeDesc->EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, ShapeIndices.usedSize(),ShapeIndices.data(), GL_STATIC_DRAW); // same indices as vertices
+
+  // remember: do NOT unbind the EBO while a VAO is active as the
+/* point position */
+
+    glVertexAttribPointer(GLShapeDesc->getPositionAttribute(pShader), 3, GL_FLOAT, GL_FALSE, (GLsizei)getStride(), (void*)verticeOffset);
+    glEnableVertexAttribArray(GLShapeDesc->PositionAttribArray);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+// unbind
+    glBindVertexArray(0);
+    pShader->release();
+}//setupGLShape
+void
+ZObject::drawGLShape(ZShader* pShader)
+{
+    if (pShader==nullptr)
         {
-            wFlat.push_back(vertices[Indices[wi]].color);
+        fprintf (stderr,"ZObject::drawGL-F-MissShader   Shader definition is missing for ZObject <%s>\n",Name);
+        abort();
         }
-        return wFlat;
-    }
-    for (size_t wi=0;wi<vertices.size();wi++)
-    {
-        wFlat.push_back(vertices[wi].color);
-    }
-    return wFlat;
-}//toFlatColors
-*/
+    pShader->use();
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLShapeDesc->EBO);
+    glBindVertexArray(GLShapeDesc->VAO);
+
+    glDrawElements(GL_LINE_STRIP, ShapeIndices.count(), GL_UNSIGNED_INT, 0);
+
+    return;
+} // drawGLNormalVisu
+
 zbs::ZArray<Vertice_type>
 ZObject::toRawVertices()
 {
@@ -563,8 +564,16 @@ ZObject::toFlatTexCoords()
 void
 ZObject::print(int pLimit,FILE* pOutput)
 {
-    long wVCount=pLimit<0?vertices.size():(long)pLimit;
-    long wICount=pLimit<0?Indices.size():(long)pLimit;
+    long wVCount=vertices.size();
+    if (vertices.size()<pLimit)
+                wVCount=pLimit;
+
+    long wICount=Indices.size();
+    if (Indices.size()<pLimit)
+                wICount=pLimit;
+    long wNVCount=ZANormVisu.size();
+    if (ZANormVisu.size()<pLimit)
+                wICount=pLimit;
     char wLimitChar[20];
     if (pLimit<0)
         strcpy(wLimitChar,"All data");
@@ -574,7 +583,11 @@ ZObject::print(int pLimit,FILE* pOutput)
     fprintf (pOutput,
              "\nObject <%s>\n",
              Name==nullptr?"No Name":Name);
-        fprintf (pOutput,"Vertices <%s>\n--------\n",wLimitChar);
+        fprintf (pOutput,"Vertices count <%ld> displayed <%ld> <%s>\n"
+                         "-------------------------------------------------\n",
+                 vertices.count(),
+                 wVCount,
+                 wLimitChar);
             fprintf (pOutput,
                      "                  Vertices                            Normals                         Texture \n"
                      "     -----------------------------------------------------------------------------------------------------\n");
@@ -598,12 +611,47 @@ ZObject::print(int pLimit,FILE* pOutput)
                     vertices[wi].textcoords.y);
             }
 
-        fprintf (pOutput,"Indices <%s>\n--------\n",wLimitChar);
+        fprintf (pOutput,"Indices count <%ld> displayed <%ld> <%s>\n"
+                         "-------------------------------------------------------\n",
+                 Indices.count(),
+                 wICount,
+                 wLimitChar);
         if (Indices.count()==0)
             fprintf (pOutput," No indices\n");
         else
         for (long wi=0; wi < wICount;wi+=3)
                 fprintf (pOutput,"%u %u %u\n",Indices[wi],Indices[wi+1],Indices[wi+2]);
+
+
+        fprintf (pOutput,"Normal Vectors count <%ld> displayed <%ld> <%s>\n"
+                         "------------------------------------------------------------\n",
+                 ZANormVisu.count(),
+                 wNVCount,
+                 wLimitChar);
+        if (ZANormVisu.count()==0)
+            fprintf (pOutput," No Normal vectors\n");
+        else {
+            fprintf (pOutput,
+                     "                  Center                      Target\n"
+                     "     ---------------------------------------------------------------------------------\n");
+            for (long wi=0; wi < wNVCount;wi+=2)
+                {
+                const char* wName;
+                if (wi<VName.size())
+                    wName=VName[wi];
+                else {
+                    wName="NoName";
+                    }
+                fprintf (pOutput,"   x:% 3f y:% 3f z:% 3f  x:% 3f y:% 3f z:% 3f\n",
+                        ZANormVisu[wi].x,
+                        ZANormVisu[wi].y,
+                        ZANormVisu[wi].z,
+                        ZANormVisu[wi+1].x,
+                        ZANormVisu[wi+1].y,
+                        ZANormVisu[wi+1].z);
+
+                    }// for
+            }//else
 
 }// print
 
@@ -670,3 +718,29 @@ ZObject::computeNormals()
 
     return ;
 }//ZObject::generateNormals()
+
+
+
+void ZObject::generateNormVisu()
+{
+
+    ZANormVisu.clear();
+
+
+ //   Vertice_type wTriangle[3];
+    Vertice_type wCenter;
+    Vertice_type wTarget;
+    for (long wi=0;wi<vertices.count();wi+=3)
+        {
+        wCenter=calculateCenter(vertices[wi].point,
+                                vertices[wi+1].point,
+                                vertices[wi+2].point);
+
+        ZANormVisu.push_back(wCenter);
+        wTarget = vertices[wi].normal*NormalVisuSize;
+        wTarget = wTarget+ wCenter;
+        ZANormVisu.push_back(wTarget);
+        }
+    return;
+}
+

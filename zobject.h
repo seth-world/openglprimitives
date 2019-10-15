@@ -22,21 +22,21 @@ public:
     ZGLObjDescriptor() {}
     ZGLObjDescriptor(ZGLObjDescriptor &&pDescriptor)
     {
-       copy(pDescriptor);
+       cloneFrom(pDescriptor);
     }
 
     ZGLObjDescriptor(ZGLObjDescriptor* pDescriptor)
     {
-        copy (*pDescriptor);
+        cloneFrom (*pDescriptor);
     }
 
 
     ~ZGLObjDescriptor()
     {
-        deleteGLContext();
+//        deleteGLContext();
     }
 
-    inline ZGLObjDescriptor& copy(const ZGLObjDescriptor &pDescriptor)
+    inline ZGLObjDescriptor& cloneFrom(const ZGLObjDescriptor &pDescriptor)
     {
         VBO=pDescriptor.VBO;
         VAO=pDescriptor.VAO;
@@ -44,9 +44,6 @@ public:
         TexVBO=pDescriptor.TexVBO;
         EBO=pDescriptor.NormVBO;
         Mode=pDescriptor.Mode;
-        HasElements=pDescriptor.HasElements;
-        count=pDescriptor.count;
-        size=pDescriptor.size;
         Texture=pDescriptor.Texture;
         UseTexture=pDescriptor.UseTexture;
         UseDefaultColor=pDescriptor.UseDefaultColor;
@@ -55,6 +52,33 @@ public:
         return *this;
     }
 
+    GLuint getPositionAttribute(ZShader* pShader)
+    {
+        int wPosition=(GLuint)glGetAttribLocation(pShader->getShaderId(),__POSITION_ATR_NAME__);
+        if (wPosition<0)
+            PositionAttribArray= cst_defaultPositionLocation;
+        else
+            PositionAttribArray=(GLuint)wPosition;
+        return PositionAttribArray;
+    }
+    GLuint getNormalAttribute(ZShader* pShader)
+    {
+        int wNormal=(GLuint)glGetAttribLocation(pShader->getShaderId(),__NORMAL_ATR_NAME__);
+        if (wNormal<0)
+            NormalAttribArray= cst_defaultNormalLocation;
+        else
+            NormalAttribArray=(GLuint)wNormal;
+        return NormalAttribArray;
+    }
+    GLuint getTexCoordsAttribute(ZShader* pShader)
+    {
+        int wTextCoords=(GLuint)glGetAttribLocation(pShader->getShaderId(),__TEXCOORDS_ATR_NAME__);
+        if (wTextCoords<0)
+            TexCoordsAttribArray= cst_defaultTexCoordsLocation;
+        else
+            TexCoordsAttribArray=(GLuint)wTextCoords;
+        return TexCoordsAttribArray;
+    }
     bool hasTexture()
     {
     return (Texture!=nullptr) && UseTexture;
@@ -96,15 +120,8 @@ public:
 
    ZTexture*    Texture=nullptr;
 
-   int          count;
-   int          size;
+   GLenum       Mode ; /* GL_TRIANGLE_FAN GL_TRIANGLES GL_LINE etc.*/
 
-
-   unsigned int Mode ; /* GL_TRIANGLE_FAN GL_TRIANGLES */
-   bool         HasElements=false; /* defines wether to use glDrawElements in place of glDrawArrays
-                                        if set to true, then EBO must point to a GL_ELEMENT_ARRAY_BUFFER
-                                        containing valid index values
-*/
    bool         UseTexture=false;
    bool         UseDefaultColor=false;
    bool         UseDefaultAlpha=false;
@@ -148,9 +165,7 @@ public:
         setupTextures       =   2
     };
 
-    GLuint cst_defaultPositionLocation = 0;
-    GLuint cst_defaultNormalLocation = 1;
-    GLuint cst_defaultTexCoordsLocation = 2;
+
 
     static constexpr Vertice_type NDirFront = Vertice_type(0.0f,0.0f,1.0f);
     static constexpr Vertice_type NDirBack = Vertice_type(0.0f,0.0f,-1.0f);
@@ -161,12 +176,32 @@ public:
 
     ZObject(const char* pName) ;
 
-    ZObject(const ZObject&pObject) { copy(pObject); }// copy CTOR
+    ZObject(const ZObject&pObject)
+    {
+        cloneFrom(pObject);
+        GLResources->registerObject(this);
+    }// copy CTOR
 
-    ZObject(const ZObject&&pObject) {copy(pObject); }// copy CTOR
+    ZObject(const ZObject&&pObject)
+    {
+        cloneFrom(pObject);
+        GLResources->registerObject(this);
+    }// copy CTOR
 
-    void copy(const ZObject&pObject);
-    void copy(const ZObject&&pObject);
+
+    ~ZObject( )
+    {
+        GLResources->deregisterObject(this);
+        if (GLDescriptor!=nullptr)
+                delete GLDescriptor;
+        if (GLNormVisuDesc!=nullptr)
+                delete GLNormVisuDesc;
+        if (GLShapeDesc!=nullptr)
+                delete GLShapeDesc;
+    }
+
+    void cloneFrom(const ZObject&pObject);
+    void cloneFrom(const ZObject&&pObject);
 
     ZObject& addObject(ZObject &pObject);
 
@@ -183,10 +218,12 @@ public:
     {
         vertices.clear();
         Indices.clear();
+        ShapeIndices.clear();
+        ZANormVisu.clear();
 //        Normals.clear();
         VNormalDir.clear();
         VName.clear();
-        isMinMaxInit=false;
+//        isMinMaxInit=false;
     }//clearObject
 
     zbs::ZArrayIndex_type verticeCount() {return vertices.size();}
@@ -210,13 +247,13 @@ public:
     ZObject& operator = (ZObject &pInput)
     {
         clearObject();
-        copy(pInput);
+        cloneFrom(pInput);
         return *this;
     }
     ZObject& operator = (ZObject &&pInput)
     {
         clearObject();
-        copy(pInput);
+        cloneFrom(pInput);
         return *this;
     }
     void addIndice(unsigned int pIndice) {Indices.push_back(pIndice);}
@@ -247,21 +284,28 @@ public:
     bool hasTexture() ;
     bool useTexture() {return GLDescriptor->UseTexture;}
 
-    void createGL_ObjectArray(  uint8_t pShaderSetupOpt );
+
+
+
+    void createGL_ObjectArray(ZShader* pShader,  uint8_t pShaderSetupOpt );
 
 //    void createGL_ObjectElement(unsigned int pShaderVerticePositions,
 //                                int pShaderNormalPosition);
-    void createGL_ObjectElement(  uint8_t pShaderSetupOpt );
+    void createGL_ObjectElement(ZShader *pShader,  uint8_t pShaderSetupOpt );
 
     void setupGL(ZShader *pShader,
                  uint8_t    pShaderSetupOpt=SetupVertices,
                  GLenum DrawFigure=GL_TRIANGLES,
                  ZTexture *pTexture=nullptr);
 
-    void drawGL(unsigned int pDrawFigure);
-    void drawGL() {drawGL(DrawFigure);}
+    void setupGLShape(ZShader* pShader);
+    void setupGLNormalVisu(ZShader* pShader);
 
-    void drawGLLines();
+    void drawGL(ZShader *pShader, unsigned int pDrawFigure);
+    void drawGL(ZShader *pShader) {drawGL(pShader,DrawFigure);}
+
+    void drawGLNormalVisu(ZShader* pShader);
+    void drawGLShape(ZShader* pShader);
 
     void print(int pLimit=-1, FILE* pOutput=stdout);
 
@@ -274,7 +318,7 @@ public:
     void setUseDefaultColor(bool pOnOff) {GLDescriptor->useDefaultColor(pOnOff);}
     void setUseDefaultAlpha(bool pOnOff) {GLDescriptor->useDefaultAlpha(pOnOff);}
 
-    void setShader(ZShader* pShader) {Shader=pShader;}
+ //   void setShader(ZShader* pShader) {Shader=pShader;}
 
     size_t getStride() {return sizeof(ZVertice);}
 
@@ -292,23 +336,25 @@ public:
     zbs::ZArray<ZVertice>           vertices;
     zbs::ZArray<const char*>        VName;
     zbs::ZArray<unsigned int>       Indices;
-    zbs::ZArray<NormalDirection>     VNormalDir; /* one rank per triangle : serie of 3 vertices*/
+
+    zbs::ZArray<NormalDirection>    VNormalDir; /* one rank per triangle : serie of 3 vertices*/
 
     Color_type DefaultColor=cst_object_color_default;
     float DefaultAlpha=1.0f;
     unsigned int DrawFigure=GL_TRIANGLES;
 
     ZGLObjDescriptor*            GLDescriptor=nullptr;
+    ZGLObjDescriptor*            GLNormVisuDesc=nullptr;
+    ZGLObjDescriptor*            GLShapeDesc=nullptr;
 
-    ZShader* Shader=nullptr;
+//    ZShader* Shader=nullptr;
     const char*Name=nullptr;
 
     /* position within model where object is initially positionned using first translation for model's origin */
     Vertice_type DefaultPosition=Vertice_type(0.0f,0.0f,0.0f);
 
-    bool isMinMaxInit=false;
-    float XMin, XMax,YMin,YMax;
-
+//    bool isMinMaxInit=false;
+//    float XMin, XMax,YMin,YMax;
 
     void setComputeNormals(bool pOnOff) {ComputeNormals=pOnOff;}
     bool havetoComputeNormals() {return ComputeNormals;}
@@ -318,6 +364,11 @@ public:
 
     bool ComputeNormals=true;
     bool ComputeTexCoords=true;
+
+    void generateNormVisu();
+    float NormalVisuSize=0.04;
+    zbs::ZArray<Vertice_type>       ZANormVisu;
+    zbs::ZArray<GLuint>             ShapeIndices;
 
 };
 

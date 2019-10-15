@@ -1,5 +1,5 @@
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include </usr/include/GLFW/glfw3.h>
 
 #include <iostream>
 
@@ -20,10 +20,16 @@
 #include <zobject.h>
 #include <zobjectfunctions.h>
 
+//#include <zcandy.h>
+
 #include <zsphere.h>
 #include <ztexture.h>
 
-#define __SHADER__  lightingShader
+#define __CANDY_SHADER__  materialShader
+#define __COLOR_SHADER__    colorShader
+#define __SPHERE_SHADER__   materialShader
+//#define __SPHERE_SHADER__   textureShader
+#define __PIPE_SHADER__     colorShader
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -47,15 +53,10 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 
-const Vertice_type lightPosition = Vertice_type(0.0f, 0.0f, 1.0f);
-
-const glm::vec3 lightAmbient = glm::vec3(0.3f, 0.3f, 0.3f);
-const glm::vec3 lightDiffuse  = glm::vec3(0.7f, 0.7f, 0.7f);
-const glm::vec3 lightSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
-
 Vertice_type objectLocation=glm::vec3(0.0f, 0.0f, 0.0f);
-
-
+GLFWcursor* DefaultCursor=nullptr;
+GLFWcursor* HandCursor=nullptr;
+GLFWcursor* CurrentCursor=nullptr;
 int main()
 {
     // glfw: initialize and configure
@@ -87,44 +88,63 @@ int main()
 
     glfwSetMouseButtonCallback(window, mouse_button_callback);
 
+    HandCursor=glfwCreateStandardCursor(GLFW_HAND_CURSOR);
+    DefaultCursor=glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
+    CurrentCursor=DefaultCursor;
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
+        glfwTerminate();
+        abort();
     }
-
+    printf("Using OpenGL version %d.%d\n", GLVersion.major, GLVersion.minor);
 //=================================Objects Vertices creation ============================================
-
-    ZObject wBox ("OpenBox");
-    ZObject wLamp("Lamp");
 
     const float wHigh=0.5f;
     const float wWidth=0.5f;
     const float wDepth=0.2f;
 
+
+//#ifdef __COMMENT__
 //    zbs::ZArray<Vertice_type> wMids=boxIndexSetup(&wBox,ZBlueColor,wHigh,wWidth,wDepth);
+    ZBoxComponents wBoxComponents;
+//    ZObject wBox =openboxSetup(wHigh,wWidth,wDepth,wBoxComponents,"Openbox");
 
-    zbs::ZArray<Vertice_type> wMids;
-    wBox=openboxSetup(wHigh,wWidth,wDepth,&wMids,"Openbox");
+    ZObject wBox =openboxSetup(wHigh,wWidth,wDepth,wBoxComponents,"Openbox");
+    wBox.setDefaultPosition(ZModelOrigin);
 
-    wLamp=boxIndexSetup(wHigh,wWidth,wDepth,nullptr,"Lamp"); /* same shape as wBox (but scaled down ) */
+    ZBoxComponents wBox1Components;
+    ZObject wBox1 =boxSetup(wHigh,wWidth,wDepth,wBox1Components,"Box1");
+    wBox1.setDefaultPosition(Vertice_type(0.8,0.8,0.0));
+    wBox1Components.generateShape(wBox);
+
 
     float wRadius= wHigh/2.0f;
 
-    ZObject wArcFL = generate_Arc(wMids[0],wRadius,10,ZObject::DirLeft,ZObject::Front,"ArcFL");  /* generate arc reverse (left) */
-    ZObject wArcBL = generate_Arc(wMids[1],wRadius,10,ZObject::DirLeft,ZObject::Back,"ArcBL");/* generate arc reverse (left) */
+//    ZObject wArcFL = generate_Arc(wMids[0],wRadius,10,ZObject::DirLeft,ZObject::Front,"ArcFL");  /* generate arc reverse (left) */
+//    ZObject wArcBL = generate_Arc(wMids[1],wRadius,10,ZObject::DirLeft,ZObject::Back,"ArcBL");/* generate arc reverse (left) */
 
-    ZObject wArcFR = generate_Arc(wMids[2],wRadius,10,ZObject::DirRight,ZObject::Front,"ArcFR");/* generate front arc forward (right) */
-    ZObject wArcBR = generate_Arc(wMids[3],wRadius,10,ZObject::DirRight,ZObject::Back,"ArcBR");/* generate bottom arc forward (right) */
+//    ZObject wArcFR = generate_Arc(wMids[2],wRadius,10,ZObject::DirRight,ZObject::Front,"ArcFR");/* generate front arc forward (right) */
+//    ZObject wArcBR = generate_Arc(wMids[3],wRadius,10,ZObject::DirRight,ZObject::Back,"ArcBR");/* generate bottom arc forward (right) */
+
+    ZObject wArcFL = generate_Arc(wBoxComponents.FLMid,wRadius,10,ZObject::DirLeft,ZObject::Front,"ArcFL");  /* generate arc reverse (left) */
+    ZObject wArcBL = generate_Arc(wBoxComponents.BLMid,wRadius,10,ZObject::DirLeft,ZObject::Back,"ArcBL");/* generate arc reverse (left) */
+    ZObject wArcFR = generate_Arc(wBoxComponents.FRMid,wRadius,10,ZObject::DirRight,ZObject::Front,"ArcFR");/* generate front arc forward (right) */
+    ZObject wArcBR = generate_Arc(wBoxComponents.BRMid,wRadius,10,ZObject::DirRight,ZObject::Back,"ArcBR");/* generate bottom arc forward (right) */
 
 //    ZObject wArcStripsLeft = generate_ArcStripsLeft(wArcFL,wArcBL);
 
     ZObject wArcStripsLeft = generate_ArcStripsLeft(wArcFL,wArcBL,"ArcStripLeft");
     ZObject wArcStripsRight = generate_ArcStripsRight(wArcFR,wArcBR,"ArcStripRight");
+//#endif //__COMMENT__
+#ifdef __COMMENT__
+    ZCandy wCandy = generateCandy(wHigh,wWidth,wDepth,"Candy");
 
+    wCandy.printLineShape();
+#endif //__COMMENT__
     Vertice_type wC1=Vertice_type(0.8f,0.9f,0.0f);
 
     Vertice_type wC2=Vertice_type(0.8f,0.4f,0.0f);
@@ -146,19 +166,42 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//    glEnable( GL_POLYGON_SMOOTH );
 
     // build and compile our shader zprogram
     // ------------------------------------
 //    ZShader lightingShader(Resources.getShaderPath("zbasic_lighting.vs").c_str(), Resources.getShaderPath("zbasic_lighting.fs").c_str());
+    ZBoxComponents wLampComponents;
+    ZObject wLamp =boxSetup(0.05f,0.05f,0.05f,wLampComponents,"Lamp"); /* same shape as wBox (but scaled down ) */
+    wLampComponents.generateShape(wLamp);
+
+    printf ("Lamp Indices\n");
+    wLamp.print(20);
+
 
     ZShader lampShader("zlamp.vs", "zlamp.fs", "LampShader");
+    /* process lamp object */
 
-    ZShader sphereShader("zsphere.vs", "zsphere.fs","SphereShader");
+    wLamp.setDefaultColor(ZYellowBright);
+    wLamp.setDefaultAlpha(1.0f);
+    wLamp.setupGL(&lampShader,
+                   ZObject::SetupVertices,
+                   GL_TRIANGLES);
 
-    ZShader lightingShader("zlighting.vs", "zlighting.fs","LightingShader");
+    lampShader.setVec3("DefaultColor",ZYellowBright);
 
-    ZShader BlightingShader("zbasic_lighting.vs", "zbasic_lighting.fs","BasicLightingShader");
+    wLamp.setupGLShape(&lampShader);
 
+
+ //   ZShader sphereShader("zsphere.vs", "zsphere.fs","SphereShader");
+
+//    ZShader textureShader("zlighting.vs", "ztexture_initial.fs","TextureShader");
+
+    ZShader colorShader("zlighting.vs", "zcolor_lighting.fs","ColorShader");
+
+    ZShader normvisuShader("znormvisu.vs", "znormvisu.fs","NormVisuShader");
+
+    ZShader materialShader("zlighting.vs", "zmaterial_lighting.fs","MaterialShader");
 
     // lamp object
     camera.setLightPosition(glm::vec3(1.0f, 0.2f, 1.0f));
@@ -171,69 +214,142 @@ int main()
 
     ZTexture wTexWoodFloor("wood.png");
 
-    wBox.setDefaultColor(ZBlueColor);
-    wBox.setDefaultAlpha(0.5f);
+    ZTexture wTexTissueGrey("tissuegrey.jpeg");
+    ZTexture wTexTissueBluePale("tissueblue.png");
+    ZTexture wTexTissueBrown("tissuebrownbure.jpeg");
+    ZTexture wTexMetal("metal.png");
 
-    wBox.setupGL(&__SHADER__,
+    ZTexture wTexMoon("moon1024.bmp");
+    ZTexture wTexEarth("earth2048.bmp");
+//#ifdef __COMMENT__
+
+
+
+//    wBox.setDefaultPosition(ZModelOrigin);
+    wBox.setDefaultColor(ZBlueColor);
+//    wBox.setMaterial(ZChrome);
+    wBox.setDefaultAlpha(0.5f);
+    wBox.setComputeNormals(true);
+    wBox.setComputeTexCoords(true);
+
+    wBox.setupGL(&__COLOR_SHADER__,
                  ZObject::SetupVertices+ZObject::setupNormals+ZObject::setupTextures,
+//                 ZObject::SetupVertices,
                  GL_TRIANGLES,
-                 &wTexWoodFloor);
+                 &wTexTissueBluePale);
+    wBox.setupGLNormalVisu(&lampShader);
+
+    wBox1.setupGL(&__COLOR_SHADER__,
+                 ZObject::SetupVertices+ZObject::setupNormals+ZObject::setupTextures,
+//                 ZObject::SetupVertices,
+                 GL_TRIANGLES,
+                 &wTexTissueBluePale);
+
+    wBox1.setupGLNormalVisu(&lampShader);
+    wBox1.setupGLShape(&lampShader);
+
+
+    wBox1.print();
+//#endif // __COMMENT__
+#ifdef __COMMENT_
+    wCandy.setMaterial(ZChrome);
+//    wCandy.setDefaultColor(ZBlueColor);
+//    wCandy.setDefaultAlpha(0.5f);
+
+
+    wCandy.setupGL(&__CANDY_SHADER__,
+                 ZObject::SetupVertices+ZObject::setupNormals+ZObject::setupTextures,
+                 &wTexTissueBluePale);
+
+#endif //__COMMENT_
 
 //    wBox.setTexture("wood.png");
-    __SHADER__.use();
-    __SHADER__.setInt("TextureSampler",0);
-    __SHADER__.setBool ("BlinnPhong",true);
+    __COLOR_SHADER__.use();
+    __COLOR_SHADER__.setInt("TextureSampler",0);
+    __COLOR_SHADER__.setBool ("BlinnPhong",true);
+
+
+//    __SPHERE_SHADER__.use();
+//    __SPHERE_SHADER__.setInt("TextureSampler",0);
+//    __TEXTURE_SHADER__.setBool ("BlinnPhong",true);
 
 //    wBox.print();
 
-
+//#ifdef __COMMENT__
 /* process arc front left */
+    wArcFL.setDefaultPosition(ZModelOrigin);
     wArcFL.setDefaultColor(ZBlueColor);
     wArcFL.setDefaultAlpha(0.5f);
-    wArcFL.setupGL(&__SHADER__,
+    wArcFL.setComputeNormals(true);
+    wArcFL.setComputeTexCoords(true);
+    wArcFL.setupGL(&__COLOR_SHADER__,
                    ZObject::SetupVertices+ZObject::setupNormals+ZObject::setupTextures,
                    GL_TRIANGLE_FAN,
-                   &wTexWoodFloor);
- //           (apos,anormal,&__SHADER__,ZBlueColor,Alpha,GL_TRIANGLE_FAN);
+                   wBox.getTexture());
+ //           (apos,anormal,&__TEXTURE_SHADER__,ZBlueColor,Alpha,GL_TRIANGLE_FAN);
+
+    wArcFL.setupGLNormalVisu(&__COLOR_SHADER__);
+
+    wArcFL.setupGLNormalVisu(&lampShader);
 
 /* process arc front right */
-
+    wArcFR.setDefaultPosition(ZModelOrigin);
     wArcFR.setDefaultColor(ZBlueColor);
     wArcFR.setDefaultAlpha(0.5f);
-    wArcFR.setupGL(&__SHADER__,
+    wArcFR.setComputeNormals(true);
+    wArcFR.setComputeTexCoords(true);
+    wArcFR.setupGL(&__COLOR_SHADER__,
                    ZObject::SetupVertices+ZObject::setupNormals+ZObject::setupTextures,
                    GL_TRIANGLE_FAN,
-                   &wTexWoodFloor);
-//            (apos,anormal,&__SHADER__,ZBlueColor,Alpha,GL_TRIANGLE_FAN);
+                   wBox.getTexture());
+    wArcFR.setupGLNormalVisu(&lampShader);
+
 /* process arc bottom left */
+    wArcBL.setDefaultPosition(ZModelOrigin);
     wArcBL.setDefaultColor(ZBlueColor);
     wArcBL.setDefaultAlpha(0.5f);
-    wArcBL.setupGL(&__SHADER__,
+    wArcBL.setComputeNormals(true);
+    wArcBL.setComputeTexCoords(true);
+    wArcBL.setupGL(&__COLOR_SHADER__,
                    ZObject::SetupVertices+ZObject::setupNormals,
                    GL_TRIANGLE_FAN);
-
+    wArcBL.setupGLNormalVisu(&lampShader);
 
 /* process arc bottom right */
+    wArcBR.setDefaultPosition(ZModelOrigin);
     wArcBR.setDefaultColor(ZBlueColor);
     wArcBR.setDefaultAlpha(0.5f);
-    wArcBR.setupGL(&__SHADER__,
+    wArcBR.setComputeNormals(true);
+    wArcBR.setComputeTexCoords(true);
+    wArcBR.setupGL(&__COLOR_SHADER__,
                    ZObject::SetupVertices+ZObject::setupNormals,
                    GL_TRIANGLE_FAN);
+    wArcBR.setupGLNormalVisu(&lampShader);
 
 /* process arc strips right */
+    wArcStripsRight.setDefaultPosition(ZModelOrigin);
     wArcStripsRight.setDefaultColor(ZBlueColor);
     wArcStripsRight.setDefaultAlpha(0.5f);
-    wArcStripsRight.setupGL(&__SHADER__,
+    wArcStripsRight.setComputeNormals(true);
+    wArcStripsRight.setComputeTexCoords(true);
+    wArcStripsRight.setupGL(&lampShader,
                    ZObject::SetupVertices+ZObject::setupNormals,
                    GL_TRIANGLES);
-
+    wArcStripsRight.setupGLNormalVisu(&lampShader);
 /* process arc strips leftt */
+    wArcStripsLeft.setDefaultPosition(ZModelOrigin);
     wArcStripsLeft.setDefaultColor(ZBlueColor);
     wArcStripsLeft.setDefaultAlpha(0.5f);
-    wArcStripsLeft.setupGL(&__SHADER__,
+    wArcStripsLeft.setComputeNormals(true);
+    wArcStripsLeft.setComputeTexCoords(true);
+    wArcStripsLeft.setupGL(&__COLOR_SHADER__,
                    ZObject::SetupVertices+ZObject::setupNormals,
                    GL_TRIANGLES);
+    wArcStripsLeft.setupGLNormalVisu(&lampShader);
 
+ //   wArcStripsLeft.print();
+
+//#endif // __COMMENT__
 
 #ifdef __COMMENT__
 /* process circles */
@@ -242,43 +358,39 @@ int main()
 
     wCircle3.setDefaultColor(ZGreyColor);
     wCircle3.setDefaultAlpha(0.5f);
-//    wCircle3.setupGL(apos,anormal,&__SHADER__,ZGreyColor,Alpha,GL_TRIANGLE_FAN);
+//    wCircle3.setupGL(apos,anormal,&__TEXTURE_SHADER__,ZGreyColor,Alpha,GL_TRIANGLE_FAN);
     wCircle3.setupGL(&sphereShader,
                    ZObject::SetupVertices+ZObject::setupNormals,
                    GL_TRIANGLES);
 #endif//__COMMENT__
 /* Pipe GL set-up */
-
+    wPipe.setDefaultPosition(Vertice_type(0.5f,0.5f,0.5f));
     wPipe.setDefaultColor(ZGreyColor);
     wPipe.setDefaultAlpha(0.5f);
-    wPipe.setupGL(&__SHADER__,
-                   ZObject::SetupVertices+ZObject::setupNormals,
-                   GL_TRIANGLES);
-
-
-/* process lamp object */
-
-    wLamp.setDefaultColor(Color_type(1.0f,1.0f,1.0f));
-    wLamp.setDefaultAlpha(1.0f);
-    wLamp.setupGL(&lampShader,
-                   ZObject::SetupVertices,
-                   GL_TRIANGLES);
-
-
-    wSphere.setDefaultColor(ZBlueColor);
-    wSphere.setDefaultAlpha(0.5f);
-    wSphere.setDefaultPosition(Vertice_type(-0.6f,0.6f,0.0f));
-
-    wSphere.setupGL(&__SHADER__,
+    wPipe.setComputeNormals(true);
+    wPipe.setComputeTexCoords(true);
+    wPipe.setupGL(&__COLOR_SHADER__,
                    ZObject::SetupVertices+ZObject::setupNormals+ZObject::setupTextures,
                    GL_TRIANGLES,
-                    &wTexWoodFloor);
+                  &wTexMetal);
+
+
+
+
+    wSphere.setDefaultPosition(Vertice_type(-0.8f,0.8f,0.0f));
+    wSphere.setDefaultColor(ZBlueColor);
+    wSphere.setDefaultAlpha(0.5f);
+//    wSphere.setMaterial(ZBronze);
+    wSphere.setComputeNormals(false);
+    wSphere.setComputeTexCoords(false);
+
+    wSphere.setupGL(&__COLOR_SHADER__,
+                   ZObject::SetupVertices+ZObject::setupNormals+ZObject::setupTextures,
+                   GL_TRIANGLES,
+                    &wTexEarth);
 
 
  //   wSphere.print(50); /* print 50 first data */
-
-
-
 
     // uncomment this call to draw in wireframe polygons.
 //    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -286,6 +398,7 @@ int main()
 
     // render loop
     // -----------
+
     while (!glfwWindowShouldClose(window))
     {
         // input
@@ -309,21 +422,19 @@ int main()
                 glDisable(GL_FRAMEBUFFER_SRGB);
         }
 
-//        glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
-
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT);
-
-
-
-
+//#ifdef __COMMENT__
         // render lamp object
-        lampShader.use();
-        lampShader.setVec3("Color", ZYellowBright);
+        lampShader.use(); /* access violation */
+        lampShader.setVec3("DefaultColor", ZYellowBright);
+
 
         glm::mat4 lampModel = glm::mat4(1.0f);
         lampModel = glm::translate(lampModel, camera.LightPosition);
-        lampModel = glm::scale(lampModel, glm::vec3(0.2f)); // a smaller cube - no scaling
+//        lampModel = glm::scale(lampModel, glm::vec3(0.2f)); // a smaller cube - no scaling
+        lampModel = glm::rotate(lampModel,(float)glfwGetTime(),glm::vec3(1.0f, 0.5f, 0.2f));
+
 
         glm::mat4 lampView = camera.GetViewMatrix();
 
@@ -332,110 +443,245 @@ int main()
         lampShader.setMat4("mProjection", lampProjection);
         lampShader.setMat4("mView", lampView);
         lampShader.setMat4("mModel", lampModel);
+        lampShader.setVec3("DefaultColor", ZYellowBright);
 
-        wLamp.drawGL(GL_TRIANGLES);
+        wLamp.drawGL(&lampShader,GL_TRIANGLES);
 
+        lampShader.setVec3("DefaultColor", ZGreySilver);
+
+        wLamp.drawGLShape(&lampShader);
+
+
+//#endif //__COMMENT__
         // render objects
         // ------
 
-        __SHADER__.use();
-/* light color parameters */
 
-        __SHADER__.setLight(ZLight(ZYellowAmbient,ZYellowDiffuse,ZYellowSpecular));
-        // pass projection matrix to shader (note that in this case it could change every frame)
-        glm::mat4 mProjection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        __SHADER__.setMat4("mProjection", mProjection);
+/*
+ Common matrices :
 
+    View matrix is common to all objects
+    Projection matrix is common to all objects
+    Normal matrix is computed from matrix product (camera Model * camera View) matrices  (modelView)
+    Normal formula --> mat4 normalMatrix = transpose(inverse(modelView));
+
+    Normal matrix is common to all objects
+
+Per object matrix:
+
+    Model matrix is computed object per object
+*/
         // camera/view transformation
         glm::mat4 mView = camera.GetViewMatrix();
-        __SHADER__.setMat4("mView", mView);
+        // pass projection matrix to shaders (note that in this case it could change every frame)
+        glm::mat4 mProjection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
 
-        // calculate the model matrix for each object and pass it to shader before drawing
-//        glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-//        model = glm::translate(model, objectLocation);
-//        if (camera.RotationAngle > 0.0f) /* if any rotation requested */
-//                model = glm::rotate(model, (float)camera.RotationAngle, camera.RotationAxis);
-
-//        glm::mat4 mModel = glm::translate(camera.getModel(), objectLocation);
-//        sphereShader.setMat4("mModel", mModel);
+        glm::mat4 mNormal = camera.GetViewMatrix()*camera.getModel();
 
 
-        // mat4 normalMatrix = transpose(inverse(modelView));
-        glm::mat4 mNormal = glm::transpose(glm::inverse(mView));
-        __SHADER__.setMat4("mNormal", mNormal);
+        mNormal = glm::transpose(glm::inverse(mNormal));
 
-//        __SHADER__.setVec3("Light.position", lightPos);
-//        __SHADER__.setVec3("lightPos", lightPos);
-//        __SHADER__.setVec3("lightPos", camera.LightPosition);
+        __COLOR_SHADER__.setMat4("mNormal", mNormal);
 
-        __SHADER__.setVec3("viewPosition", camera.CameraPosition);
+        __COLOR_SHADER__.setVec3("viewPosition", camera.CameraPosition);
+/* light properties  */
 
-        // light properties
-        __SHADER__.setVec3("light.Position",camera.LightPosition);
+        __COLOR_SHADER__.setVec3("light.Position",camera.LightPosition);
+/* light color parameters */
+        __COLOR_SHADER__.setLight(ZLight(ZYellowAmbient,ZYellowDiffuse,ZYellowSpecular));
 
-/*        __SHADER__.setVec3("light.Ambient", lightAmbient); // not used
-        __SHADER__.setVec3("light.Diffuse", lightDiffuse);  // not used
-        __SHADER__.setVec3("light.Specular", lightSpecular);    // not used
-
-        __SHADER__.setVec3("light.Color",1.0f,1.0f,1.0f);
-*/
-        __SHADER__.setVec3("InColor", ZBlueColor);
-        __SHADER__.setFloat("InAlpha", 0.8f);
-        // material properties
- /*       sphereShader.setVec3("material.Ambient", ZChrome.ambiant);
-        sphereShader.setVec3("material.Diffuse", ZChrome.diffuse);
-        sphereShader.setVec3("material.Specular", ZChrome.specular);
-        sphereShader.setFloat("material.Shininess", ZChrome.shininess);
-        sphereShader.setFloat("material.DiffuseAlpha", 1.0f);
- */
-//        __SHADER__.use();
-        __SHADER__.setMaterial(ZSphereMaterial);
+/* Object color properties */
+        __COLOR_SHADER__.setVec3("DefaultColor", ZBlueColor);
+        __COLOR_SHADER__.setFloat("DefaultAlpha", 0.5f);
 
 
+//#ifdef __COMMENT__
         wBox.setUseTexture(true);
         wBox.setUseDefaultColor(false);
         wBox.setUseDefaultAlpha(false);
+
+//        wBox.setupShaderMaterial(&__COLOR_SHADER__);
+//#endif // __COMMENT__
+#ifdef __COMMENT__
+        wCandy.setUseTexture(true);
+        wCandy.setUseDefaultColor(false);
+        wCandy.setUseDefaultAlpha(false);
+
+        wCandy.setupShaderMaterial();
+
+#endif // __COMMENT__
 
 // calculate the model matrix for each object and pass it to shader before drawing
 //        glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
 //        model = glm::translate(model, objectLocation);
 //        if (camera.RotationAngle > 0.0f) /* if any rotation requested */
 //                model = glm::rotate(model, (float)camera.RotationAngle, camera.RotationAxis);
+#ifdef __COMMENT__
+//__COMMENT__
+        glm::mat4 mModel = glm::translate(camera.getModel(), wCandy.DefaultPosition);
+        __CANDY_SHADER__.setMat4("mModel", mModel);
 
-        glm::mat4 mModel = glm::translate(camera.getModel(), wBox.DefaultPosition);
-        __SHADER__.setMat4("mModel", mModel);
+//        wBox.drawGL(GL_TRIANGLES);
 
-        wBox.drawGL(GL_TRIANGLES);
+        wCandy.drawGL();
+        glfwSwapBuffers(window);
+
+        camera.cancelRedraw();
+
+        glfwPollEvents();
+        continue;
+#endif // __COMMENT__
+//        wBox.setShader(&__COLOR_SHADER__);
+        __COLOR_SHADER__.use();
+        __COLOR_SHADER__.setMat4("mProjection", mProjection);
+        __COLOR_SHADER__.setMat4("mNormal", mNormal);
+        __COLOR_SHADER__.setMat4("mView", mView);
+
+        __COLOR_SHADER__.setVec3("light.Position",camera.LightPosition);
+
+        __COLOR_SHADER__.setVec3("viewPosition", camera.CameraPosition);
+
+        __COLOR_SHADER__.setVec3("DefaultColor", ZBlueColor);
+        __COLOR_SHADER__.setFloat("DefaultAlpha", 0.5f);
 
 
-        wArcFL.drawGL(GL_TRIANGLE_FAN);
-        wArcFR.drawGL(GL_TRIANGLE_FAN);
-        wArcBR.drawGL(GL_TRIANGLE_FAN);
-        wArcBL.drawGL(GL_TRIANGLE_FAN);
+        glm::mat4 mModel = glm::mat4(1.0f);
+//        mModel =        glm::translate(camera.getModel(), wBox.DefaultPosition);
+        mModel=camera.getModel();
+        __COLOR_SHADER__.setMat4("mModel", mModel);
+        wBox.drawGL(&__COLOR_SHADER__,GL_TRIANGLES);
 
-        wArcStripsRight.drawGL(GL_TRIANGLES);
-        wArcStripsLeft.drawGL(GL_TRIANGLES);
+    // add time component to geometry shader in the form of a uniform
+//    normvisuShader.setFloat("time",glfwGetTime());
+    if (camera.useNormalVectors)
+        {
+        lampShader.use();
+        lampShader.setMat4("mModel", mModel);
+        lampShader.setMat4("mProjection", mProjection);
+        lampShader.setMat4("mNormal", mNormal);
+        lampShader.setMat4("mView", mView);
 
-//        wCircle1.drawGL(GL_TRIANGLE_FAN);
-//        wCircle2.drawGL(GL_TRIANGLE_FAN);
-//        wCircle3.drawGL(GL_TRIANGLE_FAN);
+        lampShader.setVec3("DefaultColor",ZYellowSpecular);
+        wBox.drawGLNormalVisu(&lampShader);
+        }
 
 
-        wPipe.drawGL(GL_TRIANGLES);
 
+
+//#ifdef __COMMENT__
+ //        mModel = glm::translate(camera.getModel(), wArcFL.DefaultPosition);
+//        __COLOR_SHADER__.setMat4("mModel", mModel);
+//        lampShader.setMat4("mModel", mModel);
+        wArcFL.drawGL(&__COLOR_SHADER__,GL_TRIANGLE_FAN);
+        if (camera.useNormalVectors)
+            wArcFL.drawGLNormalVisu(&lampShader);
+
+//        mModel = glm::translate(camera.getModel(), wArcFR.DefaultPosition);
+//        __COLOR_SHADER__.setMat4("mModel", mModel);
+        wArcFR.drawGL(&__COLOR_SHADER__,GL_TRIANGLE_FAN);
+        if (camera.useNormalVectors)
+            wArcFR.drawGLNormalVisu(&lampShader);
+//        mModel = glm::translate(camera.getModel(), wArcBR.DefaultPosition);
+//        __COLOR_SHADER__.setMat4("mModel", mModel);
+        wArcBR.drawGL(&__COLOR_SHADER__,GL_TRIANGLE_FAN);
+        if (camera.useNormalVectors)
+            wArcBR.drawGLNormalVisu(&lampShader);
+//        mModel = glm::translate(camera.getModel(), wArcBL.DefaultPosition);
+//        __COLOR_SHADER__.setMat4("mModel", mModel);
+//        wArcBL.drawGL(&__COLOR_SHADER__,GL_TRIANGLE_FAN);
+        if (camera.useNormalVectors)
+            wArcBL.drawGLNormalVisu(&lampShader);
+
+//        mModel = glm::translate(camera.getModel(), wArcStripsRight.DefaultPosition);
+//        __COLOR_SHADER__.setMat4("mModel", mModel);
+        wArcStripsRight.drawGL(&__COLOR_SHADER__,GL_TRIANGLES);
+        if (camera.useNormalVectors)
+            wArcStripsRight.drawGLNormalVisu(&lampShader);
+
+//        mModel = glm::translate(camera.getModel(), wArcStripsLeft.DefaultPosition);
+//        __COLOR_SHADER__.setMat4("mModel", mModel);
+
+        wArcStripsLeft.drawGL(&__COLOR_SHADER__,GL_TRIANGLES);
+        if (camera.useNormalVectors)
+            wArcStripsLeft.drawGLNormalVisu(&lampShader);
+
+//        wCircle1.drawGL(&__COLOR_SHADER__,GL_TRIANGLE_FAN);
+//        wCircle2.drawGL(&__COLOR_SHADER__,GL_TRIANGLE_FAN);
+//        wCircle3.drawGL(&__COLOR_SHADER__,GL_TRIANGLE_FAN);
+
+        __COLOR_SHADER__.use();
+
+         mModel = glm::translate(camera.getModel(), wBox1.DefaultPosition);
+        __COLOR_SHADER__.setMat4("mModel", mModel);
+        wBox1.drawGL(&__COLOR_SHADER__);
+
+        lampShader.use();
+        lampShader.setMat4("mModel", mModel);
+        if (camera.useNormalVectors)
+            {
+            wBox1.drawGLNormalVisu(&lampShader);
+            }
+        lampShader.setVec3("DefaultColor", ZGreySilver);
+        wBox1.drawGLShape(&lampShader);
+
+
+
+        __PIPE_SHADER__.use();
+        mModel = glm::translate(camera.getModel(), wPipe.DefaultPosition);
+        __PIPE_SHADER__.setMat4("mModel", mModel);
+
+        __PIPE_SHADER__.setMat4("mProjection", mProjection);
+        __PIPE_SHADER__.setMat4("mNormal", mNormal);
+        __PIPE_SHADER__.setMat4("mView", camera.GetViewMatrix());
+
+        __PIPE_SHADER__.setVec3("light.Position",camera.LightPosition);
+
+        __PIPE_SHADER__.setVec3("viewPosition", camera.CameraPosition);
+
+        wPipe.setUseTexture(false);
+        wPipe.setUseDefaultColor(true);
+        wPipe.setUseDefaultAlpha(true);
+        wPipe.setDefaultColor(ZGreyColor);
+        wPipe.setDefaultAlpha(0.5f);
+
+        wPipe.drawGL(&__COLOR_SHADER__,GL_TRIANGLES);
+
+/* sphere */
+
+        __SPHERE_SHADER__.use();
         mModel = glm::translate(camera.getModel(), wSphere.DefaultPosition);
-        __SHADER__.setMat4("mModel", mModel);
+
+        __SPHERE_SHADER__.setMat4("mModel", mModel);
+
+        __SPHERE_SHADER__.setMat4("mProjection", mProjection);
+        __SPHERE_SHADER__.setMat4("mNormal", mNormal);
+        __SPHERE_SHADER__.setMat4("mView", camera.GetViewMatrix());
+
+        __SPHERE_SHADER__.setVec3("light.Position",camera.LightPosition);
+
+        __SPHERE_SHADER__.setVec3("viewPosition", camera.CameraPosition);
+
+        __SPHERE_SHADER__.setVec3("DefaultColor", ZBlueColor);
+        __SPHERE_SHADER__.setFloat("DefaultAlpha", 0.5f);
+
+ //       __SPHERE_SHADER__.setMaterial(ZBronze);
+        __SPHERE_SHADER__.setFloat("material.DiffuseAlpha",1.0f);
+
+
+//        wSphere.setupShaderMaterial(&__COLOR_SHADER__);
 
         wSphere.setUseTexture(false);
-        wSphere.drawGL(GL_TRIANGLES);
+        wSphere.setUseDefaultColor(false);
+        wSphere.setUseDefaultAlpha(false);
+        wSphere.drawGL(&__COLOR_SHADER__,GL_TRIANGLES);
 /*
         glBindVertexArray(ArcFLVAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
         glBindBuffer(GL_ARRAY_BUFFER, ArcFLVBO);
         glBindBuffer(GL_ARRAY_BUFFER, ArcFLNormVBO);
         glDrawArrays(GL_TRIANGLE_FAN, 0 , wArcFLFlat.size());
 */
-
+//#endif // __COMMENT__
 
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -470,7 +716,7 @@ int main()
     return 0;
 }
 
-float accelerator=0.005f;
+float accelerator=0.001f;
 
 // ---------------------------------------------------------------------------------------------------------
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
@@ -481,25 +727,43 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    /* mouse activation - desactivation */
 
-    if (glfwGetKey(window, GLFW_KEY_INSERT )== GLFW_PRESS)   /* <Insert> switches mouse on / off  */
-        {
-        camera.setMouseOnOff();
-        return;
-        }
 
     if (glfwGetKey(window, GLFW_MOD_SHIFT)==GLFW_PRESS)
             {
             camera.setShiftOn();
-            return;
             }
     if (glfwGetKey(window, GLFW_MOD_SHIFT)==GLFW_RELEASE)
             {
             camera.setShiftOff();
-//            return;
             }
 
+    /* KeyPad actions */
+
+    if (glfwGetKey(window, GLFW_KEY_KP_7)==GLFW_PRESS)
+                {
+                camera.rotateModel(-0.05,glm::vec3(1.0f,1.0f,0.0f));
+                camera.scheduleRedraw();
+                return;
+                }
+    if (glfwGetKey(window, GLFW_KEY_KP_9)==GLFW_PRESS)
+                {
+                camera.rotateModel(0.05,glm::vec3(1.0f,1.0f,0.0f));
+                camera.scheduleRedraw();
+                return;
+                }
+    if (glfwGetKey(window, GLFW_KEY_KP_1)==GLFW_PRESS)
+                {
+                camera.rotateModel(-0.05,glm::vec3(1.0f,-1.0f,0.0f));
+                camera.scheduleRedraw();
+                return;
+                }
+    if (glfwGetKey(window, GLFW_KEY_KP_3)==GLFW_PRESS)
+                {
+                camera.rotateModel(0.05,glm::vec3(1.0f,-1.0f,0.0f));
+                camera.scheduleRedraw();
+                return;
+                }
     if (glfwGetKey(window, GLFW_KEY_KP_8)==GLFW_PRESS)
                 {
                 camera.rotateModel(0.05,glm::vec3(1.0f,0.0f,0.0f));
@@ -534,13 +798,15 @@ void processInput(GLFWwindow *window)
             return;
         }
 
+/* Keyboard actions */
+
     /* camera movements */
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
         {
         camera.ProcessKeyboard(FORWARD, accelerator);
         return;
         }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
         {
         camera.ProcessKeyboard(BACKWARD, accelerator);
         return;
@@ -555,51 +821,90 @@ void processInput(GLFWwindow *window)
         camera.ProcessKeyboard(RIGHT, accelerator);
         return;
         }
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        {
+        camera.ProcessKeyboard(UP, accelerator);
+        return;
+        }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        {
+        camera.ProcessKeyboard(DOWN, accelerator);
+        return;
+        }
+
     /* light movement */
 
-    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
-        {
-        camera.ProcessKeyboard(LIGHTFORWARD, accelerator);
-        return;
-        }
-    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
-        {
-        camera.ProcessKeyboard(LIGHTBACKWARD, accelerator);
-        return;
-        }
-    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
-        {
-        camera.ProcessKeyboard(LIGHTRIGHT, accelerator);
-        return;
-        }
-    if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS)
-        {
-        camera.ProcessKeyboard(LIGHTLEFT, accelerator);
-        return;
-        }
-    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_SCROLL_LOCK) == GLFW_PRESS)
         {
         camera.ProcessKeyboard(LIGHTHIGH, accelerator);
         return;
         }
-    if (glfwGetKey(window, GLFW_KEY_N )== GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_END) == GLFW_PRESS)
         {
         camera.ProcessKeyboard(LIGHTLOW, accelerator);
         return;
         }
-    if (glfwGetKey(window, GLFW_KEY_L )== GLFW_PRESS)   /* L for polygon lines */
+    if (glfwGetKey(window, GLFW_KEY_INSERT) == GLFW_PRESS)
         {
-        camera.ProcessKeyboard(POLYGONLINES, accelerator);
+        camera.ProcessKeyboard(LIGHTLEFT, accelerator);
         return;
         }
-    if (glfwGetKey(window, GLFW_KEY_P )== GLFW_PRESS)   /* P for plain (no polygon line - fill) */
+    if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS)
         {
-        camera.ProcessKeyboard(POLYGONFILL, accelerator);
+        camera.ProcessKeyboard(LIGHTRIGHT, accelerator);
         return;
         }
+    if (glfwGetKey(window, GLFW_KEY_PAUSE) == GLFW_PRESS)
+        {
+        camera.ProcessKeyboard(LIGHTBACKWARD, accelerator);
+        return;
+        }
+    if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN )== GLFW_PRESS)
+        {
+        camera.ProcessKeyboard(LIGHTFORWARD, accelerator);
+        return;
+        }
+
+    /* toggle keys */
+
+
+    if (glfwGetKey(window, GLFW_KEY_M )== GLFW_PRESS)   /* M for toggle mouse tracking on / off  */
+        {
+        camera.ProcessKeyboard(TOGGLE_MOUSE, accelerator);
+        if (CurrentCursor==HandCursor)
+                    CurrentCursor = DefaultCursor;
+                else
+                    CurrentCursor = HandCursor;
+
+        glfwSetCursor(window,CurrentCursor) ;
+        return;
+        }
+    if (glfwGetKey(window, GLFW_KEY_SCROLL_LOCK )== GLFW_PRESS)   /* L for toggle polygon lines */
+        {
+        camera.ProcessKeyboard(TOGGLE_POLYGONLINES, accelerator);
+        return;
+        }
+    if (glfwGetKey(window, GLFW_KEY_L )== GLFW_PRESS)   /* L for toggle polygon lines */
+        {
+        camera.ProcessKeyboard(TOGGLE_POLYGONLINES, accelerator);
+        return;
+        }
+    if (glfwGetKey(window, GLFW_KEY_N )== GLFW_PRESS)   /* N for toggle normal vectors */
+        {
+        camera.ProcessKeyboard(TOGGLE_NORMALVECTORS, accelerator);
+        return;
+        }
+
+    if (glfwGetKey(window, GLFW_KEY_G )== GLFW_PRESS)   /* set or unset (if set)  gamma correction */
+        {
+        camera.ProcessKeyboard(TOGGLE_GAMMA, accelerator);
+        return;
+        }
+
+/* special keys */
     if (glfwGetKey(window, GLFW_KEY_HOME )== GLFW_PRESS)   /* Home resets camera position */
         {
-        camera.ResetPositions();
+        camera.ProcessKeyboard(RESET_POSITION, accelerator);
         return;
         }
 
