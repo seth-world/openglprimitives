@@ -10,17 +10,19 @@ class ZBoxComponents
 {
 public:
 
-    ZBoxComponents () {}
+    ZBoxComponents ()=default;
     ZBoxComponents (ZBoxComponents& pIn)
     {
-        cloneFrom(pIn);
+        _cloneFrom(pIn);
     }
     ZBoxComponents (ZBoxComponents&& pIn)
     {
-        cloneFrom(pIn);
+        _cloneFrom(pIn);
     }
 
-    void cloneFrom (ZBoxComponents& pIn);
+    ZBoxComponents& operator=(ZBoxComponents&pIn) {_cloneFrom(pIn); return *this;}
+
+    void _cloneFrom (ZBoxComponents& pIn);
 
     void setup(const float pHigh,
                    const float pWidth,

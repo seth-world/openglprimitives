@@ -6,71 +6,96 @@
 #include <zobject.h>
 
 
-class ZMetaObject : public zbs::ZArray<ZObject>
+class ZMetaObject : public zbs::ZArray<ZObject*>
 {
 public:
     ZMetaObject(const char*pName);
 
-    ZMetaObject(ZMetaObject& pIn):zbs::ZArray<ZObject> (pIn)  {}
-    ZMetaObject(ZMetaObject&& pIn):zbs::ZArray<ZObject> (pIn)  {}
+    ZMetaObject(ZMetaObject& pIn):zbs::ZArray<ZObject*> (pIn)  {}
+    ZMetaObject(ZMetaObject&& pIn):zbs::ZArray<ZObject*> (pIn)  {}
+
+    ZMetaObject& operator=(ZMetaObject&& pIn) {_cloneFrom(pIn); return *this;}
+    ZMetaObject& operator=(ZMetaObject pIn) {_cloneFrom(pIn); return *this;}
+
+
     void generateNormVisu()
         {
             for (long wi=0;wi < count();wi++)
             {
-                Tab[wi].generateNormVisu();
+                Tab[wi]->generateNormVisu();
             }
             return;
         }
 
-    void add(const ZObject& pObject)
+    void add(ZObject* pObject)
     {
         push(pObject);
     }
-    void add(const ZObject&& pObject)
+/*    void add(ZObject&& pObject)
     {
         push(pObject);
     }
-    ZMetaObject& operator << (const ZObject& pIn) {add(pIn); return *this;}
-    ZMetaObject& operator << (const ZObject&& pIn) {add(pIn); return *this;}
+*/
+    ZMetaObject& operator << (ZObject* pIn) {add(pIn); return *this;}
 
     void setDefaultColor(Color_type pColor)
     {
         for (long wi=0;wi < count();wi++)
         {
-            Tab[wi].setDefaultColor(pColor);
+            Tab[wi]->setDefaultColor(pColor);
         }
     }
     void setDefaultAlpha(float pAlpha)
     {
         for (long wi=0;wi < count();wi++)
         {
-            Tab[wi].setDefaultAlpha(pAlpha);
+            Tab[wi]->setDefaultAlpha(pAlpha);
         }
     }
-    void setDrawFigure(unsigned int pMode)
+    void setDrawFigureAll(GLenum pMode)
     {
         for (long wi=0;wi < count();wi++)
         {
-            Tab[wi].setDrawFigure(pMode);
+            Tab[wi]->setDrawFigure(pMode);
         }
     }
-    ZTexture* getTexture()  {return Tab[0].GLDescriptor->Texture;} /* share already set texture to other objects */
+    void setDrawFigure(long pObjIdx,GLenum pMode)
+    {
+            Tab[pObjIdx]->setDrawFigure(pMode);
+    }
+
+    void setTexture(ZTexture* pTexture)
+    {
+        for (long wi=0;wi < count();wi++)
+        {
+            Tab[wi]->setTexture(pTexture);
+        }
+    }
+
+    ZTexture* getTexture()  {return Tab[0]->GLDescriptor->Texture;} /* share already set texture to other objects */
 
     void setUseTexture(bool pOnOff)
     {
         for (long wi=0;wi < count();wi++)
         {
-            Tab[wi].setUseTexture(pOnOff);
+            Tab[wi]->setUseTexture(pOnOff);
         }
 
     }
 
-
+ /*   void setMaterial(ZMaterial* pTexture)
+    {
+        for (long wi=0;wi < count();wi++)
+        {
+            Tab[wi]->setMaterial(pTexture);
+        }
+    }
+ */
     void setComputeNormals(bool pOnOff)
     {
         for (long wi=0;wi < count();wi++)
         {
-            Tab[wi].setComputeNormals(pOnOff);
+            Tab[wi]->setComputeNormals(pOnOff);
         }
 
     }
@@ -78,26 +103,23 @@ public:
     {
         for (long wi=0;wi < count();wi++)
         {
-            Tab[wi].setComputeTexCoords(pOnOff);
+            Tab[wi]->setComputeTexCoords(pOnOff);
         }
     }
-    void setDrawFigure(const long pObjectIdx,GLenum pDrawFigure)
-    {
-        Tab[pObjectIdx].DrawFigure=pDrawFigure;
-    }
+
     void setShader(const long pObjIdx,ZShader*pShader)
     {
-        Tab[pObjIdx].setShader(pShader);
+        Tab[pObjIdx]->setShader(pShader);
     }
 
 /* DrawFigure  (GLenum equal to GL_TRIANGLES or GL_LINES ...) must be set Object per Object */
     void setupGL(ZShader *pShader,
-                 uint8_t    pShaderSetupOpt=ZObject::SetupVertices,
+                 uint8_t    pShaderSetupOpt=ZObject::setupVertices,
                  ZTexture *pTexture=nullptr)
     {
         for (long wi=0;wi < count();wi++)
         {
-            Tab[wi].setupGL(pShader,pShaderSetupOpt,Tab[wi].DrawFigure,pTexture);
+            Tab[wi]->setupGL(pShader,pShaderSetupOpt,Tab[wi]->DrawFigure,pTexture);
         }
 
     }
@@ -105,12 +127,12 @@ public:
      * shader must be defined object per object using setShader() routine
      * or shader must have been defined during elementary object implementation
      */
-    void setupGL(uint8_t    pShaderSetupOpt=ZObject::SetupVertices,
+    void setupGL(uint8_t    pShaderSetupOpt=ZObject::setupVertices,
                  ZTexture *pTexture=nullptr)
     {
         for (long wi=0;wi < count();wi++)
         {
-            Tab[wi].setupGL(Tab[wi].Shader,pShaderSetupOpt,Tab[wi].DrawFigure,pTexture);
+            Tab[wi]->setupGL(Tab[wi]->Shader,pShaderSetupOpt,Tab[wi]->DrawFigure,pTexture);
         }
 
     }
@@ -119,7 +141,7 @@ public:
     {
         for (long wi=0;wi < count();wi++)
         {
-            Tab[wi].setupGLShape(pShader);
+            Tab[wi]->setupGLShape(pShader);
         }
 
     }
@@ -133,7 +155,7 @@ public:
     {
         for (long wi=0;wi < count();wi++)
         {
-            Tab[wi].setupGLShape(Tab[wi].Shader);
+            Tab[wi]->setupGLShape(Tab[wi]->Shader);
         }
 
     }
@@ -142,7 +164,7 @@ public:
     {
         for (long wi=0;wi < count();wi++)
         {
-            Tab[wi].setupGLNormalVisu(pShader);
+            Tab[wi]->setupGLNormalVisu(pShader);
         }
 
     }
@@ -151,20 +173,39 @@ public:
     void drawGL(ZShader *pShader)
     {
         for(long wi=0;wi<count();wi++)
-                Tab[wi].drawGL(pShader,Tab[wi].DrawFigure);
+                Tab[wi]->drawGL(pShader,Tab[wi]->DrawFigure);
     }
     void drawGL()
     {
         for(long wi=0;wi<count();wi++)
-                Tab[wi].drawGL(Tab[wi].Shader,Tab[wi].DrawFigure);
+                Tab[wi]->drawGL(Tab[wi]->Shader,Tab[wi]->DrawFigure);
     }
 
-    void drawGLNormalVisu(ZShader* pShader);
-    void drawGLShape(ZShader* pShader);
+    void drawGLNormalVisu(ZShader* pShader)
+    {
+        for(long wi=0;wi<count();wi++)
+                Tab[wi]->drawGLNormalVisu(pShader);
+
+    }
+    void drawGLShape(ZShader* pShader)
+    {
+        for(long wi=0;wi<count();wi++)
+                Tab[wi]->drawGLShape(pShader);
+
+    }
+
+    void setPosition(Vertice_type pPosition)
+    {
+        DefaultPosition=pPosition;
+        /* no
+        for (long wi=0;wi<count();wi++)
+                Tab[wi]->DefaultPosition += DefaultPosition;
+                */
+    }
 
 
-    const char* Name=nullptr;
-
+    const char*     Name=nullptr;
+    Vertice_type    DefaultPosition=ZModelOrigin;
 
 }; // ZMetaObject
 

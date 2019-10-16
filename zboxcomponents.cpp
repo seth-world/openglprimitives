@@ -119,7 +119,7 @@ void ZBoxComponents::generateShape(ZObject& pObject)
 } // ZBoxComponents::generateShape
 
 
-void ZBoxComponents::cloneFrom (ZBoxComponents& pIn)
+void ZBoxComponents::_cloneFrom (ZBoxComponents& pIn)
 {
 
     TopY=pIn.TopY ;

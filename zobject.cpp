@@ -4,15 +4,16 @@
 
 //Vertice_type CalculateSurfaceNormal (Vertice_type* pTriangle,ZObject::NormalDirection pFront);
 
-ZObject::ZObject(const char *pName)
+ZObject::ZObject(const char *pName, ObjType pType)
 {
     Name=pName;
+    Type=pType;
 //    isMinMaxInit=false;
 
     GLResources->registerObject(this);
 }
 
-void ZObject::cloneFrom(const ZObject&pIn)
+void ZObject::_cloneFrom(ZObject&pIn)
 {
 
     Name=pIn.Name;
@@ -49,9 +50,44 @@ void ZObject::cloneFrom(const ZObject&pIn)
 
 //    GLResources->registerObject(this);
 }
-void ZObject::cloneFrom(const ZObject&&pObject)
+
+void ZObject::_cloneFrom(ZObject&&pIn)
 {
-    cloneFrom(pObject);
+    Name=pIn.Name;
+    Type=pIn.Type;
+
+    for (int wi=0;wi<pIn.vertices.size();wi++)
+        vertices.push_back(pIn.vertices[wi]);
+    for (int wi=0;wi<pIn.VName.size();wi++)
+        VName.push_back(pIn.VName[wi]);
+    for (int wi=0;wi<pIn.Indices.size();wi++)
+        Indices.push_back(pIn.Indices[wi]);
+
+    for (int wi=0;wi<pIn.VNormalDir.size();wi++)
+        VNormalDir.push_back(pIn.VNormalDir[wi]);
+    for (int wi=0;wi<pIn.ShapeIndices.size();wi++)
+        ShapeIndices.push_back(pIn.ShapeIndices[wi]);
+    for (int wi=0;wi<pIn.ZANormVisu.size();wi++)
+        ZANormVisu.push_back(pIn.ZANormVisu[wi]);
+    if (pIn.GLDescriptor)
+            GLDescriptor=new ZGLObjDescriptor(pIn.GLDescriptor);
+    else {
+            GLDescriptor=nullptr;
+         }
+    if (pIn.GLNormVisuDesc)
+            GLNormVisuDesc=new ZGLObjDescriptor(pIn.GLNormVisuDesc);
+    else {
+            GLNormVisuDesc=nullptr;
+         }
+    if (pIn.GLShapeDesc)
+            GLShapeDesc=new ZGLObjDescriptor(pIn.GLShapeDesc);
+    else {
+            GLShapeDesc=nullptr;
+        }
+//    ShapeIndices=pIn.ShapeIndices;
+//    ZANormVisu=pIn.ZANormVisu;
+
+//    GLResources->registerObject(this);
 }
 
 
@@ -125,7 +161,7 @@ ZObject::computeTexCoords()
 
 
 void
-ZObject::createGL_ObjectArray(ZShader *pShader,  uint8_t pShaderSetupOpt )
+ZObject::_setupGL_ObjectArray(ZShader *pShader,  uint8_t pShaderSetupOpt )
         //unsigned int pShaderVerticePosition,
         //                        int pShaderNormalPosition)
 {
@@ -194,10 +230,10 @@ ZObject::createGL_ObjectArray(ZShader *pShader,  uint8_t pShaderSetupOpt )
     glBindVertexArray(0);
 
     pShader->release();
-} // createGL_ObjectArray
+} // _setupGL_ObjectArray
 
 void
-ZObject::createGL_ObjectElement(ZShader* pShader,  uint8_t pShaderSetupOpt )
+ZObject::_setupGL_ObjectElement(ZShader* pShader,  uint8_t pShaderSetupOpt )
 {
   // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s)
     pShader->use();
@@ -310,9 +346,9 @@ ZObject::setupGL(ZShader* pShader,
             setTexture(pTexture);
 
     if (hasIndices())
-        createGL_ObjectElement(pShader,pShaderSetupOpt);
+        _setupGL_ObjectElement(pShader,pShaderSetupOpt);
     else
-        createGL_ObjectArray(pShader,pShaderSetupOpt);
+        _setupGL_ObjectArray(pShader,pShaderSetupOpt);
     return;
 }//setupGL
 
@@ -513,14 +549,14 @@ ZObject::toFlatNormals()
     {
         for (size_t wi=0;wi<Indices.size();wi++)
         {
-            wFlat.push_back(vertices[Indices[wi]].normal);
+            wFlat.push(vertices[Indices[wi]].normal);
         }
         return wFlat;
     }
 
     for (size_t wi=0;wi<vertices.size();wi++)
     {
-        wFlat.push_back(vertices[wi].normal);
+        wFlat.push(vertices[wi].normal);
     }
     return wFlat;
 }//toFlatNormals

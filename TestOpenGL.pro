@@ -18,6 +18,7 @@ SOURCES += \
 #        zcandy.cpp \
 #        zmetaobject.cpp \
     zcandy.cpp \
+    zglobjdescriptor.cpp \
     zmetaobject.cpp \
         zresource.cpp \
         zshader.cpp \
@@ -47,12 +48,14 @@ LIBS +=  -lglfw -ldl -lpthread -lGL -lglut
 
 HEADERS += \
     ../opengl/LearnOpenGL-master/includes/stb_image.h \
+    ../zbasesystem/ztoolset/zarray.h \
     Bmp.h \
     zboxcomponents.h \
 #    zcandy.h \
     zcandy.h \
     zglconstants.h \
 #    zmetaobject.h \
+    zglobjdescriptor.h \
     zmetaobject.h \
     zresource.h \
     zsphere.h \

@@ -37,7 +37,7 @@ const int MIN_STACK_COUNT  = 2;
 // ctor
 ///////////////////////////////////////////////////////////////////////////////
 ZSphere::ZSphere(float radius, int sectors, int stacks, bool smooth,const char* pName) :
-    ZObject(pName), interleavedStride(sizeof(ZVertice))
+    ZObject(pName,ZObject::Sphere), interleavedStride(sizeof(ZVertice))
 {
     set(radius, sectors, stacks, smooth);
 }

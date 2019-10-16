@@ -310,48 +310,48 @@ double wIncrement =  (2.0*wM_PI) /(double)pNumber ;
  */
 
 
-ZObject generate_Arc(Vertice_type pCenter,
+ZObject* generate_Arc(Vertice_type pCenter,
                      float pRadiusLen,
                      int pNumber,
                      ZObject::Direction pDirection,
                      ZObject::NormalDirection pNormDir,
                      const char*pName)
 {
-ZObject wArc("wArc");
+
+ZObject* wArc=new ZObject(pName,ZObject::Arc);
 zbs::ZArray<Vertice_type> vertexBuffer;
 
 
-if (pDirection<0)
-    {
+    if (pDirection<0)
+        {
 //     pCenter.x -= 0.25 ;
-    vertexBuffer = perfect_arc_left(pCenter,pRadiusLen,pNumber);
-    }
+        vertexBuffer = perfect_arc_left(pCenter,pRadiusLen,pNumber);
+        }
     else
-    {
+        {
 //    pCenter.x += 0.25 ;
-    vertexBuffer = perfect_arc_right(pCenter,pRadiusLen,pNumber);
-    }
+        vertexBuffer = perfect_arc_right(pCenter,pRadiusLen,pNumber);
+        }
     for (int wi=2;wi<vertexBuffer.size();wi++)
         {
-        wArc << vertexBuffer[0];
-        wArc << vertexBuffer[wi-1];
-        wArc << vertexBuffer[wi];
-        wArc.VNormalDir.push_back( pNormDir); /* one direction per triangle */
+        *wArc << vertexBuffer[0];
+        *wArc << vertexBuffer[wi-1];
+        *wArc << vertexBuffer[wi];
+        wArc->VNormalDir.push_back( pNormDir); /* one direction per triangle */
 
-        wArc.ShapeIndices << (GLuint)wArc.lastVertexIdx()-1;
-        wArc.ShapeIndices << (GLuint)wArc.lastVertexIdx();
+        wArc->ShapeIndices << (GLuint)wArc->lastVertexIdx()-1;
+        wArc->ShapeIndices << (GLuint)wArc->lastVertexIdx();
         }
-    wArc.setDrawFigure(GL_TRIANGLE_FAN);
+    wArc->setDrawFigure(GL_TRIANGLE_FAN);
     return wArc;
 }//generate_Arc
 
-ZObject
+ZObject*
 generate_ArcStripsRight(ZObject &pArcFront,
                         ZObject &pArcBack,
                         const char *pName)
 {
-ZObject wArcStrips(pName);
-
+ZObject* wArcStrips=new ZObject(pName,ZObject::ArcStrip);
 
     /* Nota Bene : no ShapeIndices for this object */
 
@@ -359,55 +359,55 @@ ZObject wArcStrips(pName);
         for (long wi=1; (wi < pArcFront.verticeCount())&&(wi<pArcBack.verticeCount());wi+=3) /* each 2 and skip arc center*/
             {
             /* first triangle counter-clockwise*/
-            wArcStrips << pArcFront[wi+1];
-            wArcStrips << pArcFront[wi];
-            wArcStrips << pArcBack[wi];
+            *wArcStrips << pArcFront[wi+1];
+            *wArcStrips << pArcFront[wi];
+            *wArcStrips << pArcBack[wi];
 
-            wArcStrips.VNormalDir.push_back( ZObject::Compute); /* one normal direction per triangle */
+            wArcStrips->VNormalDir.push_back( ZObject::Compute); /* one normal direction per triangle */
 
             /* second adjacent triangle counter-clockwise*/
-            wArcStrips << pArcBack[wi];
-            wArcStrips << pArcBack[wi+1];
-            wArcStrips << pArcFront[wi+1];
+            *wArcStrips << pArcBack[wi];
+            *wArcStrips << pArcBack[wi+1];
+            *wArcStrips << pArcFront[wi+1];
 
 
-            wArcStrips.VNormalDir.push_back( ZObject::Compute); /* one normal direction per triangle */
+            wArcStrips->VNormalDir.push_back( ZObject::Compute); /* one normal direction per triangle */
             }
-    wArcStrips.setDrawFigure(GL_TRIANGLES);
+    wArcStrips->setDrawFigure(GL_TRIANGLES);
     return wArcStrips;
 }//generate_ArcStrips
-ZObject generate_ArcStripsLeft(ZObject &pArcFront,
+ZObject* generate_ArcStripsLeft(ZObject &pArcFront,
                                ZObject &pArcBack,
                                const char *pName)
 {
-ZObject wArcStrips(pName);
+ZObject* wArcStrips=new ZObject(pName,ZObject::ArcStrip);
 
     /* start skipping arc center (first) */
     for (long wi=1; (wi < pArcFront.verticeCount())&&(wi<pArcBack.verticeCount());wi+=3) /* each 2 and skip arc center*/
         {
         /* first triangle counter-clockwise*/
-        wArcStrips << pArcFront[wi];
-        wArcStrips << pArcFront[wi+1];
-        wArcStrips << pArcBack[wi];
+        *wArcStrips << pArcFront[wi];
+        *wArcStrips << pArcFront[wi+1];
+        *wArcStrips << pArcBack[wi];
 
 //        wArcStrips.VNormalDir.push_back( pNormDir); /* one normal direction per triangle */
-        wArcStrips.VNormalDir.push_back( ZObject::Compute); /* one normal direction per triangle */
+        wArcStrips->VNormalDir.push_back( ZObject::Compute); /* one normal direction per triangle */
 
         /* second adjacent triangle counter-clockwise*/
-        wArcStrips << pArcFront[wi+1];
-        wArcStrips << pArcBack[wi+1];
-        wArcStrips << pArcBack[wi];
+        *wArcStrips << pArcFront[wi+1];
+        *wArcStrips << pArcBack[wi+1];
+        *wArcStrips << pArcBack[wi];
 
-        wArcStrips.VNormalDir.push_back( ZObject::Compute); /* one normal direction per triangle */
+        wArcStrips->VNormalDir.push_back( ZObject::Compute); /* one normal direction per triangle */
         }//for
 
-    wArcStrips.setDrawFigure(GL_TRIANGLES);
+    wArcStrips->setDrawFigure(GL_TRIANGLES);
 
     return wArcStrips;
 }//generate_ArcStripsLeft
 
 
-ZObject generate_Circle (Color_type pColor,
+ZObject* generate_Circle (Color_type pColor,
                          Vertice_type pCenter,
                          float pRadiusLen,
                          int pNumber,
@@ -415,10 +415,10 @@ ZObject generate_Circle (Color_type pColor,
                          ZObject::NormalDirection pNormDir,
                          const char*pName)
 {
-ZObject wCircle(pName);
+ZObject* wCircle=new ZObject(pName,ZObject::Circle);
 zbs::ZArray<Vertice_type> vertexBuffer;
 
-    wCircle.setDefaultColor(pColor);
+    wCircle->setDefaultColor(pColor);
 
     if (pCircleDir==ZObject::Face)
     {
@@ -437,17 +437,17 @@ zbs::ZArray<Vertice_type> vertexBuffer;
 
     for (int wi=2;wi<vertexBuffer.size();wi++)
         {
-        wCircle << vertexBuffer[0];
-        wCircle << vertexBuffer[wi-1];
-        wCircle << vertexBuffer[wi];
-        wCircle.VNormalDir.push_back( pNormDir);/* one normal direction per triangle */
+        *wCircle << vertexBuffer[0];
+        *wCircle << vertexBuffer[wi-1];
+        *wCircle << vertexBuffer[wi];
+        wCircle->VNormalDir.push_back( pNormDir);/* one normal direction per triangle */
 
         }
-    wCircle.setDrawFigure(GL_TRIANGLE_FAN);
+    wCircle->setDrawFigure(GL_TRIANGLE_FAN);
     return wCircle;
 }//generate_Circle
 
-ZObject boxIndexSetup (const float pHigh,
+ZObject* boxIndexSetup (const float pHigh,
                        const float pWidth,
                        const float pDepth,
                        const char* pName)
@@ -457,148 +457,149 @@ ZObject boxIndexSetup (const float pHigh,
 }
 
 
-ZObject boxIndexSetup (const float pHigh,
+ZObject* boxIndexSetup (const float pHigh,
                        const float pWidth,
                        const float pDepth,
                        ZBoxComponents& pBoxComponents,
                        const char* pName)
 {
-ZObject pObject(pName);
+ZObject* pObject=new ZObject(pName,ZObject::Box);
+
 
     pBoxComponents.setup(pHigh,pWidth,pDepth);
 
     /* clock wise */
 
     /* front face clock wise */
-    pObject << pBoxComponents.FTL ;
-    pObject.VName.push_back("FTL");
-    unsigned int wFTLIdx= (unsigned int)pObject.lastVertexIdx();
+    *pObject << pBoxComponents.FTL ;
+    pObject->VName.push_back("FTL");
+    unsigned int wFTLIdx= (unsigned int)pObject->lastVertexIdx();
 
-    pObject << pBoxComponents.FTR ;
-    pObject.VName.push_back("FTR");
-    unsigned int wFTRIdx=(unsigned int) pObject.lastVertexIdx();
+    *pObject << pBoxComponents.FTR ;
+    pObject->VName.push_back("FTR");
+    unsigned int wFTRIdx=(unsigned int) pObject->lastVertexIdx();
 
-    pObject << pBoxComponents.FLL ;
-    pObject.VName.push_back("FLL");
-    unsigned int wFLLIdx= (unsigned int)pObject.lastVertexIdx();
+    *pObject << pBoxComponents.FLL ;
+    pObject->VName.push_back("FLL");
+    unsigned int wFLLIdx= (unsigned int)pObject->lastVertexIdx();
 
-    pObject << pBoxComponents.FLR ;
-    pObject.VName.push_back("FLR");
-    unsigned int wFLRIdx= (unsigned int)pObject.lastVertexIdx();
+    *pObject << pBoxComponents.FLR ;
+    pObject->VName.push_back("FLR");
+    unsigned int wFLRIdx= (unsigned int)pObject->lastVertexIdx();
 
     /* back face clock wise */
-    pObject << pBoxComponents.BTL ;
-    pObject.VName.push_back("BTL");
-    unsigned int wBTLIdx= (unsigned int)pObject.lastVertexIdx();
+    *pObject << pBoxComponents.BTL ;
+    pObject->VName.push_back("BTL");
+    unsigned int wBTLIdx= (unsigned int)pObject->lastVertexIdx();
 
-    pObject << pBoxComponents.BTR ;
-    pObject.VName.push_back("BTR");
-    unsigned int wBTRIdx= (unsigned int)pObject.lastVertexIdx();
+    *pObject << pBoxComponents.BTR ;
+    pObject->VName.push_back("BTR");
+    unsigned int wBTRIdx= (unsigned int)pObject->lastVertexIdx();
 
-    pObject << pBoxComponents.BLL ;
-    pObject.VName.push_back("BLL");
-    GLuint wBLLIdx= (GLuint)pObject.lastVertexIdx();
+    *pObject << pBoxComponents.BLL ;
+    pObject->VName.push_back("BLL");
+    GLuint wBLLIdx= (GLuint)pObject->lastVertexIdx();
 
-    pObject << pBoxComponents.BLR ;
-    pObject.VName.push_back("BLR");
-    unsigned int wBLRIdx= (unsigned int)pObject.lastVertexIdx();
+    *pObject << pBoxComponents.BLR ;
+    pObject->VName.push_back("BLR");
+    unsigned int wBLRIdx= (unsigned int)pObject->lastVertexIdx();
 
     /* indices */
     /* front face */
-    pObject.addIndice( wFLRIdx);
-    pObject.addIndice( wFTRIdx);
-    pObject.addIndice( wFTLIdx);
+    pObject->addIndice( wFLRIdx);
+    pObject->addIndice( wFTRIdx);
+    pObject->addIndice( wFTLIdx);
 
 
-    pObject.VNormalDir.push_back( ZObject::Front);
+    pObject->VNormalDir.push_back( ZObject::Front);
 
-    pObject.addIndice( wFTLIdx);
-    pObject.addIndice( wFLLIdx);
-    pObject.addIndice( wFLRIdx);
+    pObject->addIndice( wFTLIdx);
+    pObject->addIndice( wFLLIdx);
+    pObject->addIndice( wFLRIdx);
 
-    pObject.VNormalDir.push_back( ZObject::Front);
+    pObject->VNormalDir.push_back( ZObject::Front);
 
     /* Backward face  */
-    pObject.addIndice(wBLRIdx);
-    pObject.addIndice(wBTRIdx);
-    pObject.addIndice(wBTLIdx);
+    pObject->addIndice(wBLRIdx);
+    pObject->addIndice(wBTRIdx);
+    pObject->addIndice(wBTLIdx);
 
-    pObject.VNormalDir.push_back( ZObject::Back);
+    pObject->VNormalDir.push_back( ZObject::Back);
 
-    pObject.addIndice(wBTLIdx);
-    pObject.addIndice(wBLLIdx);
-    pObject.addIndice(wBLRIdx);
+    pObject->addIndice(wBTLIdx);
+    pObject->addIndice(wBLLIdx);
+    pObject->addIndice(wBLRIdx);
 
-    pObject.VNormalDir.push_back( ZObject::Back);
+    pObject->VNormalDir.push_back( ZObject::Back);
 
     /* Down face  */
-    pObject.addIndice(wFLRIdx);
-    pObject.addIndice(wBLRIdx);
-    pObject.addIndice(wBLLIdx);
+    pObject->addIndice(wFLRIdx);
+    pObject->addIndice(wBLRIdx);
+    pObject->addIndice(wBLLIdx);
 
-    pObject.VNormalDir.push_back( ZObject::Bottom);
+    pObject->VNormalDir.push_back( ZObject::Bottom);
 
-    pObject.addIndice(wBLLIdx);
-    pObject.addIndice(wFLLIdx);
-    pObject.addIndice(wFLRIdx);
+    pObject->addIndice(wBLLIdx);
+    pObject->addIndice(wFLLIdx);
+    pObject->addIndice(wFLRIdx);
 
-    pObject.VNormalDir.push_back( ZObject::Bottom);
+    pObject->VNormalDir.push_back( ZObject::Bottom);
 
     /* Top face  */
-    pObject.addIndice(wFTRIdx);
-    pObject.addIndice(wBTRIdx);
-    pObject.addIndice(wBTLIdx);
+    pObject->addIndice(wFTRIdx);
+    pObject->addIndice(wBTRIdx);
+    pObject->addIndice(wBTLIdx);
 
-    pObject.VNormalDir.push_back( ZObject::Top);
+    pObject->VNormalDir.push_back( ZObject::Top);
 
-    pObject.addIndice(wBTLIdx);
-    pObject.addIndice(wFTLIdx);
-    pObject.addIndice(wFTRIdx);
+    pObject->addIndice(wBTLIdx);
+    pObject->addIndice(wFTLIdx);
+    pObject->addIndice(wFTRIdx);
 
-    pObject.VNormalDir.push_back( ZObject::Top);
+    pObject->VNormalDir.push_back( ZObject::Top);
 
     /* Left face  */
 
-    pObject.addIndice(wFTLIdx);
-    pObject.addIndice(wBTLIdx);
-    pObject.addIndice(wBLLIdx);
+    pObject->addIndice(wFTLIdx);
+    pObject->addIndice(wBTLIdx);
+    pObject->addIndice(wBLLIdx);
 
-    pObject.VNormalDir.push_back( ZObject::Left);
+    pObject->VNormalDir.push_back( ZObject::Left);
 
-    pObject.addIndice(wBLLIdx);
-    pObject.addIndice(wFLLIdx);
-    pObject.addIndice(wFTLIdx);
+    pObject->addIndice(wBLLIdx);
+    pObject->addIndice(wFLLIdx);
+    pObject->addIndice(wFTLIdx);
 
-    pObject.VNormalDir.push_back( ZObject::Left);;
+    pObject->VNormalDir.push_back( ZObject::Left);;
 
     /* Right face  */
 
-    pObject.addIndice(wFTRIdx);
-    pObject.addIndice(wBTRIdx);
-    pObject.addIndice(wBLRIdx);
+    pObject->addIndice(wFTRIdx);
+    pObject->addIndice(wBTRIdx);
+    pObject->addIndice(wBLRIdx);
 
-    pObject.VNormalDir.push_back( ZObject::Right);
+    pObject->VNormalDir.push_back( ZObject::Right);
 
-    pObject.addIndice(wBLRIdx);
-    pObject.addIndice(wFLRIdx);
-    pObject.addIndice(wFTRIdx);
+    pObject->addIndice(wBLRIdx);
+    pObject->addIndice(wFLRIdx);
+    pObject->addIndice(wFTRIdx);
 
-    pObject.VNormalDir.push_back( ZObject::Right);
+    pObject->VNormalDir.push_back( ZObject::Right);
 
     /* OK */
 
 /* end indices */
-    pObject.setDrawFigure(GL_TRIANGLES);
+    pObject->setDrawFigure(GL_TRIANGLES);
     return pObject;
 }//boxIndexSetup
 
-ZObject boxSetup_old (const float pHigh,
+ZObject* boxSetup_old (const float pHigh,
                   const float pWidth,
                   const float pDepth,
                   ZBoxComponents& pComponents,
                   const char*pName)
 {
-ZObject pObject(pName);
+ZObject* pObject=new ZObject(pName,ZObject::Box);
 /* remark : coords must remain positive -> to be addressed */
 
     pComponents.setup (pHigh,pWidth,pDepth);
@@ -645,112 +646,112 @@ ZObject pObject(pName);
         }
         */
     /* front face */
-    pObject.addVertice( wFTL);
-    pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice( wFTR);
-    pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice( wFLR);
-    pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice( wFTL);
+    pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice( wFTR);
+    pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice( wFLR);
+    pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
 
-    pObject.addVertice( wFLR); /* skip it for shape line drawing index */
-    pObject.addVertice( wFLL);
-    pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice( wFTL);
-    pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice( wFLR); /* skip it for shape line drawing index */
+    pObject->addVertice( wFLL);
+    pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice( wFTL);
+    pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
 
-    pObject.VNormalDir.push_back( ZObject::Front);pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
+    pObject->VNormalDir.push_back( ZObject::Front);pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
 
-    pObject.VNormalDir.push_back( ZObject::Front);
+    pObject->VNormalDir.push_back( ZObject::Front);
 
     /* Backward face  */
-    pObject.addVertice(wBTL);
-    pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice(wBTR);
-    pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice(wBLR);
-    pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice(wBTL);
+    pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice(wBTR);
+    pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice(wBLR);
+    pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
 
-    pObject.addVertice(wBLR);/* skip it for shape line drawing index */
-    pObject.addVertice(wBLL);
-    pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice(wBTL);
-    pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice(wBLR);/* skip it for shape line drawing index */
+    pObject->addVertice(wBLL);
+    pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice(wBTL);
+    pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
 
-    pObject.VNormalDir.push_back( ZObject::Back);
+    pObject->VNormalDir.push_back( ZObject::Back);
 
-    pObject.VNormalDir.push_back( ZObject::Back);
+    pObject->VNormalDir.push_back( ZObject::Back);
 
     /* Down face  */
-    pObject.addVertice(wBLL);
-    pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice(wBLR);
-    pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice(wFLR);
+    pObject->addVertice(wBLL);
+    pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice(wBLR);
+    pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice(wFLR);
 
-    pObject.addVertice(wFLR);
-    pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice(wFLL);
-    pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice(wBLL);
+    pObject->addVertice(wFLR);
+    pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice(wFLL);
+    pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice(wBLL);
 
-    pObject.VNormalDir.push_back( ZObject::Bottom);
+    pObject->VNormalDir.push_back( ZObject::Bottom);
 
-    pObject.VNormalDir.push_back( ZObject::Bottom);
+    pObject->VNormalDir.push_back( ZObject::Bottom);
 
     /* Top face  */
-    pObject.addVertice(wBTL);
-    pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice(wBTR);
-    pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice(wFTR);
+    pObject->addVertice(wBTL);
+    pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice(wBTR);
+    pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice(wFTR);
 
-    pObject.addVertice(wFTR);
-    pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice(wFTL);
-    pObject.ShapeIndices << (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice(wBTL);
+    pObject->addVertice(wFTR);
+    pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice(wFTL);
+    pObject->ShapeIndices << (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice(wBTL);
 
-    pObject.VNormalDir.push_back( ZObject::Top);
+    pObject->VNormalDir.push_back( ZObject::Top);
 
-    pObject.VNormalDir.push_back( ZObject::Top);
+    pObject->VNormalDir.push_back( ZObject::Top);
 
     /* Left face  */
 
-    pObject.addVertice(wFTL);
-    pObject.addVertice(wBTL);
-    pObject.addVertice(wBLL);
+    pObject->addVertice(wFTL);
+    pObject->addVertice(wBTL);
+    pObject->addVertice(wBLL);
 
-    pObject.addVertice(wBLL);
-    pObject.addVertice(wFLL);
-    pObject.addVertice(wFTL);
+    pObject->addVertice(wBLL);
+    pObject->addVertice(wFLL);
+    pObject->addVertice(wFTL);
 
-    pObject.VNormalDir.push_back( ZObject::Left);
+    pObject->VNormalDir.push_back( ZObject::Left);
 
-    pObject.VNormalDir.push_back( ZObject::Left);;
+    pObject->VNormalDir.push_back( ZObject::Left);;
 
     /* Right face  */
 
-    pObject.addVertice(wFTR);
-    pObject.addVertice(wBTR);
-    pObject.addVertice(wBLR);
+    pObject->addVertice(wFTR);
+    pObject->addVertice(wBTR);
+    pObject->addVertice(wBLR);
 
-    pObject.addVertice(wBLR);
-    pObject.addVertice(wFLR);
-    pObject.addVertice(wFTR);
+    pObject->addVertice(wBLR);
+    pObject->addVertice(wFLR);
+    pObject->addVertice(wFTR);
 
-    pObject.VNormalDir.push_back( ZObject::Right);
+    pObject->VNormalDir.push_back( ZObject::Right);
 
-    pObject.VNormalDir.push_back( ZObject::Right);
+    pObject->VNormalDir.push_back( ZObject::Right);
 
 
     /* OK */
-    pObject.setDrawFigure(GL_TRIANGLES);
+    pObject->setDrawFigure(GL_TRIANGLES);
 /* end indices */
 
     return pObject;
 }//boxSetup_old
 
-ZObject boxSetup (const float pHigh,
+ZObject* boxSetup (const float pHigh,
                        const float pWidth,
                        const float pDepth,
                        const char* pName)
@@ -758,110 +759,111 @@ ZObject boxSetup (const float pHigh,
     ZBoxComponents pBoxComponents;
     return boxSetup(pHigh,pWidth,pDepth,pBoxComponents,pName);
 }
-ZObject boxSetup (const float pHigh,
+ZObject* boxSetup (const float pHigh,
                   const float pWidth,
                   const float pDepth,
                   ZBoxComponents& pComponents,
                   const char*pName)
 {
-ZObject pObject(pName);
+ZObject* pObject=new ZObject(pName,ZObject::Box);
 /* remark : coords must remain positive -> to be addressed */
+
 
     pComponents.setup (pHigh,pWidth,pDepth);
 
     /* front face counter-clockwise */
-    pObject.addVertice( pComponents.FLR,"FLR");
-    pComponents.FLRIdx= (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice( pComponents.FLR,"FLR");
+    pComponents.FLRIdx= (GLuint)pObject->lastVertexIdx();
 
-    pObject.addVertice( pComponents.FTR,"FTR");
-    pComponents.FTRIdx= (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice( pComponents.FTR,"FTR");
+    pComponents.FTRIdx= (GLuint)pObject->lastVertexIdx();
 
-    pObject.addVertice( pComponents.FTL,"FTL");
-    pComponents.FTLIdx= (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice( pComponents.FTL,"FTL");
+    pComponents.FTLIdx= (GLuint)pObject->lastVertexIdx();
 
-    pObject.VNormalDir.push_back( ZObject::Front);
+    pObject->VNormalDir.push_back( ZObject::Front);
 
-    pObject.addVertice( pComponents.FTL,"FTL");
-    pObject.addVertice( pComponents.FLL,"FLL");
-    pComponents.FLLIdx= (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice( pComponents.FLR,"FLR");
+    pObject->addVertice( pComponents.FTL,"FTL");
+    pObject->addVertice( pComponents.FLL,"FLL");
+    pComponents.FLLIdx= (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice( pComponents.FLR,"FLR");
 
 
-    pObject.VNormalDir.push_back( ZObject::Front);
+    pObject->VNormalDir.push_back( ZObject::Front);
 
 
     /* Backward face  counter-clockwise*/
 
-    pObject.addVertice(pComponents.BLR,"BLR");
-    pComponents.BLRIdx= (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice(pComponents.BTR,"BTR");
-    pComponents.BTRIdx= (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice(pComponents.BTL,"BTL");
-    pComponents.BTLIdx= (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice(pComponents.BLR,"BLR");
+    pComponents.BLRIdx= (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice(pComponents.BTR,"BTR");
+    pComponents.BTRIdx= (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice(pComponents.BTL,"BTL");
+    pComponents.BTLIdx= (GLuint)pObject->lastVertexIdx();
 
-    pObject.VNormalDir.push_back( ZObject::Back); /* one per triangle */
+    pObject->VNormalDir.push_back( ZObject::Back); /* one per triangle */
 
-    pObject.addVertice(pComponents.BTL,"BTL");/* skip it for shape line drawing index */
-    pObject.addVertice(pComponents.BLL,"BLL");
-    pComponents.BLLIdx= (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice(pComponents.BLR,"BLR");
+    pObject->addVertice(pComponents.BTL,"BTL");/* skip it for shape line drawing index */
+    pObject->addVertice(pComponents.BLL,"BLL");
+    pComponents.BLLIdx= (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice(pComponents.BLR,"BLR");
 
 
-    pObject.VNormalDir.push_back( ZObject::Back); /* one per triangle */
+    pObject->VNormalDir.push_back( ZObject::Back); /* one per triangle */
 
     /* Down face  - Low face counter-clockwise*/
 
-    pObject.addVertice(pComponents.FLR,"FLR");
-    pObject.addVertice(pComponents.BLR,"BLR");
-    pObject.addVertice(pComponents.BLL,"BLL");
+    pObject->addVertice(pComponents.FLR,"FLR");
+    pObject->addVertice(pComponents.BLR,"BLR");
+    pObject->addVertice(pComponents.BLL,"BLL");
 
-    pObject.VNormalDir.push_back( ZObject::Bottom);/* one per triangle */
+    pObject->VNormalDir.push_back( ZObject::Bottom);/* one per triangle */
 
-    pObject.addVertice(pComponents.BLL,"BLL");
-    pObject.addVertice(pComponents.FLL,"FLL");
-    pObject.addVertice(pComponents.FLR,"FLR");
+    pObject->addVertice(pComponents.BLL,"BLL");
+    pObject->addVertice(pComponents.FLL,"FLL");
+    pObject->addVertice(pComponents.FLR,"FLR");
 
-    pObject.VNormalDir.push_back( ZObject::Bottom);/* one per triangle */
+    pObject->VNormalDir.push_back( ZObject::Bottom);/* one per triangle */
 
     /* Top face  counter-clockwise */
 
-    pObject.addVertice(pComponents.FTR,"FTR");
-    pObject.addVertice(pComponents.BTR,"BTR");
-    pObject.addVertice(pComponents.BTL,"BTL");
+    pObject->addVertice(pComponents.FTR,"FTR");
+    pObject->addVertice(pComponents.BTR,"BTR");
+    pObject->addVertice(pComponents.BTL,"BTL");
 
-    pObject.VNormalDir.push_back( ZObject::Top);
+    pObject->VNormalDir.push_back( ZObject::Top);
 
-    pObject.addVertice(pComponents.BTL,"BTL");
-    pObject.addVertice(pComponents.FTL,"FTL");
-    pObject.addVertice(pComponents.FTR,"FTR");
+    pObject->addVertice(pComponents.BTL,"BTL");
+    pObject->addVertice(pComponents.FTL,"FTL");
+    pObject->addVertice(pComponents.FTR,"FTR");
 
-    pObject.VNormalDir.push_back( ZObject::Top);
+    pObject->VNormalDir.push_back( ZObject::Top);
 
     /* Left face  */
-    pObject.addVertice(pComponents.FTL,"FTL");
-    pObject.addVertice(pComponents.BTL,"BTL");
-    pObject.addVertice(pComponents.BLL,"BLL");
+    pObject->addVertice(pComponents.FTL,"FTL");
+    pObject->addVertice(pComponents.BTL,"BTL");
+    pObject->addVertice(pComponents.BLL,"BLL");
 
-    pObject.VNormalDir.push_back( ZObject::Left);
+    pObject->VNormalDir.push_back( ZObject::Left);
 
-    pObject.addVertice(pComponents.BLL,"BTL");
-    pObject.addVertice(pComponents.FLL,"FLL");
-    pObject.addVertice(pComponents.FTL,"FTL");
+    pObject->addVertice(pComponents.BLL,"BTL");
+    pObject->addVertice(pComponents.FLL,"FLL");
+    pObject->addVertice(pComponents.FTL,"FTL");
 
-    pObject.VNormalDir.push_back( ZObject::Left);
+    pObject->VNormalDir.push_back( ZObject::Left);
 
     /* Right face  */
-    pObject.addVertice(pComponents.FTR,"FTR");
-    pObject.addVertice(pComponents.BTR,"BTR");
-    pObject.addVertice(pComponents.BLR,"BLR");
+    pObject->addVertice(pComponents.FTR,"FTR");
+    pObject->addVertice(pComponents.BTR,"BTR");
+    pObject->addVertice(pComponents.BLR,"BLR");
 
-    pObject.VNormalDir.push_back( ZObject::Right);
+    pObject->VNormalDir.push_back( ZObject::Right);
 
-    pObject.addVertice(pComponents.BLR,"BLR");
-    pObject.addVertice(pComponents.FLR,"FLR");
-    pObject.addVertice(pComponents.FTR,"FTR");
+    pObject->addVertice(pComponents.BLR,"BLR");
+    pObject->addVertice(pComponents.FLR,"FLR");
+    pObject->addVertice(pComponents.FTR,"FTR");
 
-    pObject.VNormalDir.push_back( ZObject::Right);
+    pObject->VNormalDir.push_back( ZObject::Right);
 
 
 /* shape lines */
@@ -870,60 +872,70 @@ ZObject pObject(pName);
 
 /* for GL_LINE_LOOP */
 //#ifdef __COMMENT__
-    pObject.ShapeIndices << pComponents.FTRIdx;
-    pObject.ShapeIndices << pComponents.FTLIdx;
-    pObject.ShapeIndices << pComponents.FLLIdx;
-    pObject.ShapeIndices << pComponents.FLRIdx;
-    pObject.ShapeIndices << pComponents.FTRIdx;
+    pObject->ShapeIndices << pComponents.FTRIdx;
+    pObject->ShapeIndices << pComponents.FTLIdx;
+    pObject->ShapeIndices << pComponents.FLLIdx;
+    pObject->ShapeIndices << pComponents.FLRIdx;
+    pObject->ShapeIndices << pComponents.FTRIdx;
 
    /* closing the figure back to FTR point */
 //#endif
 /* Top face counter-clockwise  starting from wFTRIdx*/
 
- //   pObject.ShapeIndices << pComponents.FTRIdx;
-    pObject.ShapeIndices << pComponents.BTRIdx;
-    pObject.ShapeIndices << pComponents.BTLIdx;
-    pObject.ShapeIndices << pComponents.FTLIdx;
-    pObject.ShapeIndices << pComponents.FTRIdx;
+ //   pObject->ShapeIndices << pComponents.FTRIdx;
+    pObject->ShapeIndices << pComponents.BTRIdx;
+    pObject->ShapeIndices << pComponents.BTLIdx;
+    pObject->ShapeIndices << pComponents.FTLIdx;
+    pObject->ShapeIndices << pComponents.FTRIdx;
     /* closing the figure back to FTRpoint */
 
 /* Low Face */
-    pObject.ShapeIndices << pComponents.FLRIdx;
-    pObject.ShapeIndices << pComponents.FLLIdx;
-    pObject.ShapeIndices << pComponents.BLLIdx;
-    pObject.ShapeIndices << pComponents.BLRIdx;
-    pObject.ShapeIndices << pComponents.FLRIdx;
+    pObject->ShapeIndices << pComponents.FLRIdx;
+    pObject->ShapeIndices << pComponents.FLLIdx;
+    pObject->ShapeIndices << pComponents.BLLIdx;
+    pObject->ShapeIndices << pComponents.BLRIdx;
+    pObject->ShapeIndices << pComponents.FLRIdx;
 
 /* Back Face */
-    pObject.ShapeIndices << pComponents.BLRIdx;
-    pObject.ShapeIndices << pComponents.BTRIdx;
-    pObject.ShapeIndices << pComponents.BTLIdx;
-    pObject.ShapeIndices << pComponents.BLLIdx;
-    pObject.ShapeIndices << pComponents.BLRIdx;
+    pObject->ShapeIndices << pComponents.BLRIdx;
+    pObject->ShapeIndices << pComponents.BTRIdx;
+    pObject->ShapeIndices << pComponents.BTLIdx;
+    pObject->ShapeIndices << pComponents.BLLIdx;
+    pObject->ShapeIndices << pComponents.BLRIdx;
 
-    pObject.ShapeIndices << pComponents.BTRIdx; /* closing the volume loop */
-    pObject.ShapeIndices << pComponents.FTRIdx;
+    pObject->ShapeIndices << pComponents.BTRIdx; /* closing the volume loop */
+    pObject->ShapeIndices << pComponents.FTRIdx;
 
     /* closing the figure back to BTR point */
 
     /* OK */
 
-    pObject.setDrawFigure(GL_TRIANGLES);
+    pObject->setDrawFigure(GL_TRIANGLES);
 
     return pObject;
 }//boxSetup
 
+ZObject* openboxSetup (const float pHigh,
+                       const float pWidth,
+                       const float pDepth,
+                       const char* pName)
+{
+    ZBoxComponents pBoxComponents;
+    return openboxSetup(pHigh,pWidth,pDepth,pBoxComponents,pName);
+}
 
 
 
-ZObject openboxSetup (const float pHigh,
+
+ZObject* openboxSetup (const float pHigh,
                        const float pWidth,
                        const float pDepth,
                       ZBoxComponents& pComponents,
                       const char *pName)
 {
 
-ZObject pObject(pName);
+ZObject* pObject=new ZObject(pName,ZObject::Openbox);
+
 
 //    ZBoxComponents pComponents(pHigh,pWidth,pDepth);
 
@@ -932,72 +944,72 @@ ZObject pObject(pName);
 
 
     /* front face counter-clockwise */
-    pObject.addVertice( pComponents.FLR,"FLR");
-    pComponents.FLRIdx= (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice( pComponents.FLR,"FLR");
+    pComponents.FLRIdx= (GLuint)pObject->lastVertexIdx();
 
-    pObject.addVertice( pComponents.FTR,"FTR");
-    pComponents.FTRIdx= (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice( pComponents.FTR,"FTR");
+    pComponents.FTRIdx= (GLuint)pObject->lastVertexIdx();
 
-    pObject.addVertice( pComponents.FTL,"FTL");
-    pComponents.FTLIdx= (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice( pComponents.FTL,"FTL");
+    pComponents.FTLIdx= (GLuint)pObject->lastVertexIdx();
 
-    pObject.VNormalDir.push_back( ZObject::Front);
+    pObject->VNormalDir.push_back( ZObject::Front);
 
-    pObject.addVertice( pComponents.FTL,"FTL");
-    pObject.addVertice( pComponents.FLL,"FLL");
-    pComponents.FLLIdx= (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice( pComponents.FLR,"FLR");
+    pObject->addVertice( pComponents.FTL,"FTL");
+    pObject->addVertice( pComponents.FLL,"FLL");
+    pComponents.FLLIdx= (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice( pComponents.FLR,"FLR");
 
 
-    pObject.VNormalDir.push_back( ZObject::Front);
+    pObject->VNormalDir.push_back( ZObject::Front);
 
 
     /* Backward face  counter-clockwise*/
 
-    pObject.addVertice(pComponents.BLR,"BLR");
-    pComponents.BLRIdx= (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice(pComponents.BTR,"BTR");
-    pComponents.BTRIdx= (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice(pComponents.BTL,"BTL");
-    pComponents.BTLIdx= (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice(pComponents.BLR,"BLR");
+    pComponents.BLRIdx= (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice(pComponents.BTR,"BTR");
+    pComponents.BTRIdx= (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice(pComponents.BTL,"BTL");
+    pComponents.BTLIdx= (GLuint)pObject->lastVertexIdx();
 
-    pObject.VNormalDir.push_back( ZObject::Back); /* one per triangle */
+    pObject->VNormalDir.push_back( ZObject::Back); /* one per triangle */
 
-    pObject.addVertice(pComponents.BTL,"BTL");/* skip it for shape line drawing index */
-    pObject.addVertice(pComponents.BLL,"BLL");
-    pComponents.BLLIdx= (GLuint)pObject.lastVertexIdx();
-    pObject.addVertice(pComponents.BLR,"BLR");
+    pObject->addVertice(pComponents.BTL,"BTL");/* skip it for shape line drawing index */
+    pObject->addVertice(pComponents.BLL,"BLL");
+    pComponents.BLLIdx= (GLuint)pObject->lastVertexIdx();
+    pObject->addVertice(pComponents.BLR,"BLR");
 
 
-    pObject.VNormalDir.push_back( ZObject::Back); /* one per triangle */
+    pObject->VNormalDir.push_back( ZObject::Back); /* one per triangle */
 
     /* Down face  - Low face counter-clockwise*/
 
-    pObject.addVertice(pComponents.FLR,"FLR");
-    pObject.addVertice(pComponents.BLR,"BLR");
-    pObject.addVertice(pComponents.BLL,"BLL");
+    pObject->addVertice(pComponents.FLR,"FLR");
+    pObject->addVertice(pComponents.BLR,"BLR");
+    pObject->addVertice(pComponents.BLL,"BLL");
 
-    pObject.VNormalDir.push_back( ZObject::Bottom);/* one per triangle */
+    pObject->VNormalDir.push_back( ZObject::Bottom);/* one per triangle */
 
-    pObject.addVertice(pComponents.BLL,"BLL");
-    pObject.addVertice(pComponents.FLL,"FLL");
-    pObject.addVertice(pComponents.FLR,"FLR");
+    pObject->addVertice(pComponents.BLL,"BLL");
+    pObject->addVertice(pComponents.FLL,"FLL");
+    pObject->addVertice(pComponents.FLR,"FLR");
 
-    pObject.VNormalDir.push_back( ZObject::Bottom);/* one per triangle */
+    pObject->VNormalDir.push_back( ZObject::Bottom);/* one per triangle */
 
     /* Top face  counter-clockwise */
 
-    pObject.addVertice(pComponents.FTR,"FTR");
-    pObject.addVertice(pComponents.BTR,"BTR");
-    pObject.addVertice(pComponents.BTL,"BTL");
+    pObject->addVertice(pComponents.FTR,"FTR");
+    pObject->addVertice(pComponents.BTR,"BTR");
+    pObject->addVertice(pComponents.BTL,"BTL");
 
-    pObject.VNormalDir.push_back( ZObject::Top);
+    pObject->VNormalDir.push_back( ZObject::Top);
 
-    pObject.addVertice(pComponents.BTL,"BTL");
-    pObject.addVertice(pComponents.FTL,"FTL");
-    pObject.addVertice(pComponents.FTR,"FTR");
+    pObject->addVertice(pComponents.BTL,"BTL");
+    pObject->addVertice(pComponents.FTL,"FTL");
+    pObject->addVertice(pComponents.FTR,"FTR");
 
-    pObject.VNormalDir.push_back( ZObject::Top);
+    pObject->VNormalDir.push_back( ZObject::Top);
 
     /* no right no Left face  */
 #ifdef __COMMENT__
@@ -1007,145 +1019,146 @@ ZObject pObject(pName);
 
 /* for GL_LINE_LOOP */
 //#ifdef __COMMENT__
-    pObject.ShapeIndices << pComponents.FTRIdx;
-    pObject.ShapeIndices << pComponents.FTLIdx;
-    pObject.ShapeIndices << pComponents.FLLIdx;
-    pObject.ShapeIndices << pComponents.FLRIdx;
-    pObject.ShapeIndices << pComponents.FTRIdx;
+    pObject->ShapeIndices << pComponents.FTRIdx;
+    pObject->ShapeIndices << pComponents.FTLIdx;
+    pObject->ShapeIndices << pComponents.FLLIdx;
+    pObject->ShapeIndices << pComponents.FLRIdx;
+    pObject->ShapeIndices << pComponents.FTRIdx;
 
    /* closing the figure back to FTR point */
 //#endif
 /* Top face counter-clockwise  starting from wFTRIdx*/
 
-    pObject.ShapeIndices << pComponents.FTRIdx;
-    pObject.ShapeIndices << pComponents.BTRIdx;
-    pObject.ShapeIndices << pComponents.BTLIdx;
-    pObject.ShapeIndices << pComponents.FTLIdx;
-    pObject.ShapeIndices << pComponents.FTRIdx;
+    pObject->ShapeIndices << pComponents.FTRIdx;
+    pObject->ShapeIndices << pComponents.BTRIdx;
+    pObject->ShapeIndices << pComponents.BTLIdx;
+    pObject->ShapeIndices << pComponents.FTLIdx;
+    pObject->ShapeIndices << pComponents.FTRIdx;
     /* closing the figure back to FTRpoint */
 
 /* Low Face */
-    pObject.ShapeIndices << pComponents.FLRIdx;
-    pObject.ShapeIndices << pComponents.FLLIdx;
-    pObject.ShapeIndices << pComponents.BLLIdx;
-    pObject.ShapeIndices << pComponents.BLRIdx;
-    pObject.ShapeIndices << pComponents.FLRIdx;
+    pObject->ShapeIndices << pComponents.FLRIdx;
+    pObject->ShapeIndices << pComponents.FLLIdx;
+    pObject->ShapeIndices << pComponents.BLLIdx;
+    pObject->ShapeIndices << pComponents.BLRIdx;
+    pObject->ShapeIndices << pComponents.FLRIdx;
 
 /* Back Face */
-    pObject.ShapeIndices << pComponents.BLRIdx;
-    pObject.ShapeIndices << pComponents.BTRIdx;
-    pObject.ShapeIndices << pComponents.BTLIdx;
-    pObject.ShapeIndices << pComponents.BLLIdx;
-    pObject.ShapeIndices << pComponents.BLRIdx;
+    pObject->ShapeIndices << pComponents.BLRIdx;
+    pObject->ShapeIndices << pComponents.BTRIdx;
+    pObject->ShapeIndices << pComponents.BTLIdx;
+    pObject->ShapeIndices << pComponents.BLLIdx;
+    pObject->ShapeIndices << pComponents.BLRIdx;
 
-    pObject.ShapeIndices << pComponents.BTRIdx; /* closing the volume loop */
-    pObject.ShapeIndices << pComponents.FTRIdx;
+    pObject->ShapeIndices << pComponents.BTRIdx; /* closing the volume loop */
+    pObject->ShapeIndices << pComponents.FTRIdx;
 
     /* closing the figure back to BTR point */
 #endif // __COMMENT__
     /* OK */
 
-    pObject.setDrawFigure(GL_TRIANGLES);
+    pObject->setDrawFigure(GL_TRIANGLES);
 
 /* end indices */
 
     return pObject;
 }//openboxSetup
-ZObject openboxIndexedSetup (const float pHigh,
+ZObject* openboxIndexedSetup (const float pHigh,
                              const float pWidth,
                              const float pDepth,
                             ZBoxComponents& pComponents,
                             const char *pName)
 {
 
-ZObject pObject(pName);
+ZObject* pObject=new ZObject(pName,ZObject::Openbox);
+
 
 //    ZBoxComponents pComponents(pHigh,pWidth,pDepth);
 
     pComponents.setup(pHigh,pWidth,pDepth);
 /* remark : coords must remain positive -> to be addressed */
 
- /*   pObject.addVertice( pComponents.FLR,"FLR");
-    GLuint wFLRIdx= (GLuint)pObject.lastVertexIdx();
+ /*   pObject->addVertice( pComponents.FLR,"FLR");
+    GLuint wFLRIdx= (GLuint)pObject->lastVertexIdx();
 
-    pObject.addVertice( pComponents.FTR,"FTR");
-    GLuint wFTRIdx= (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice( pComponents.FTR,"FTR");
+    GLuint wFTRIdx= (GLuint)pObject->lastVertexIdx();
 
-    pObject.addVertice( pComponents.FTL,"FTL");
-    GLuint wFTLIdx= (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice( pComponents.FTL,"FTL");
+    GLuint wFTLIdx= (GLuint)pObject->lastVertexIdx();
 
-    pObject.addVertice( pComponents.FLL,"FLL");
-    GLuint wFLLIdx= (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice( pComponents.FLL,"FLL");
+    GLuint wFLLIdx= (GLuint)pObject->lastVertexIdx();
 
 
-    pObject.addVertice( pComponents.BLR,"BLR");
-    GLuint wBLRIdx= (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice( pComponents.BLR,"BLR");
+    GLuint wBLRIdx= (GLuint)pObject->lastVertexIdx();
 
-    pObject.addVertice( pComponents.BTR,"BTR");
-    GLuint wBTRIdx= (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice( pComponents.BTR,"BTR");
+    GLuint wBTRIdx= (GLuint)pObject->lastVertexIdx();
 
-    pObject.addVertice( pComponents.BTL,"BTL");
-    GLuint wBTLIdx= (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice( pComponents.BTL,"BTL");
+    GLuint wBTLIdx= (GLuint)pObject->lastVertexIdx();
 
-    pObject.addVertice( pComponents.BLL,"BLL");
-    GLuint wBLLIdx= (GLuint)pObject.lastVertexIdx();
+    pObject->addVertice( pComponents.BLL,"BLL");
+    GLuint wBLLIdx= (GLuint)pObject->lastVertexIdx();
 */
-    pComponents.setupRawVertices(pObject);
+    pComponents.setupRawVertices(*pObject);
 
 /* front face counter-clockwise */
-    pObject.Indices << pComponents.FLRIdx;
-    pObject.Indices << pComponents.FTRIdx;
-    pObject.Indices << pComponents.FTLIdx;
+    pObject->Indices << pComponents.FLRIdx;
+    pObject->Indices << pComponents.FTRIdx;
+    pObject->Indices << pComponents.FTLIdx;
 
-    pObject.VNormalDir.push_back( ZObject::Front);
+    pObject->VNormalDir.push_back( ZObject::Front);
 
-    pObject.Indices << pComponents.FTLIdx;
-    pObject.Indices << pComponents.FLLIdx;
-    pObject.Indices << pComponents.FLRIdx;
+    pObject->Indices << pComponents.FTLIdx;
+    pObject->Indices << pComponents.FLLIdx;
+    pObject->Indices << pComponents.FLRIdx;
 
-    pObject.VNormalDir.push_back( ZObject::Front);
+    pObject->VNormalDir.push_back( ZObject::Front);
 
 /* Backward face  counter-clockwise*/
-    pObject.Indices << pComponents.BLRIdx;
-    pObject.Indices << pComponents.BTRIdx;
-    pObject.Indices << pComponents.BTLIdx;
+    pObject->Indices << pComponents.BLRIdx;
+    pObject->Indices << pComponents.BTRIdx;
+    pObject->Indices << pComponents.BTLIdx;
 
-    pObject.VNormalDir.push_back( ZObject::Back);
+    pObject->VNormalDir.push_back( ZObject::Back);
 
-    pObject.Indices << pComponents.BTLIdx;
-    pObject.Indices << pComponents.BLLIdx;
-    pObject.Indices << pComponents.BLRIdx;
+    pObject->Indices << pComponents.BTLIdx;
+    pObject->Indices << pComponents.BLLIdx;
+    pObject->Indices << pComponents.BLRIdx;
 
-    pObject.VNormalDir.push_back( ZObject::Back);/* one per triangle */
+    pObject->VNormalDir.push_back( ZObject::Back);/* one per triangle */
 
  /* Down face  - Low face counter-clockwise*/
 
-    pObject.Indices << pComponents.FLRIdx;
-    pObject.Indices << pComponents.BLRIdx;
-    pObject.Indices << pComponents.BLLIdx;
+    pObject->Indices << pComponents.FLRIdx;
+    pObject->Indices << pComponents.BLRIdx;
+    pObject->Indices << pComponents.BLLIdx;
 
-    pObject.VNormalDir.push_back( ZObject::Bottom);
+    pObject->VNormalDir.push_back( ZObject::Bottom);
 
-    pObject.Indices << pComponents.BLLIdx;
-    pObject.Indices << pComponents.FLLIdx;
-    pObject.Indices << pComponents.FLRIdx;
+    pObject->Indices << pComponents.BLLIdx;
+    pObject->Indices << pComponents.FLLIdx;
+    pObject->Indices << pComponents.FLRIdx;
 
-    pObject.VNormalDir.push_back( ZObject::Bottom);/* one per triangle */
+    pObject->VNormalDir.push_back( ZObject::Bottom);/* one per triangle */
 
 
     /* Top face  counter-clockwise */
 
-    pObject.Indices << pComponents.FTRIdx;
-    pObject.Indices << pComponents.BTRIdx;
-    pObject.Indices << pComponents.BTLIdx;
+    pObject->Indices << pComponents.FTRIdx;
+    pObject->Indices << pComponents.BTRIdx;
+    pObject->Indices << pComponents.BTLIdx;
 
-    pObject.VNormalDir.push_back( ZObject::Top);
+    pObject->VNormalDir.push_back( ZObject::Top);
 
-    pObject.Indices << pComponents.BTLIdx;
-    pObject.Indices << pComponents.FTLIdx;
-    pObject.Indices << pComponents.FTRIdx;
+    pObject->Indices << pComponents.BTLIdx;
+    pObject->Indices << pComponents.FTLIdx;
+    pObject->Indices << pComponents.FTRIdx;
 
-    pObject.VNormalDir.push_back( ZObject::Top);/* one per triangle */
+    pObject->VNormalDir.push_back( ZObject::Top);/* one per triangle */
 
     /* no right no Left face  */
 
@@ -1155,45 +1168,45 @@ ZObject pObject(pName);
 
 /* for GL_LINE_LOOP */
 //#ifdef __COMMENT__
-    pObject.ShapeIndices << pComponents.FTRIdx;
-    pObject.ShapeIndices << pComponents.FTLIdx;
-    pObject.ShapeIndices << pComponents.FLLIdx;
-    pObject.ShapeIndices << pComponents.FLRIdx;
-    pObject.ShapeIndices << pComponents.FTRIdx;
+    pObject->ShapeIndices << pComponents.FTRIdx;
+    pObject->ShapeIndices << pComponents.FTLIdx;
+    pObject->ShapeIndices << pComponents.FLLIdx;
+    pObject->ShapeIndices << pComponents.FLRIdx;
+    pObject->ShapeIndices << pComponents.FTRIdx;
 
    /* closing the figure back to FTR point */
 //#endif
 /* Top face counter-clockwise  starting from wFTRIdx*/
 
-    pObject.ShapeIndices << pComponents.FTRIdx;
-    pObject.ShapeIndices << pComponents.BTRIdx;
-    pObject.ShapeIndices << pComponents.BTLIdx;
-    pObject.ShapeIndices << pComponents.FTLIdx;
-    pObject.ShapeIndices << pComponents.FTRIdx;
+    pObject->ShapeIndices << pComponents.FTRIdx;
+    pObject->ShapeIndices << pComponents.BTRIdx;
+    pObject->ShapeIndices << pComponents.BTLIdx;
+    pObject->ShapeIndices << pComponents.FTLIdx;
+    pObject->ShapeIndices << pComponents.FTRIdx;
     /* closing the figure back to FTRpoint */
 
 /* Low Face */
-    pObject.ShapeIndices << pComponents.FLRIdx;
-    pObject.ShapeIndices << pComponents.FLLIdx;
-    pObject.ShapeIndices << pComponents.BLLIdx;
-    pObject.ShapeIndices << pComponents.BLRIdx;
-    pObject.ShapeIndices << pComponents.FLRIdx;
+    pObject->ShapeIndices << pComponents.FLRIdx;
+    pObject->ShapeIndices << pComponents.FLLIdx;
+    pObject->ShapeIndices << pComponents.BLLIdx;
+    pObject->ShapeIndices << pComponents.BLRIdx;
+    pObject->ShapeIndices << pComponents.FLRIdx;
 
 /* Back Face */
-    pObject.ShapeIndices << pComponents.BLRIdx;
-    pObject.ShapeIndices << pComponents.BTRIdx;
-    pObject.ShapeIndices << pComponents.BTLIdx;
-    pObject.ShapeIndices << pComponents.BLLIdx;
-    pObject.ShapeIndices << pComponents.BLRIdx;
+    pObject->ShapeIndices << pComponents.BLRIdx;
+    pObject->ShapeIndices << pComponents.BTRIdx;
+    pObject->ShapeIndices << pComponents.BTLIdx;
+    pObject->ShapeIndices << pComponents.BLLIdx;
+    pObject->ShapeIndices << pComponents.BLRIdx;
 
-    pObject.ShapeIndices << pComponents.BTRIdx; /* closing the volume loop */
-    pObject.ShapeIndices << pComponents.FTRIdx;
+    pObject->ShapeIndices << pComponents.BTRIdx; /* closing the volume loop */
+    pObject->ShapeIndices << pComponents.FTRIdx;
 
     /* closing the figure back to BTR point */
 
     /* OK */
 
-    pObject.setDrawFigure(GL_TRIANGLES);
+    pObject->setDrawFigure(GL_TRIANGLES);
 
 /* end indices */
 
@@ -1217,39 +1230,39 @@ ZBoxComponents pComponents;
 
  //   strcpy (wName,pName);
  //   strcat (wName,"_OpenBox");
-    ZObject wOpenBox = openboxSetup(pHigh,pWidth,pDepth,pComponents,"OpenBox");
+    ZObject* wOpenBox = openboxSetup(pHigh,pWidth,pDepth,pComponents,"OpenBox");
 //    wOpenBox.setDrawFigure(GL_TRIANGLES);
     wCandy.add(wOpenBox);
 
 //    strcpy (wName,pName);
 //    strcat (wName,"_ArcFL");
-    ZObject wArcFL = generate_Arc(pComponents.FLMid,wRadius,10,ZObject::DirLeft,ZObject::Front,"ArcFL");
+    ZObject* wArcFL = generate_Arc(pComponents.FLMid,wRadius,10,ZObject::DirLeft,ZObject::Front,"ArcFL");
 //    wArcFL.setDrawFigure(GL_TRIANGLE_FAN);
     wCandy.add(wArcFL);
 //    strcpy (wName,pName);
 //    strcat (wName,"ArcBL");
-    ZObject wArcBL = generate_Arc(pComponents.BLMid,wRadius,10,ZObject::DirLeft,ZObject::Back,"ArcBL");/* generate arc reverse (left) */
+    ZObject* wArcBL = generate_Arc(pComponents.BLMid,wRadius,10,ZObject::DirLeft,ZObject::Back,"ArcBL");/* generate arc reverse (left) */
 //    wArcBL.setDrawFigure(GL_TRIANGLE_FAN);
     wCandy.add(wArcBL);
 //    strcpy (wName,pName);
 //    strcat (wName,"ArcFR");
-    ZObject wArcFR = generate_Arc(pComponents.FRMid,wRadius,10,ZObject::DirRight,ZObject::Front,"ArcFR");/* generate front arc forward (right) */
+    ZObject* wArcFR = generate_Arc(pComponents.FRMid,wRadius,10,ZObject::DirRight,ZObject::Front,"ArcFR");/* generate front arc forward (right) */
 //    wArcFR.setDrawFigure(GL_TRIANGLE_FAN);
     wCandy.add(wArcFR);
 //    strcpy (wName,pName);
 //    strcat (wName,"ArcBR");
-    ZObject wArcBR = generate_Arc(pComponents.BRMid,wRadius,10,ZObject::DirRight,ZObject::Back,"ArcBR");/* generate bottom arc forward (right) */
+    ZObject* wArcBR = generate_Arc(pComponents.BRMid,wRadius,10,ZObject::DirRight,ZObject::Back,"ArcBR") ;/* generate bottom arc forward (right) */
 //    wArcBR.setDrawFigure(GL_TRIANGLE_FAN);
     wCandy.add(wArcBR);
 
 //    strcpy (wName,pName);
 //    strcat (wName,"wArcStripsLeft");
-    ZObject wArcStripsLeft = generate_ArcStripsLeft(wArcFL,wArcBL,"ArcStripLeft");
+    ZObject* wArcStripsLeft = generate_ArcStripsLeft(*wArcFL,*wArcBL,"ArcStripLeft");
 //    wArcStripsLeft.setDrawFigure(GL_TRIANGLES);
     wCandy.add(wArcStripsLeft);
 //    strcpy (wName,pName);
 //    strcat (wName,"wArcStripsRight");
-    ZObject wArcStripsRight = generate_ArcStripsRight(wArcFR,wArcBR,"ArcStripRight");
+    ZObject* wArcStripsRight = generate_ArcStripsRight(*wArcFR,*wArcBR,"ArcStripRight");
 //    wArcStripsLeft.setDrawFigure(GL_TRIANGLES);
     wCandy.add(wArcStripsRight);
 
@@ -1259,19 +1272,19 @@ ZBoxComponents pComponents;
     wCandy.FrontShape.push_back(pComponents.FTR);
     wCandy.FrontShape.push_back(pComponents.FTL);
 
-    for (long wi=0;wi<wArcFL.vertices.count();wi+=3)
+    for (long wi=0;wi<wArcFL->vertices.count();wi+=3)
         {
         /* skip first which is center of arc */
-        wCandy.FrontShape.push_back(wArcFL.vertices[wi+1].point);
-        wCandy.FrontShape.push_back(wArcFL.vertices[wi+2].point);
+        wCandy.FrontShape.push_back(wArcFL->vertices[wi+1].point);
+        wCandy.FrontShape.push_back(wArcFL->vertices[wi+2].point);
         }
     wCandy.FrontShape.push_back(pComponents.FLL);
     wCandy.FrontShape.push_back(pComponents.FLR);
 
-    for (long wi=wArcFR.vertices.count()-1;wi>1;wi-=3) /* start by end and skip first which is center of arc */
+    for (long wi=wArcFR->vertices.count()-1;wi>1;wi-=3) /* start by end and skip first which is center of arc */
         {
-        wCandy.FrontShape.push_back(wArcFR.vertices[wi].point);
-        wCandy.FrontShape.push_back(wArcFR.vertices[wi-1].point);
+        wCandy.FrontShape.push_back(wArcFR->vertices[wi].point);
+        wCandy.FrontShape.push_back(wArcFR->vertices[wi-1].point);
         }
     wCandy.FrontShape.push_back(pComponents.FTR);
 
@@ -1279,19 +1292,19 @@ ZBoxComponents pComponents;
 
     wCandy.BackShape.push_back(pComponents.BTR);
     wCandy.BackShape.push_back(pComponents.BTL);
-    for (long wi=0;wi<wArcBL.vertices.count();wi+=3)
+    for (long wi=0;wi<wArcBL->vertices.count();wi+=3)
         {
         /* skip first which is center of arc */
-        wCandy.FrontShape.push_back(wArcBL.vertices[wi+1].point);
-        wCandy.FrontShape.push_back(wArcBL.vertices[wi+2].point);
+        wCandy.FrontShape.push_back(wArcBL->vertices[wi+1].point);
+        wCandy.FrontShape.push_back(wArcBL->vertices[wi+2].point);
         }
     wCandy.BackShape.push_back(pComponents.BLL);
     wCandy.BackShape.push_back(pComponents.BLR);
 
-    for (long wi=wArcBR.vertices.count()-1;wi>1;wi-=3) /* start by end and skip first which is center of arc */
+    for (long wi=wArcBR->vertices.count()-1;wi>1;wi-=3) /* start by end and skip first which is center of arc */
         {
-        wCandy.BackShape.push_back(wArcBR.vertices[wi].point);
-        wCandy.BackShape.push_back(wArcBR.vertices[wi-1].point);
+        wCandy.BackShape.push_back(wArcBR->vertices[wi].point);
+        wCandy.BackShape.push_back(wArcBR->vertices[wi-1].point);
         }
 
     wCandy.BackShape.push_back(pComponents.BTR);
@@ -1305,7 +1318,7 @@ ZBoxComponents pComponents;
 //#endif // __COMMENT__
 
 
-ZObject
+ZObject*
 generateCylinder(Color_type pColor,
                  Vertice_type pBeginCenter,
                  float pBeginRadius,
@@ -1316,55 +1329,60 @@ generateCylinder(Color_type pColor,
                  ZObject::CircleMade pTargetCircleState,
                  const char* pName)
 {
-    ZObject wBegin= generate_Circle(pColor,pBeginCenter,pBeginRadius,pNumber,pBeginCircleState);
-    ZObject wTarget=generate_Circle(pColor,pTargetCenter,pTargetRadius,pNumber,pTargetCircleState);
-    ZObject wPipe(pName);
-    wPipe.setDefaultColor(pColor);
+    ZObject* wBegin= generate_Circle(pColor,pBeginCenter,pBeginRadius,pNumber,pBeginCircleState);
+    ZObject* wTarget=generate_Circle(pColor,pTargetCenter,pTargetRadius,pNumber,pTargetCircleState);
+    ZObject* wPipe=new ZObject(pName,ZObject::Pipe);
 
-    wPipe << wBegin.vertices[0].point;
-    wPipe << wBegin.vertices[wBegin.vertices.count()-1].point;
-    wPipe << wTarget.vertices[0].point;
-    wPipe.VNormalDir.push_back(ZObject::Compute);
 
-    wPipe << wTarget.vertices[0].point;
-    wPipe << wTarget.vertices[wBegin.vertices.count()-1].point;
-    wPipe << wBegin.vertices[wBegin.vertices.count()-1].point;
-    wPipe.VNormalDir.push_back(ZObject::Compute);
+    wPipe->setDefaultColor(pColor);
+
+    *wPipe << wBegin->vertices[0].point;
+    *wPipe << wBegin->vertices[wBegin->vertices.count()-1].point;
+    *wPipe << wTarget->vertices[0].point;
+    wPipe->VNormalDir.push_back(ZObject::Compute);
+
+    *wPipe << wTarget->vertices[0].point;
+    *wPipe << wTarget->vertices[wBegin->vertices.count()-1].point;
+    *wPipe << wBegin->vertices[wBegin->vertices.count()-1].point;
+    wPipe->VNormalDir.push_back(ZObject::Compute);
 
 
 
     long wi=0;
 
-    for (; wi < (wBegin.vertices.count()-1) ;wi++)
+    for (; wi < (wBegin->vertices.count()-1) ;wi++)
     {
-        wPipe << wBegin.vertices[wi+1].point;
-        wPipe << wBegin.vertices[wi].point;
-        wPipe << wTarget.vertices[wi+1].point;
-        wPipe.VNormalDir.push_back(ZObject::Compute);
+        *wPipe << wBegin->vertices[wi+1].point;
+        *wPipe << wBegin->vertices[wi].point;
+        *wPipe << wTarget->vertices[wi+1].point;
+        wPipe->VNormalDir.push_back(ZObject::Compute);
 
-        wPipe << wTarget.vertices[wi].point;
-        wPipe << wTarget.vertices[wi+1].point;
-        wPipe << wBegin.vertices[wi].point;
-        wPipe.VNormalDir.push_back(ZObject::Compute);
+        *wPipe << wTarget->vertices[wi].point;
+        *wPipe << wTarget->vertices[wi+1].point;
+        *wPipe << wBegin->vertices[wi].point;
+        wPipe->VNormalDir.push_back(ZObject::Compute);
     }
-    if ((wBegin.verticeCount()<2)||(wTarget.verticeCount()<2))
+    if ((wBegin->verticeCount()<2)||(wTarget->verticeCount()<2))
                 return wPipe;
 
-    long wj=wBegin.vertices.count()-1;
-    wPipe << wBegin.vertices[0].point;
-    wPipe << wBegin.vertices[wj].point;
-    wPipe << wTarget.vertices[wj].point;
-    wPipe.VNormalDir.push_back(ZObject::Compute);
+    long wj=wBegin->vertices.count()-1;
+    *wPipe << wBegin->vertices[0].point;
+    *wPipe << wBegin->vertices[wj].point;
+    *wPipe << wTarget->vertices[wj].point;
+    wPipe->VNormalDir.push_back(ZObject::Compute);
 
-    wPipe << wTarget.vertices[wj].point;
-    wPipe << wTarget.vertices[0].point;
-    wPipe << wBegin.vertices[0].point;
-    wPipe.VNormalDir.push_back(ZObject::Compute);
+    *wPipe << wTarget->vertices[wj].point;
+    *wPipe << wTarget->vertices[0].point;
+    *wPipe << wBegin->vertices[0].point;
+    wPipe->VNormalDir.push_back(ZObject::Compute);
+
+    delete wTarget;
+    delete wBegin;
 
     return wPipe;
 }//generateRegularPipe
 
-ZObject
+ZObject*
 generateRegularCylinder(Color_type pColor,
                         Vertice_type pBeginCenter,
                         Vertice_type pTargetCenter,
@@ -1385,7 +1403,7 @@ generateRegularCylinder(Color_type pColor,
 
 }
 
-ZObject
+ZObject*
 generateDirectionCylinder(Color_type pColor,
                           Vertice_type pBeginCenter,
                           Vertice_type pDirection,
@@ -1414,7 +1432,7 @@ generateSphere(Color_type pColor,
                int pNumber,
                const char*pName=nullptr)
 {
-   ZObject wSphere(pName);
+   ZObject wSphere(pName,ZObject::Sphere);
 
 }
 

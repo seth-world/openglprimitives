@@ -25,36 +25,44 @@ inline const Vertice_type calculateCenter(Vertice_type &pTriangle1,
 zbs::ZArray<Vertice_type>  generateVNormal(zbs::ZArray<Vertice_type> &wVertex,
                                            zbs::ZArray<ZObject::NormalDirection> &pNormDir);
 
-ZObject boxIndexSetup (const float pHigh,
+class ZCandy;
+
+ZCandy
+generateCandy (const float pHigh,
+            const float pWidth,
+            const float pDepth,
+            const char *pName);
+
+ZObject* boxIndexSetup (const float pHigh,
                        const float pWidth,
                        const float pDepth,
                        const char* pName);
 
 
-ZObject boxIndexSetup (const float pHigh,
+ZObject* boxIndexSetup (const float pHigh,
                        const float pWidth,
                        const float pDepth,
                        ZBoxComponents& pBoxComponents,
                        const char* pName);
 
-ZObject boxSetup (const float pHigh,
+ZObject *boxSetup(const float pHigh,
                        const float pWidth,
                        const float pDepth,
                        const char* pName);
 
-ZObject boxSetup (const float pHigh,
+ZObject* boxSetup (const float pHigh,
                   const float pWidth,
                   const float pDepth,
                   ZBoxComponents& pComponents,
                   const char*pName);
 
-ZObject openboxSetup (const float pHigh,
+ZObject *openboxSetup(const float pHigh,
                        const float pWidth,
                        const float pDepth,
                       ZBoxComponents& pComponents,
                       const char *pName);
 
-ZObject openboxSetup (const float pHigh,
+ZObject* openboxSetup (const float pHigh,
                        const float pWidth,
                        const float pDepth,
                       const char *pName);
@@ -64,22 +72,22 @@ ZObject openboxSetup (const float pHigh,
 zbs::ZArray<Vertice_type> perfect_arc_right(Vertice_type pCenter,float pRadiusLen,  int pNumber);
 zbs::ZArray<Vertice_type> perfect_arc_left(Vertice_type pCenter,float pRadiusLen,  int pNumber);
 
-ZObject generate_Arc(Vertice_type pCenter,
+ZObject *generate_Arc(Vertice_type pCenter,
                      float pRadiusLen,
                      int pNumber,
                      ZObject::Direction pDirection,
                      ZObject::NormalDirection pNormDir,
                      const char *pName=nullptr);
 
-ZObject generate_ArcStripsRight(ZObject &pArcFront,
+ZObject *generate_ArcStripsRight(ZObject &pArcFront,
                                 ZObject &pArcBack,
                                 const char*pName=nullptr);
 
-ZObject generate_ArcStripsLeft(ZObject &pArcFront,
+ZObject *generate_ArcStripsLeft(ZObject &pArcFront,
                                ZObject &pArcBack,
                                const char*pName=nullptr);
 
-ZObject generate_Circle (Color_type pColor,
+ZObject *generate_Circle(Color_type pColor,
                          Vertice_type pCenter,
                          float pRadiusLen,
                          int pNumber,
@@ -87,7 +95,7 @@ ZObject generate_Circle (Color_type pColor,
                          ZObject::NormalDirection pNormDir=ZObject::Front,
                          const char *pName=nullptr);
 
-ZObject
+ZObject*
 generateCylinder(Color_type pColor,
                  Vertice_type pBeginCenter,
                  float pBeginRadius,
@@ -98,7 +106,7 @@ generateCylinder(Color_type pColor,
                  ZObject::CircleMade pTargetCircleState,
                  const char*pName=nullptr);
 
-ZObject
+ZObject*
 generateRegularCylinder(glm::vec3 pColor,
                         Vertice_type pBeginCenter,
                         Vertice_type pTargetCenter,

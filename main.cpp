@@ -20,7 +20,7 @@
 #include <zobject.h>
 #include <zobjectfunctions.h>
 
-//#include <zcandy.h>
+#include <zcandy.h>
 
 #include <zsphere.h>
 #include <ztexture.h>
@@ -108,7 +108,7 @@ int main()
     const float wDepth=0.2f;
 
 
-//#ifdef __COMMENT__
+#ifdef __COMMENT__
 //    zbs::ZArray<Vertice_type> wMids=boxIndexSetup(&wBox,ZBlueColor,wHigh,wWidth,wDepth);
     ZBoxComponents wBoxComponents;
 //    ZObject wBox =openboxSetup(wHigh,wWidth,wDepth,wBoxComponents,"Openbox");
@@ -139,12 +139,12 @@ int main()
 
     ZObject wArcStripsLeft = generate_ArcStripsLeft(wArcFL,wArcBL,"ArcStripLeft");
     ZObject wArcStripsRight = generate_ArcStripsRight(wArcFR,wArcBR,"ArcStripRight");
-//#endif //__COMMENT__
-#ifdef __COMMENT__
+#endif //__COMMENT__
+//#ifdef __COMMENT__
     ZCandy wCandy = generateCandy(wHigh,wWidth,wDepth,"Candy");
 
-    wCandy.printLineShape();
-#endif //__COMMENT__
+//    wCandy.printLineShape();
+//#endif //__COMMENT__
     Vertice_type wC1=Vertice_type(0.8f,0.9f,0.0f);
 
     Vertice_type wC2=Vertice_type(0.8f,0.4f,0.0f);
@@ -153,7 +153,7 @@ int main()
 
 //    ZObject wCircle3=generate_Circle(ZGreyColor, wC3,0.2f,50,ZObject::Flat,ZObject::Top);
 
-    ZObject wPipe = generateRegularCylinder(ZGreyColor,wC1,wC2,0.05f,50,ZObject::Flat,"Pipe");
+    ZObject* wPipe = generateRegularCylinder(ZGreyColor,wC1,wC2,0.05f,50,ZObject::Flat,"Pipe");
 
     ZSphere wSphere(0.10f,18,9,false, "Sphere");
 
@@ -172,25 +172,25 @@ int main()
     // ------------------------------------
 //    ZShader lightingShader(Resources.getShaderPath("zbasic_lighting.vs").c_str(), Resources.getShaderPath("zbasic_lighting.fs").c_str());
     ZBoxComponents wLampComponents;
-    ZObject wLamp =boxSetup(0.05f,0.05f,0.05f,wLampComponents,"Lamp"); /* same shape as wBox (but scaled down ) */
-    wLampComponents.generateShape(wLamp);
+    ZObject* wLamp =boxSetup(0.05f,0.05f,0.05f,wLampComponents,"Lamp"); /* same shape as wBox (but scaled down ) */
+    wLampComponents.generateShape(*wLamp);
 
     printf ("Lamp Indices\n");
-    wLamp.print(20);
+//    wLamp->print(20);
 
 
     ZShader lampShader("zlamp.vs", "zlamp.fs", "LampShader");
     /* process lamp object */
 
-    wLamp.setDefaultColor(ZYellowBright);
-    wLamp.setDefaultAlpha(1.0f);
-    wLamp.setupGL(&lampShader,
-                   ZObject::SetupVertices,
+    wLamp->setDefaultColor(ZYellowBright);
+    wLamp->setDefaultAlpha(1.0f);
+    wLamp->setupGL(&lampShader,
+                   ZObject::setupVertices,
                    GL_TRIANGLES);
 
     lampShader.setVec3("DefaultColor",ZYellowBright);
 
-    wLamp.setupGLShape(&lampShader);
+    wLamp->setupGLShape(&lampShader);
 
 
  //   ZShader sphereShader("zsphere.vs", "zsphere.fs","SphereShader");
@@ -198,8 +198,6 @@ int main()
 //    ZShader textureShader("zlighting.vs", "ztexture_initial.fs","TextureShader");
 
     ZShader colorShader("zlighting.vs", "zcolor_lighting.fs","ColorShader");
-
-    ZShader normvisuShader("znormvisu.vs", "znormvisu.fs","NormVisuShader");
 
     ZShader materialShader("zlighting.vs", "zmaterial_lighting.fs","MaterialShader");
 
@@ -221,7 +219,8 @@ int main()
 
     ZTexture wTexMoon("moon1024.bmp");
     ZTexture wTexEarth("earth2048.bmp");
-//#ifdef __COMMENT__
+
+#ifdef __COMMENT__
 
 
 
@@ -250,23 +249,24 @@ int main()
 
 
     wBox1.print();
-//#endif // __COMMENT__
-#ifdef __COMMENT_
-    wCandy.setMaterial(ZChrome);
-//    wCandy.setDefaultColor(ZBlueColor);
-//    wCandy.setDefaultAlpha(0.5f);
+#endif // __COMMENT__
+//#ifdef __COMMENT_
+//    wCandy.setMaterial(ZChrome);
+    wCandy.setDefaultColor(ZBlueColor);
+    wCandy.setDefaultAlpha(0.5f);
 
-
-    wCandy.setupGL(&__CANDY_SHADER__,
-                 ZObject::SetupVertices+ZObject::setupNormals+ZObject::setupTextures,
+ /*   wCandy.setupGL(&__COLOR_SHADER__,
+                 ZObject::setupAll,
                  &wTexTissueBluePale);
+*/
+    wCandy.setupGL(&__COLOR_SHADER__,
+                    ZObject::setupAll);
 
-#endif //__COMMENT_
+    wCandy.setupGLNormalVisu(&lampShader);
+    wCandy.setupGLShape(&lampShader);
 
 //    wBox.setTexture("wood.png");
-    __COLOR_SHADER__.use();
-    __COLOR_SHADER__.setInt("TextureSampler",0);
-    __COLOR_SHADER__.setBool ("BlinnPhong",true);
+
 
 
 //    __SPHERE_SHADER__.use();
@@ -274,8 +274,8 @@ int main()
 //    __TEXTURE_SHADER__.setBool ("BlinnPhong",true);
 
 //    wBox.print();
-
-//#ifdef __COMMENT__
+//#endif //__COMMENT_
+#ifdef __COMMENT__
 /* process arc front left */
     wArcFL.setDefaultPosition(ZModelOrigin);
     wArcFL.setDefaultColor(ZBlueColor);
@@ -351,7 +351,7 @@ int main()
 
  //   wArcStripsLeft.print();
 
-//#endif // __COMMENT__
+#endif // __COMMENT__
 
 #ifdef __COMMENT__
 /* process circles */
@@ -366,13 +366,13 @@ int main()
                    GL_TRIANGLES);
 #endif//__COMMENT__
 /* Pipe GL set-up */
-    wPipe.setDefaultPosition(Vertice_type(0.5f,0.5f,0.5f));
-    wPipe.setDefaultColor(ZGreyColor);
-    wPipe.setDefaultAlpha(0.5f);
-    wPipe.setComputeNormals(true);
-    wPipe.setComputeTexCoords(true);
-    wPipe.setupGL(&__COLOR_SHADER__,
-                   ZObject::SetupVertices+ZObject::setupNormals+ZObject::setupTextures,
+    wPipe->setDefaultPosition(Vertice_type(0.5f,0.5f,0.5f));
+    wPipe->setDefaultColor(ZGreyColor);
+    wPipe->setDefaultAlpha(0.5f);
+    wPipe->setComputeNormals(true);
+    wPipe->setComputeTexCoords(true);
+    wPipe->setupGL(&__COLOR_SHADER__,
+                   ZObject::setupVertices+ZObject::setupNormals+ZObject::setupTextures,
                    GL_TRIANGLES,
                   &wTexMetal);
 
@@ -387,7 +387,7 @@ int main()
     wSphere.setComputeTexCoords(false);
 
     wSphere.setupGL(&__COLOR_SHADER__,
-                   ZObject::SetupVertices+ZObject::setupNormals+ZObject::setupTextures,
+                   ZObject::setupVertices+ZObject::setupNormals+ZObject::setupTextures,
                    GL_TRIANGLES,
                     &wTexEarth);
 
@@ -447,11 +447,11 @@ int main()
         lampShader.setMat4("mModel", lampModel);
         lampShader.setVec3("DefaultColor", ZYellowBright);
 
-        wLamp.drawGL(&lampShader,GL_TRIANGLES);
+        wLamp->drawGL(&lampShader,GL_TRIANGLES);
 
         lampShader.setVec3("DefaultColor", ZGreySilver);
 
-        wLamp.drawGLShape(&lampShader);
+        wLamp->drawGLShape(&lampShader);
 
 
 //#endif //__COMMENT__
@@ -478,67 +478,55 @@ Per object matrix:
         // pass projection matrix to shaders (note that in this case it could change every frame)
         glm::mat4 mProjection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
-
         glm::mat4 mNormal = camera.GetViewMatrix()*camera.getModel();
-
-
         mNormal = glm::transpose(glm::inverse(mNormal));
 
-        __COLOR_SHADER__.setMat4("mNormal", mNormal);
 
-        __COLOR_SHADER__.setVec3("viewPosition", camera.CameraPosition);
-/* light properties  */
-
-        __COLOR_SHADER__.setVec3("light.Position",camera.LightPosition);
 /* light color parameters */
         __COLOR_SHADER__.setLight(ZLight(ZYellowAmbient,ZYellowDiffuse,ZYellowSpecular));
 
-/* Object color properties */
-        __COLOR_SHADER__.setVec3("DefaultColor", ZBlueColor);
-        __COLOR_SHADER__.setFloat("DefaultAlpha", 0.5f);
 
 
-//#ifdef __COMMENT__
+#ifdef __COMMENT__
         wBox.setUseTexture(true);
         wBox.setUseDefaultColor(false);
         wBox.setUseDefaultAlpha(false);
 
 //        wBox.setupShaderMaterial(&__COLOR_SHADER__);
-//#endif // __COMMENT__
-#ifdef __COMMENT__
-        wCandy.setUseTexture(true);
-        wCandy.setUseDefaultColor(false);
-        wCandy.setUseDefaultAlpha(false);
-
-        wCandy.setupShaderMaterial();
-
 #endif // __COMMENT__
+//#ifdef __COMMENT__
+        wCandy.setUseTexture(true);
+//        wCandy.setUseDefaultColor(false);
+//        wCandy.setUseDefaultAlpha(false);
+
+//        wCandy.setupShaderMaterial();
+
+//#endif // __COMMENT__
 
 // calculate the model matrix for each object and pass it to shader before drawing
 //        glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
 //        model = glm::translate(model, objectLocation);
 //        if (camera.RotationAngle > 0.0f) /* if any rotation requested */
 //                model = glm::rotate(model, (float)camera.RotationAngle, camera.RotationAxis);
-#ifdef __COMMENT__
-//__COMMENT__
+//#ifdef __COMMENT__
+
         glm::mat4 mModel = glm::translate(camera.getModel(), wCandy.DefaultPosition);
-        __CANDY_SHADER__.setMat4("mModel", mModel);
 
 //        wBox.drawGL(GL_TRIANGLES);
 
-        wCandy.drawGL();
-        glfwSwapBuffers(window);
 
-        camera.cancelRedraw();
-
-        glfwPollEvents();
-        continue;
-#endif // __COMMENT__
+//#endif // __COMMENT__
 //        wBox.setShader(&__COLOR_SHADER__);
         __COLOR_SHADER__.use();
+
+        __COLOR_SHADER__.setInt("TextureSampler",0);
+        __COLOR_SHADER__.setBool ("BlinnPhong",true);
+
         __COLOR_SHADER__.setMat4("mProjection", mProjection);
         __COLOR_SHADER__.setMat4("mNormal", mNormal);
         __COLOR_SHADER__.setMat4("mView", mView);
+
+        __COLOR_SHADER__.setMat4("mModel", mModel);
 
         __COLOR_SHADER__.setVec3("light.Position",camera.LightPosition);
 
@@ -547,6 +535,31 @@ Per object matrix:
         __COLOR_SHADER__.setVec3("DefaultColor", ZBlueColor);
         __COLOR_SHADER__.setFloat("DefaultAlpha", 0.5f);
 
+        wCandy.drawGL(&__COLOR_SHADER__);
+
+        lampShader.use();
+        lampShader.setMat4("mModel", mModel);
+        lampShader.setMat4("mProjection", mProjection);
+        lampShader.setMat4("mNormal", mNormal);
+        lampShader.setMat4("mView", mView);
+        lampShader.setVec3("DefaultColor", ZGreySilver);
+        wCandy.drawGLShape(&lampShader);
+
+        if (camera.useNormalVectors)
+            {
+            lampShader.setVec3("DefaultColor",ZYellowSpecular);
+            wCandy.drawGLNormalVisu(&lampShader);
+            }
+
+
+        glfwSwapBuffers(window);
+
+        camera.cancelRedraw();
+
+        glfwPollEvents();
+        continue;
+
+#ifdef __COMMENT__
 
         glm::mat4 mModel = glm::mat4(1.0f);
 //        mModel =        glm::translate(camera.getModel(), wBox.DefaultPosition);
@@ -569,9 +582,9 @@ Per object matrix:
         }
 
 
+#endif //__COMMENT__
 
-
-//#ifdef __COMMENT__
+#ifdef __COMMENT__
  //        mModel = glm::translate(camera.getModel(), wArcFL.DefaultPosition);
 //        __COLOR_SHADER__.setMat4("mModel", mModel);
 //        lampShader.setMat4("mModel", mModel);
@@ -626,11 +639,11 @@ Per object matrix:
             }
         lampShader.setVec3("DefaultColor", ZGreySilver);
         wBox1.drawGLShape(&lampShader);
-
+#endif //__COMMENT__
 
 
         __PIPE_SHADER__.use();
-        mModel = glm::translate(camera.getModel(), wPipe.DefaultPosition);
+        mModel = glm::translate(camera.getModel(), wPipe->DefaultPosition);
         __PIPE_SHADER__.setMat4("mModel", mModel);
 
         __PIPE_SHADER__.setMat4("mProjection", mProjection);
@@ -641,13 +654,13 @@ Per object matrix:
 
         __PIPE_SHADER__.setVec3("viewPosition", camera.CameraPosition);
 
-        wPipe.setUseTexture(false);
-        wPipe.setUseDefaultColor(true);
-        wPipe.setUseDefaultAlpha(true);
-        wPipe.setDefaultColor(ZGreyColor);
-        wPipe.setDefaultAlpha(0.5f);
+        wPipe->setUseTexture(false);
+        wPipe->setUseDefaultColor(true);
+        wPipe->setUseDefaultAlpha(true);
+        wPipe->setDefaultColor(ZGreyColor);
+        wPipe->setDefaultAlpha(0.5f);
 
-        wPipe.drawGL(&__COLOR_SHADER__,GL_TRIANGLES);
+        wPipe->drawGL(&__COLOR_SHADER__,GL_TRIANGLES);
 
 /* sphere */
 
@@ -709,6 +722,9 @@ Per object matrix:
     glDeleteBuffers(1, &lampVBO);
     glDeleteBuffers(1, &lampEBO);
 */
+
+    delete wLamp;
+    delete wPipe;
 
     GLResources->cleanAll(); /* clean all objects' OpenGL contexts before quitting */
 
