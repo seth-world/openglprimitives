@@ -38,19 +38,27 @@ public:
 */
     ZMetaObject& operator << (ZObject* pIn) {add(pIn); return *this;}
 
-    void setDefaultColor(Color_type pColor)
+    void setDefaultColorAll(const Color_type pColor)
     {
         for (long wi=0;wi < count();wi++)
         {
             Tab[wi]->setDefaultColor(pColor);
         }
     }
-    void setDefaultAlpha(float pAlpha)
+    void setDefaultColor(const long pIdx,const Color_type pColor)
+    {
+            Tab[pIdx]->setDefaultColor(pColor);
+    }
+    void setDefaultAlphaAll(float pAlpha)
     {
         for (long wi=0;wi < count();wi++)
         {
             Tab[wi]->setDefaultAlpha(pAlpha);
         }
+    }
+    void setDefaultAlpha(const long pIdx,const float pAlpha)
+    {
+            Tab[pIdx]->setDefaultAlpha(pAlpha);
     }
     void setDrawFigureAll(GLenum pMode)
     {
@@ -59,9 +67,9 @@ public:
             Tab[wi]->setDrawFigure(pMode);
         }
     }
-    void setDrawFigure(long pObjIdx,GLenum pMode)
+    void setDrawFigure(long pIdx,GLenum pMode)
     {
-            Tab[pObjIdx]->setDrawFigure(pMode);
+            Tab[pIdx]->setDrawFigure(pMode);
     }
 
     void setTexture(ZTexture* pTexture)
@@ -74,7 +82,7 @@ public:
 
     ZTexture* getTexture()  {return Tab[0]->GLDescriptor->Texture;} /* share already set texture to other objects */
 
-    void setUseTexture(bool pOnOff)
+    void setUseTextureAll(bool pOnOff)
     {
         for (long wi=0;wi < count();wi++)
         {
@@ -82,15 +90,23 @@ public:
         }
 
     }
+    void setUseTexture(const long pIdx,bool pOnOff)
+    {
+            Tab[pIdx]->setUseTexture(pOnOff);
+    }
 
- /*   void setMaterial(ZMaterial* pTexture)
+    void setMaterialAll(const ZMaterial& pMaterial)
     {
         for (long wi=0;wi < count();wi++)
         {
-            Tab[wi]->setMaterial(pTexture);
+            Tab[wi]->setMaterial(pMaterial);
         }
     }
- */
+    void setMaterial(const long pIdx,const ZMaterial& pMaterial)
+    {
+            Tab[pIdx]->setMaterial(pMaterial);
+    }
+
     void setComputeNormals(bool pOnOff)
     {
         for (long wi=0;wi < count();wi++)
@@ -107,9 +123,16 @@ public:
         }
     }
 
-    void setShader(const long pObjIdx,ZShader*pShader)
+    void setShader(const long pIdx,ZShader*pShader)
     {
-        Tab[pObjIdx]->setShader(pShader);
+        Tab[pIdx]->setShader(pShader);
+    }
+    void setShaderAll(ZShader*pShader)
+    {
+        for (long wi=0;wi < count();wi++)
+        {
+            Tab[wi]->setShader(pShader);
+        }
     }
 
 /* DrawFigure  (GLenum equal to GL_TRIANGLES or GL_LINES ...) must be set Object per Object */
@@ -137,6 +160,7 @@ public:
 
     }
 
+    /* ZCandy : get hidden by overloading method */
     void setupGLShape(ZShader* pShader)
     {
         for (long wi=0;wi < count();wi++)
@@ -145,7 +169,6 @@ public:
         }
 
     }
-
 
     /* uses the specific per object shader
      * shader must be defined object per object using setShader() routine
@@ -202,7 +225,6 @@ public:
                 Tab[wi]->DefaultPosition += DefaultPosition;
                 */
     }
-
 
     const char*     Name=nullptr;
     Vertice_type    DefaultPosition=ZModelOrigin;

@@ -29,8 +29,8 @@ const Color_type ZYellowAmbient(0.025f, 0.025f, 0.0f);
 const Color_type ZYellowDiffuse(0.25f, 0.25f, 0.01f);
 const Color_type ZYellowSpecular(0.6f,0.6f,0.2f);
 
-const Color_type ZYellowBright(0.8f,0.8f,0.2f);
-const Color_type ZGreySilver(1.0/204.0 ,1.0/204.0 ,1.0/204.0 );
+const Color_type ZYellowBright(252.0f/255.0f,252.0f/255.0f,0.2f/255.0f);
+const Color_type ZGreySilver(222.0f/255.0f ,222.0f/255.0f ,222.0f/255.0f );
 const Color_type cst_object_color_default=ZBlueColor;
 
 const Vertice_type ZModelOrigin=Vertice_type(0.0,0.0,0.0);

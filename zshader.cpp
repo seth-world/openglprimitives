@@ -76,11 +76,9 @@ ZShader::ZShader(const char* pVertexPath, const char* pFragmentPath, const char*
     glDeleteShader(vertex);
     glDeleteShader(fragment);
 
-    printf("Shaders Name <%s> sucessfully loaded with id <%u>\n Paths <%s> <%s>.\n",
+    printf("Shaders Name <%s> sucessfully loaded with id <%u>.\n",
            Name,
-           ID,
-           pVertexPath,
-           pFragmentPath);
+           ID);
 }// ZShader CTOR
 
 ZShader::ZShader(const char* pVertexPath, const char* pFragmentPath, const char* pGeometryPath ,const char* pName)

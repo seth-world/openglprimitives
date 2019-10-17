@@ -54,10 +54,14 @@ void ZCandy::setupGLShape(ZShader* pShader)
 void ZCandy::drawGLShape(ZShader* pShader)
 {
     pShader->use();
+    glBindBuffer(GL_ARRAY_BUFFER, FrontShapeDesc->VBO);
     glBindVertexArray(FrontShapeDesc->VAO);
     /* draw front shape up until BackStart */
-    glDrawArrays(GL_LINE_STRIP, 0 , BackStart);
+    glDrawArrays(GL_LINE_LOOP, 0 , BackStart);
     /* draw back shape from BackStart till end */
     glBindVertexArray(FrontShapeDesc->VAO);
-    glDrawArrays(GL_LINE_STRIP, (GLsizei)BackStart, FrontShapeDesc->Count-BackStart);
+    glDrawArrays(GL_LINE_LOOP, (GLsizei)BackStart, (FrontShapeDesc->Count-BackStart)-1);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    pShader->release();
 }

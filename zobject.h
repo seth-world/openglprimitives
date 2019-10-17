@@ -246,7 +246,9 @@ public:
     bool havetoComputeTexCoords() {return ComputeTexCoords;}
 
     void generateNormVisu();
+    void setMaterial(const ZMaterial& pMaterial) {Material=pMaterial;}
 
+    ZMaterial                   Material=ZChrome ;
 
     ZGLObjDescriptor*            GLDescriptor=nullptr;
     ZGLObjDescriptor*            GLNormVisuDesc=nullptr;

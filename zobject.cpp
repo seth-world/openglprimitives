@@ -337,9 +337,6 @@ ZObject::setupGL(ZShader* pShader,
             delete GLDescriptor;
     GLDescriptor=new ZGLObjDescriptor;
 
-//    Shader=pShader;
-//    setDefaultAlpha(pAlpha);
-//    setDefaultColor(pColor);
     setDrawFigure(pMode);
 
     if (pTexture!=nullptr)
@@ -361,32 +358,12 @@ ZObject::drawGL(ZShader* pShader,unsigned int pDrawFigure)
         abort();
         }
     pShader->use();
-/*
-    pShader->setVec3("InColor",DefaultColor);
-    pShader->setFloat("InAlpha",DefaultAlpha);
-*/
-    if (GLDescriptor->hasTexture())
-        {
-        GLDescriptor->Texture->bind();
-        }
-#ifdef __COMMENT__
-    if (GLDescriptor->hasTexture())
-        {
-        GLDescriptor->Texture->bind();
 
-        /* Texture exists : set the choices from GLDescriptor preset options */
-//        wUseTexture=true;
-        Shader->setBool("useInColor",GLDescriptor->UseDefaultColor);
-        Shader->setBool("useInAlpha",GLDescriptor->UseDefaultAlpha);
-        Shader->setBool("useTexture",GLDescriptor->UseTexture);
+    if (GLDescriptor->hasTexture())
+        {
+        GLDescriptor->Texture->bind();
         }
-    else
-    {
-        Shader->setBool("useInColor",true);
-        Shader->setBool("useInAlpha",true);
-        Shader->setBool("useTexture",false);
-    }
-#endif // __COMMENT__
+    glBindBuffer(GL_ARRAY_BUFFER, GLDescriptor->VBO);
 
     if (hasIndices())
     {
@@ -488,13 +465,13 @@ ZObject::drawGLShape(ZShader* pShader)
     if (pShader==nullptr)
         {
         fprintf (stderr,"ZObject::drawGL-F-MissShader   Shader definition is missing for ZObject <%s>\n",Name);
-        abort();
+        exit (EXIT_FAILURE);
         }
     pShader->use();
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLShapeDesc->EBO);
     glBindVertexArray(GLShapeDesc->VAO);
 
-    glDrawElements(GL_LINE_STRIP, ShapeIndices.count(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_LINE_LOOP, ShapeIndices.count(), GL_UNSIGNED_INT, 0);
 
     return;
 } // drawGLNormalVisu
@@ -699,7 +676,10 @@ ZObject::computeNormals()
         }
         if (wNormIdx>=VNormalDir.size())
         {
-        fprintf (stderr," Normal directions are not homogeneous per triangles for object\n");
+        fprintf (stderr,
+                 " computeNormal-E-IVNORM Normal directions are not homogeneous per triangles for object <%s>\n"
+                 " May be normals have to be forced   (setComputeNormals(false))\n",
+                 Name);
         exit (EXIT_FAILURE);
         }
        switch (VNormalDir[wNormIdx])

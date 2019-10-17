@@ -27,7 +27,7 @@
 
 #define __CANDY_SHADER__  materialShader
 #define __COLOR_SHADER__    colorShader
-#define __SPHERE_SHADER__   materialShader
+#define __SPHERE_SHADER__   colorShader
 //#define __SPHERE_SHADER__   textureShader
 #define __PIPE_SHADER__     colorShader
 
@@ -108,43 +108,8 @@ int main()
     const float wDepth=0.2f;
 
 
-#ifdef __COMMENT__
-//    zbs::ZArray<Vertice_type> wMids=boxIndexSetup(&wBox,ZBlueColor,wHigh,wWidth,wDepth);
-    ZBoxComponents wBoxComponents;
-//    ZObject wBox =openboxSetup(wHigh,wWidth,wDepth,wBoxComponents,"Openbox");
-
-    ZObject wBox =openboxSetup(wHigh,wWidth,wDepth,wBoxComponents,"Openbox");
-    wBox.setDefaultPosition(ZModelOrigin);
-
-    ZBoxComponents wBox1Components;
-    ZObject wBox1 =boxSetup(wHigh,wWidth,wDepth,wBox1Components,"Box1");
-    wBox1.setDefaultPosition(Vertice_type(0.8,0.8,0.0));
-    wBox1Components.generateShape(wBox);
-
-
-    float wRadius= wHigh/2.0f;
-
-//    ZObject wArcFL = generate_Arc(wMids[0],wRadius,10,ZObject::DirLeft,ZObject::Front,"ArcFL");  /* generate arc reverse (left) */
-//    ZObject wArcBL = generate_Arc(wMids[1],wRadius,10,ZObject::DirLeft,ZObject::Back,"ArcBL");/* generate arc reverse (left) */
-
-//    ZObject wArcFR = generate_Arc(wMids[2],wRadius,10,ZObject::DirRight,ZObject::Front,"ArcFR");/* generate front arc forward (right) */
-//    ZObject wArcBR = generate_Arc(wMids[3],wRadius,10,ZObject::DirRight,ZObject::Back,"ArcBR");/* generate bottom arc forward (right) */
-
-    ZObject wArcFL = generate_Arc(wBoxComponents.FLMid,wRadius,10,ZObject::DirLeft,ZObject::Front,"ArcFL");  /* generate arc reverse (left) */
-    ZObject wArcBL = generate_Arc(wBoxComponents.BLMid,wRadius,10,ZObject::DirLeft,ZObject::Back,"ArcBL");/* generate arc reverse (left) */
-    ZObject wArcFR = generate_Arc(wBoxComponents.FRMid,wRadius,10,ZObject::DirRight,ZObject::Front,"ArcFR");/* generate front arc forward (right) */
-    ZObject wArcBR = generate_Arc(wBoxComponents.BRMid,wRadius,10,ZObject::DirRight,ZObject::Back,"ArcBR");/* generate bottom arc forward (right) */
-
-//    ZObject wArcStripsLeft = generate_ArcStripsLeft(wArcFL,wArcBL);
-
-    ZObject wArcStripsLeft = generate_ArcStripsLeft(wArcFL,wArcBL,"ArcStripLeft");
-    ZObject wArcStripsRight = generate_ArcStripsRight(wArcFR,wArcBR,"ArcStripRight");
-#endif //__COMMENT__
-//#ifdef __COMMENT__
     ZCandy wCandy = generateCandy(wHigh,wWidth,wDepth,"Candy");
 
-//    wCandy.printLineShape();
-//#endif //__COMMENT__
     Vertice_type wC1=Vertice_type(0.8f,0.9f,0.0f);
 
     Vertice_type wC2=Vertice_type(0.8f,0.4f,0.0f);
@@ -220,40 +185,9 @@ int main()
     ZTexture wTexMoon("moon1024.bmp");
     ZTexture wTexEarth("earth2048.bmp");
 
-#ifdef __COMMENT__
-
-
-
-//    wBox.setDefaultPosition(ZModelOrigin);
-    wBox.setDefaultColor(ZBlueColor);
-//    wBox.setMaterial(ZChrome);
-    wBox.setDefaultAlpha(0.5f);
-    wBox.setComputeNormals(true);
-    wBox.setComputeTexCoords(true);
-
-    wBox.setupGL(&__COLOR_SHADER__,
-                 ZObject::SetupVertices+ZObject::setupNormals+ZObject::setupTextures,
-//                 ZObject::SetupVertices,
-                 GL_TRIANGLES,
-                 &wTexTissueBluePale);
-    wBox.setupGLNormalVisu(&lampShader);
-
-    wBox1.setupGL(&__COLOR_SHADER__,
-                 ZObject::SetupVertices+ZObject::setupNormals+ZObject::setupTextures,
-//                 ZObject::SetupVertices,
-                 GL_TRIANGLES,
-                 &wTexTissueBluePale);
-
-    wBox1.setupGLNormalVisu(&lampShader);
-    wBox1.setupGLShape(&lampShader);
-
-
-    wBox1.print();
-#endif // __COMMENT__
-//#ifdef __COMMENT_
-//    wCandy.setMaterial(ZChrome);
-    wCandy.setDefaultColor(ZBlueColor);
-    wCandy.setDefaultAlpha(0.5f);
+    wCandy.setMaterialAll(ZChrome);
+    wCandy.setDefaultColorAll(ZBlueColor);
+    wCandy.setDefaultAlphaAll(0.5f);
 
  /*   wCandy.setupGL(&__COLOR_SHADER__,
                  ZObject::setupAll,
@@ -273,98 +207,7 @@ int main()
 //    __SPHERE_SHADER__.setInt("TextureSampler",0);
 //    __TEXTURE_SHADER__.setBool ("BlinnPhong",true);
 
-//    wBox.print();
-//#endif //__COMMENT_
-#ifdef __COMMENT__
-/* process arc front left */
-    wArcFL.setDefaultPosition(ZModelOrigin);
-    wArcFL.setDefaultColor(ZBlueColor);
-    wArcFL.setDefaultAlpha(0.5f);
-    wArcFL.setComputeNormals(true);
-    wArcFL.setComputeTexCoords(true);
-    wArcFL.setupGL(&__COLOR_SHADER__,
-                   ZObject::SetupVertices+ZObject::setupNormals+ZObject::setupTextures,
-                   GL_TRIANGLE_FAN,
-                   wBox.getTexture());
- //           (apos,anormal,&__TEXTURE_SHADER__,ZBlueColor,Alpha,GL_TRIANGLE_FAN);
 
-    wArcFL.setupGLNormalVisu(&__COLOR_SHADER__);
-
-    wArcFL.setupGLNormalVisu(&lampShader);
-
-/* process arc front right */
-    wArcFR.setDefaultPosition(ZModelOrigin);
-    wArcFR.setDefaultColor(ZBlueColor);
-    wArcFR.setDefaultAlpha(0.5f);
-    wArcFR.setComputeNormals(true);
-    wArcFR.setComputeTexCoords(true);
-    wArcFR.setupGL(&__COLOR_SHADER__,
-                   ZObject::SetupVertices+ZObject::setupNormals+ZObject::setupTextures,
-                   GL_TRIANGLE_FAN,
-                   wBox.getTexture());
-    wArcFR.setupGLNormalVisu(&lampShader);
-
-/* process arc bottom left */
-    wArcBL.setDefaultPosition(ZModelOrigin);
-    wArcBL.setDefaultColor(ZBlueColor);
-    wArcBL.setDefaultAlpha(0.5f);
-    wArcBL.setComputeNormals(true);
-    wArcBL.setComputeTexCoords(true);
-    wArcBL.setupGL(&__COLOR_SHADER__,
-                   ZObject::SetupVertices+ZObject::setupNormals,
-                   GL_TRIANGLE_FAN);
-    wArcBL.setupGLNormalVisu(&lampShader);
-
-/* process arc bottom right */
-    wArcBR.setDefaultPosition(ZModelOrigin);
-    wArcBR.setDefaultColor(ZBlueColor);
-    wArcBR.setDefaultAlpha(0.5f);
-    wArcBR.setComputeNormals(true);
-    wArcBR.setComputeTexCoords(true);
-    wArcBR.setupGL(&__COLOR_SHADER__,
-                   ZObject::SetupVertices+ZObject::setupNormals,
-                   GL_TRIANGLE_FAN);
-    wArcBR.setupGLNormalVisu(&lampShader);
-
-/* process arc strips right */
-    wArcStripsRight.setDefaultPosition(ZModelOrigin);
-    wArcStripsRight.setDefaultColor(ZBlueColor);
-    wArcStripsRight.setDefaultAlpha(0.5f);
-    wArcStripsRight.setComputeNormals(true);
-    wArcStripsRight.setComputeTexCoords(true);
-    wArcStripsRight.setupGL(&lampShader,
-                   ZObject::SetupVertices+ZObject::setupNormals,
-                   GL_TRIANGLES);
-    wArcStripsRight.setupGLNormalVisu(&lampShader);
-/* process arc strips leftt */
-    wArcStripsLeft.setDefaultPosition(ZModelOrigin);
-    wArcStripsLeft.setDefaultColor(ZBlueColor);
-    wArcStripsLeft.setDefaultAlpha(0.5f);
-    wArcStripsLeft.setComputeNormals(true);
-    wArcStripsLeft.setComputeTexCoords(true);
-    wArcStripsLeft.setupGL(&__COLOR_SHADER__,
-                   ZObject::SetupVertices+ZObject::setupNormals,
-                   GL_TRIANGLES);
-    wArcStripsLeft.setupGLNormalVisu(&lampShader);
-
-    wArcStripsLeft.print();
-
- //   wArcStripsLeft.print();
-
-#endif // __COMMENT__
-
-#ifdef __COMMENT__
-/* process circles */
-    wCircle1.setupGL(apos,anormal);
-    wCircle2.setupGL(apos,anormal);
-
-    wCircle3.setDefaultColor(ZGreyColor);
-    wCircle3.setDefaultAlpha(0.5f);
-//    wCircle3.setupGL(apos,anormal,&__TEXTURE_SHADER__,ZGreyColor,Alpha,GL_TRIANGLE_FAN);
-    wCircle3.setupGL(&sphereShader,
-                   ZObject::SetupVertices+ZObject::setupNormals,
-                   GL_TRIANGLES);
-#endif//__COMMENT__
 /* Pipe GL set-up */
     wPipe->setDefaultPosition(Vertice_type(0.5f,0.5f,0.5f));
     wPipe->setDefaultColor(ZGreyColor);
@@ -376,17 +219,14 @@ int main()
                    GL_TRIANGLES,
                   &wTexMetal);
 
-
-
-
     wSphere.setDefaultPosition(Vertice_type(-0.8f,0.8f,0.0f));
     wSphere.setDefaultColor(ZBlueColor);
     wSphere.setDefaultAlpha(0.5f);
 //    wSphere.setMaterial(ZBronze);
-    wSphere.setComputeNormals(false);
-    wSphere.setComputeTexCoords(false);
+    wSphere.setComputeNormals(false); /* normals are given by creation algo */
+    wSphere.setComputeTexCoords(false);/* texture coords are given by creation algo */
 
-    wSphere.setupGL(&__COLOR_SHADER__,
+    wSphere.setupGL(&__SPHERE_SHADER__,
                    ZObject::setupVertices+ZObject::setupNormals+ZObject::setupTextures,
                    GL_TRIANGLES,
                     &wTexEarth);
@@ -495,9 +335,9 @@ Per object matrix:
 //        wBox.setupShaderMaterial(&__COLOR_SHADER__);
 #endif // __COMMENT__
 //#ifdef __COMMENT__
-        wCandy.setUseTexture(true);
-//        wCandy.setUseDefaultColor(false);
-//        wCandy.setUseDefaultAlpha(false);
+        wCandy.setUseTextureAll(true);
+//        wCandy.setUseDefaultColorAll(false);
+//        wCandy.setUseDefaultAlphaAll(false);
 
 //        wCandy.setupShaderMaterial();
 
@@ -540,9 +380,9 @@ Per object matrix:
         lampShader.use();
         lampShader.setMat4("mModel", mModel);
         lampShader.setMat4("mProjection", mProjection);
-        lampShader.setMat4("mNormal", mNormal);
+//        lampShader.setMat4("mNormal", mNormal);
         lampShader.setMat4("mView", mView);
-        lampShader.setVec3("DefaultColor", ZGreySilver);
+        lampShader.setVec3("DefaultColor", ZYellowSpecular);
         wCandy.drawGLShape(&lampShader);
 
         if (camera.useNormalVectors)
@@ -550,96 +390,14 @@ Per object matrix:
             lampShader.setVec3("DefaultColor",ZYellowSpecular);
             wCandy.drawGLNormalVisu(&lampShader);
             }
-
-
+/*
         glfwSwapBuffers(window);
 
         camera.cancelRedraw();
 
         glfwPollEvents();
         continue;
-
-#ifdef __COMMENT__
-
-        glm::mat4 mModel = glm::mat4(1.0f);
-//        mModel =        glm::translate(camera.getModel(), wBox.DefaultPosition);
-        mModel=camera.getModel();
-        __COLOR_SHADER__.setMat4("mModel", mModel);
-        wBox.drawGL(&__COLOR_SHADER__,GL_TRIANGLES);
-
-    // add time component to geometry shader in the form of a uniform
-//    normvisuShader.setFloat("time",glfwGetTime());
-    if (camera.useNormalVectors)
-        {
-        lampShader.use();
-        lampShader.setMat4("mModel", mModel);
-        lampShader.setMat4("mProjection", mProjection);
-        lampShader.setMat4("mNormal", mNormal);
-        lampShader.setMat4("mView", mView);
-
-        lampShader.setVec3("DefaultColor",ZYellowSpecular);
-        wBox.drawGLNormalVisu(&lampShader);
-        }
-
-
-#endif //__COMMENT__
-
-#ifdef __COMMENT__
- //        mModel = glm::translate(camera.getModel(), wArcFL.DefaultPosition);
-//        __COLOR_SHADER__.setMat4("mModel", mModel);
-//        lampShader.setMat4("mModel", mModel);
-        wArcFL.drawGL(&__COLOR_SHADER__,GL_TRIANGLE_FAN);
-        if (camera.useNormalVectors)
-            wArcFL.drawGLNormalVisu(&lampShader);
-
-//        mModel = glm::translate(camera.getModel(), wArcFR.DefaultPosition);
-//        __COLOR_SHADER__.setMat4("mModel", mModel);
-        wArcFR.drawGL(&__COLOR_SHADER__,GL_TRIANGLE_FAN);
-        if (camera.useNormalVectors)
-            wArcFR.drawGLNormalVisu(&lampShader);
-//        mModel = glm::translate(camera.getModel(), wArcBR.DefaultPosition);
-//        __COLOR_SHADER__.setMat4("mModel", mModel);
-        wArcBR.drawGL(&__COLOR_SHADER__,GL_TRIANGLE_FAN);
-        if (camera.useNormalVectors)
-            wArcBR.drawGLNormalVisu(&lampShader);
-//        mModel = glm::translate(camera.getModel(), wArcBL.DefaultPosition);
-//        __COLOR_SHADER__.setMat4("mModel", mModel);
-//        wArcBL.drawGL(&__COLOR_SHADER__,GL_TRIANGLE_FAN);
-        if (camera.useNormalVectors)
-            wArcBL.drawGLNormalVisu(&lampShader);
-
-//        mModel = glm::translate(camera.getModel(), wArcStripsRight.DefaultPosition);
-//        __COLOR_SHADER__.setMat4("mModel", mModel);
-        wArcStripsRight.drawGL(&__COLOR_SHADER__,GL_TRIANGLES);
-        if (camera.useNormalVectors)
-            wArcStripsRight.drawGLNormalVisu(&lampShader);
-
-//        mModel = glm::translate(camera.getModel(), wArcStripsLeft.DefaultPosition);
-//        __COLOR_SHADER__.setMat4("mModel", mModel);
-
-        wArcStripsLeft.drawGL(&__COLOR_SHADER__,GL_TRIANGLES);
-        if (camera.useNormalVectors)
-            wArcStripsLeft.drawGLNormalVisu(&lampShader);
-
-//        wCircle1.drawGL(&__COLOR_SHADER__,GL_TRIANGLE_FAN);
-//        wCircle2.drawGL(&__COLOR_SHADER__,GL_TRIANGLE_FAN);
-//        wCircle3.drawGL(&__COLOR_SHADER__,GL_TRIANGLE_FAN);
-
-        __COLOR_SHADER__.use();
-
-         mModel = glm::translate(camera.getModel(), wBox1.DefaultPosition);
-        __COLOR_SHADER__.setMat4("mModel", mModel);
-        wBox1.drawGL(&__COLOR_SHADER__);
-
-        lampShader.use();
-        lampShader.setMat4("mModel", mModel);
-        if (camera.useNormalVectors)
-            {
-            wBox1.drawGLNormalVisu(&lampShader);
-            }
-        lampShader.setVec3("DefaultColor", ZGreySilver);
-        wBox1.drawGLShape(&lampShader);
-#endif //__COMMENT__
+*/
 
 
         __PIPE_SHADER__.use();
@@ -665,9 +423,9 @@ Per object matrix:
 /* sphere */
 
         __SPHERE_SHADER__.use();
-        mModel = glm::translate(camera.getModel(), wSphere.DefaultPosition);
+        glm::mat4 mSphereModel = glm::translate(camera.getModel(), wSphere.DefaultPosition);
 
-        __SPHERE_SHADER__.setMat4("mModel", mModel);
+        __SPHERE_SHADER__.setMat4("mModel", mSphereModel);
 
         __SPHERE_SHADER__.setMat4("mProjection", mProjection);
         __SPHERE_SHADER__.setMat4("mNormal", mNormal);
@@ -680,8 +438,8 @@ Per object matrix:
         __SPHERE_SHADER__.setVec3("DefaultColor", ZBlueColor);
         __SPHERE_SHADER__.setFloat("DefaultAlpha", 0.5f);
 
- //       __SPHERE_SHADER__.setMaterial(ZBronze);
-        __SPHERE_SHADER__.setFloat("material.DiffuseAlpha",1.0f);
+        __SPHERE_SHADER__.setMaterial(ZChrome);
+//        __SPHERE_SHADER__.setFloat("material.DiffuseAlpha",1.0f);
 
 
 //        wSphere.setupShaderMaterial(&__COLOR_SHADER__);
@@ -689,14 +447,7 @@ Per object matrix:
         wSphere.setUseTexture(false);
         wSphere.setUseDefaultColor(false);
         wSphere.setUseDefaultAlpha(false);
-        wSphere.drawGL(&__COLOR_SHADER__,GL_TRIANGLES);
-/*
-        glBindVertexArray(ArcFLVAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-        glBindBuffer(GL_ARRAY_BUFFER, ArcFLVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, ArcFLNormVBO);
-        glDrawArrays(GL_TRIANGLE_FAN, 0 , wArcFLFlat.size());
-*/
-//#endif // __COMMENT__
+        wSphere.drawGL(&__SPHERE_SHADER__,GL_TRIANGLES);
 
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -739,12 +490,56 @@ float accelerator=0.001f;
 // ---------------------------------------------------------------------------------------------------------
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
+
+struct ZAntiRebounce{
+    int         LastKey;
+    double      LastTime;
+} AntiRebounce = {0 , 0.0};
+const double          AntiRebounceDelay=1.0; /* 0.5 second delay for anti-rebounce */
+bool testRebounce (int pKey)
+{
+    double wTime=glfwGetTime();
+    if (pKey== AntiRebounce.LastKey)
+        {
+        if ((wTime-AntiRebounce.LastTime) < AntiRebounceDelay)
+                {
+//                AntiRebounce.LastTime=wTime;
+                return false;
+                }
+        }
+    AntiRebounce.LastKey=pKey;
+    AntiRebounce.LastTime=wTime;
+    return true;
+}
+
+bool testKeyNoRebound(GLFWwindow *window,int pKey)
+{
+   if (glfwGetKey(window, pKey) == GLFW_RELEASE)
+    {
+//       return true;
+       return testRebounce(pKey);
+    }
+   return false;
+}
+void resetKeyEntered()
+{
+    AntiRebounce.LastKey=0;
+    AntiRebounce.LastTime=0;
+}
+inline bool testKeyEntered(GLFWwindow *window,int pKey)
+{
+   return (glfwGetKey(window, pKey) == GLFW_PRESS);
+}
+
+#define _TESTKEY_(__Key__) testKeyEntered(window,__Key__)
+
+#define _TESTKEY_NOREBOUND_(__Key__) testKeyEntered(window,__Key__)
+
 void processInput(GLFWwindow *window)
 {
 
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-
 
 
     if (glfwGetKey(window, GLFW_MOD_SHIFT)==GLFW_PRESS)
@@ -758,56 +553,56 @@ void processInput(GLFWwindow *window)
 
     /* KeyPad actions */
 
-    if (glfwGetKey(window, GLFW_KEY_KP_7)==GLFW_PRESS)
+    if (_TESTKEY_(GLFW_KEY_KP_7))
                 {
                 camera.rotateModel(-0.05,glm::vec3(1.0f,1.0f,0.0f));
                 camera.scheduleRedraw();
                 return;
                 }
-    if (glfwGetKey(window, GLFW_KEY_KP_9)==GLFW_PRESS)
+    if (_TESTKEY_(GLFW_KEY_KP_9))
                 {
                 camera.rotateModel(0.05,glm::vec3(1.0f,1.0f,0.0f));
                 camera.scheduleRedraw();
                 return;
                 }
-    if (glfwGetKey(window, GLFW_KEY_KP_1)==GLFW_PRESS)
+    if (_TESTKEY_(GLFW_KEY_KP_1))
                 {
                 camera.rotateModel(-0.05,glm::vec3(1.0f,-1.0f,0.0f));
                 camera.scheduleRedraw();
                 return;
                 }
-    if (glfwGetKey(window, GLFW_KEY_KP_3)==GLFW_PRESS)
+    if (_TESTKEY_(GLFW_KEY_KP_3))
                 {
                 camera.rotateModel(0.05,glm::vec3(1.0f,-1.0f,0.0f));
                 camera.scheduleRedraw();
                 return;
                 }
-    if (glfwGetKey(window, GLFW_KEY_KP_8)==GLFW_PRESS)
+    if (_TESTKEY_(GLFW_KEY_KP_8))
                 {
                 camera.rotateModel(0.05,glm::vec3(1.0f,0.0f,0.0f));
                 camera.scheduleRedraw();
                 return;
                 }
-    if (glfwGetKey(window, GLFW_KEY_KP_2)==GLFW_PRESS)
+    if (_TESTKEY_( GLFW_KEY_KP_2))
                 {
                 camera.rotateModel(-0.05,glm::vec3(1.0f,0.0f,0.0f));
                 camera.scheduleRedraw();
                 return;
                 }
-    if (glfwGetKey(window, GLFW_KEY_KP_6)==GLFW_PRESS)
+    if (_TESTKEY_(GLFW_KEY_KP_6))
                 {
                 camera.rotateModel(+0.05,glm::vec3(0.0f,1.0f,0.0f));
                 camera.scheduleRedraw();
                 return;
                 }
-    if (glfwGetKey(window, GLFW_KEY_KP_4)==GLFW_PRESS)
+    if (_TESTKEY_( GLFW_KEY_KP_4))
                 {
                 camera.rotateModel(-0.05,glm::vec3(0.0f,1.0f,0.0f));
                 camera.scheduleRedraw();
                 return;
                 }
-     if ((glfwGetKey(window, GLFW_KEY_KP_5)==GLFW_PRESS)||
-        (glfwGetKey(window, GLFW_KEY_TAB)==GLFW_PRESS))
+     if ((_TESTKEY_(GLFW_KEY_KP_5))||
+        (_TESTKEY_(GLFW_KEY_TAB)))
         {
             camera.RotationAngle=0.0f;
             camera.RotationAxis=glm::vec3(0.0f);
@@ -819,32 +614,32 @@ void processInput(GLFWwindow *window)
 /* Keyboard actions */
 
     /* camera movements */
-    if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
+    if (_TESTKEY_( GLFW_KEY_X) )
         {
         camera.ProcessKeyboard(FORWARD, accelerator);
         return;
         }
-    if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
+    if (_TESTKEY_( GLFW_KEY_C) )
         {
         camera.ProcessKeyboard(BACKWARD, accelerator);
         return;
         }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+    if (_TESTKEY_( GLFW_KEY_A) )
         {
         camera.ProcessKeyboard(LEFT, accelerator);
         return;
         }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+    if (_TESTKEY_( GLFW_KEY_D) )
         {
         camera.ProcessKeyboard(RIGHT, accelerator);
         return;
         }
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    if (_TESTKEY_(GLFW_KEY_W) )
         {
         camera.ProcessKeyboard(UP, accelerator);
         return;
         }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+    if (_TESTKEY_(GLFW_KEY_S) )
         {
         camera.ProcessKeyboard(DOWN, accelerator);
         return;
@@ -852,32 +647,32 @@ void processInput(GLFWwindow *window)
 
     /* light movement */
 
-    if (glfwGetKey(window, GLFW_KEY_SCROLL_LOCK) == GLFW_PRESS)
+    if (_TESTKEY_(GLFW_KEY_SCROLL_LOCK) )
         {
         camera.ProcessKeyboard(LIGHTHIGH, accelerator);
         return;
         }
-    if (glfwGetKey(window, GLFW_KEY_END) == GLFW_PRESS)
+    if (_TESTKEY_( GLFW_KEY_END) )
         {
         camera.ProcessKeyboard(LIGHTLOW, accelerator);
         return;
         }
-    if (glfwGetKey(window, GLFW_KEY_INSERT) == GLFW_PRESS)
+    if (_TESTKEY_( GLFW_KEY_INSERT) )
         {
         camera.ProcessKeyboard(LIGHTLEFT, accelerator);
         return;
         }
-    if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS)
+    if (_TESTKEY_( GLFW_KEY_PAGE_UP) )
         {
         camera.ProcessKeyboard(LIGHTRIGHT, accelerator);
         return;
         }
-    if (glfwGetKey(window, GLFW_KEY_PAUSE) == GLFW_PRESS)
+    if (_TESTKEY_( GLFW_KEY_PAUSE) )
         {
         camera.ProcessKeyboard(LIGHTBACKWARD, accelerator);
         return;
         }
-    if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN )== GLFW_PRESS)
+    if (_TESTKEY_( GLFW_KEY_PAGE_DOWN ))
         {
         camera.ProcessKeyboard(LIGHTFORWARD, accelerator);
         return;
@@ -886,7 +681,7 @@ void processInput(GLFWwindow *window)
     /* toggle keys */
 
 
-    if (glfwGetKey(window, GLFW_KEY_M )== GLFW_PRESS)   /* M for toggle mouse tracking on / off  */
+    if (_TESTKEY_NOREBOUND_(GLFW_KEY_M ))   /* M for toggle mouse tracking on / off  */
         {
         camera.ProcessKeyboard(TOGGLE_MOUSE, accelerator);
         if (CurrentCursor==HandCursor)
@@ -897,36 +692,32 @@ void processInput(GLFWwindow *window)
         glfwSetCursor(window,CurrentCursor) ;
         return;
         }
-    if (glfwGetKey(window, GLFW_KEY_SCROLL_LOCK )== GLFW_PRESS)   /* L for toggle polygon lines */
+
+    if (_TESTKEY_NOREBOUND_(GLFW_KEY_L ))   /* L for toggle polygon lines */
         {
         camera.ProcessKeyboard(TOGGLE_POLYGONLINES, accelerator);
         return;
         }
-    if (glfwGetKey(window, GLFW_KEY_L )== GLFW_PRESS)   /* L for toggle polygon lines */
-        {
-        camera.ProcessKeyboard(TOGGLE_POLYGONLINES, accelerator);
-        return;
-        }
-    if (glfwGetKey(window, GLFW_KEY_N )== GLFW_PRESS)   /* N for toggle normal vectors */
+    if (_TESTKEY_NOREBOUND_(GLFW_KEY_N ))   /* N for toggle normal vectors */
         {
         camera.ProcessKeyboard(TOGGLE_NORMALVECTORS, accelerator);
         return;
         }
 
-    if (glfwGetKey(window, GLFW_KEY_G )== GLFW_PRESS)   /* set or unset (if set)  gamma correction */
+    if (_TESTKEY_NOREBOUND_(GLFW_KEY_G ))   /* G for toggle gamma correction */
         {
         camera.ProcessKeyboard(TOGGLE_GAMMA, accelerator);
         return;
         }
 
 /* special keys */
-    if (glfwGetKey(window, GLFW_KEY_HOME )== GLFW_PRESS)   /* Home resets camera position */
+    if (_TESTKEY_( GLFW_KEY_HOME ))   /* Home resets camera position */
         {
         camera.ProcessKeyboard(RESET_POSITION, accelerator);
         return;
         }
 
-
+//    resetKeyEntered();
 
     camera.resetKeyAccelerator();
     return;

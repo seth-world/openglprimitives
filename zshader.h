@@ -20,6 +20,7 @@ public:
     const char* Name=nullptr;
     int setErrorCount=0;
     const int MaxErrorDisplay=15;
+    ZShader()=delete; /* no default constructor for this object */
     // constructor generates the shader on the fly
     // ------------------------------------------------------------------------
     ZShader(const char* pVertexPath, const char* pFragmentPath, const char* pName );
@@ -31,6 +32,8 @@ public:
         else
             ZShader(vertexPath.c_str(),fragmentPath.c_str(),geometryPath.c_str(),pName);
     }
+
+    ~ZShader() {}
 
     void setMaterial(const ZMaterial &pMaterial);
     void setLight(const ZLight& pLight);
@@ -55,7 +58,7 @@ public:
     {
         if (setErrorCount > MaxErrorDisplay)
                                         return;
-        setErrorCount++;
+
         if (setErrorCount == MaxErrorDisplay)
             fprintf (stderr,
                      "Shader-E-Uniform  Uniform name <%s> not found within shader id <%u> <%s>.\n Maximum error display count reached subsequent messages ignored for this shader....\n",
@@ -68,6 +71,7 @@ public:
                      pName,
                      ID,
                      Name);
+        setErrorCount++;
     }//displayErrorUniform
 
     // utility uniform functions

@@ -1307,7 +1307,7 @@ ZBoxComponents pComponents;
         wCandy.BackShape.push_back(wArcBR->vertices[wi-1].point);
         }
 
-    wCandy.BackShape.push_back(pComponents.BTR);
+   wCandy.BackShape.push_back(pComponents.BTR);
     /* OK */
 
 /* end indices */

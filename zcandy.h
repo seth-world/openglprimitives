@@ -33,9 +33,8 @@ public:
     ZCandy& operator=(ZCandy&& pIn) {_cloneFrom(pIn); return *this;}
     ZCandy& operator=(ZCandy pIn) {_cloneFrom(pIn); return *this;}
 
+    /* Shape has a special processing with ZCandy */
     void setupGLShape(ZShader* pShader);
-
-
     void drawGLShape(ZShader* pShader);
 
     GLuint                      BackStart=0;
@@ -45,20 +44,5 @@ public:
     zbs::ZArray<Vertice_type>   BackShape;
 
 };
-namespace zbs
-{
-template <class _Tp>
-ZArray<_Tp>& operator += (ZArray<_Tp>& pFirst,ZArray<_Tp>& pSecond )
-{
-    for (long wi=0;wi<pSecond.size();wi++)
-            pFirst << pSecond[wi];
-}
 
-template <class _Tp>
-ZArray<_Tp>& operator += (ZArray<_Tp>& pFirst,ZArray<_Tp>&& pSecond )
-{
-    for (long wi=0;wi<pSecond.size();wi++)
-            pFirst << pSecond[wi];
-}
-}
 #endif // ZCANDY_H

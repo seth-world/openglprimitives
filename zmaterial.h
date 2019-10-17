@@ -3,6 +3,14 @@
 #include <glm/glm.hpp>
 
 class ZMaterial{
+private:
+    inline void _cloneFrom(const ZMaterial& pIn)
+    {
+        Ambient=pIn.Ambient;
+        Diffuse=pIn.Diffuse;
+        Specular=pIn.Specular;
+        Shininess=pIn.Shininess;
+    }
 public:
     ZMaterial(const glm::vec3 pAmbient, const glm::vec3 pDiffuse,const glm::vec3 pSpecular,float pShininess)
     {
@@ -11,20 +19,23 @@ public:
         Specular=pSpecular;
         Shininess=pShininess;
     }
-    ZMaterial(ZMaterial &pIn)
+    ZMaterial(const ZMaterial &pIn)
     {
-        Ambient=pIn.Ambient;
-        Diffuse=pIn.Diffuse;
-        Specular=pIn.Specular;
-        Shininess=pIn.Shininess;
+        _cloneFrom(pIn);
     }
-    ZMaterial(ZMaterial &&pIn)
+    ZMaterial(const ZMaterial &&pIn)
     {
-        Ambient=pIn.Ambient;
-        Diffuse=pIn.Diffuse;
-        Specular=pIn.Specular;
-        Shininess=pIn.Shininess;
+         _cloneFrom(pIn);
     }
+
+    ZMaterial& operator=(const ZMaterial& pIn)
+    {
+         _cloneFrom(pIn);
+         return *this;
+    }
+
+
+
     glm::vec3 Ambient;
     glm::vec3 Diffuse;
     glm::vec3 Specular;
