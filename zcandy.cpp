@@ -9,7 +9,7 @@ void ZCandy::setupGLShape(ZShader* pShader)
 
 /* concatenate Front and back Shapes : Not in first approach */
 
-    BackStart= FrontShape.count(); /* first indice of concatenated BackShape */
+    BackStart=(GLint) FrontShape.count(); /* first indice of BackShape after being concatenated  */
 
     FrontShape += BackShape;                    /* concatenate front and back to one unique set of vertices */
     FrontShapeDesc->Count = FrontShape.count(); /* total number of elements to draw */
@@ -59,8 +59,8 @@ void ZCandy::drawGLShape(ZShader* pShader)
     /* draw front shape up until BackStart */
     glDrawArrays(GL_LINE_LOOP, 0 , BackStart);
     /* draw back shape from BackStart till end */
-    glBindVertexArray(FrontShapeDesc->VAO);
-    glDrawArrays(GL_LINE_LOOP, (GLsizei)BackStart, (FrontShapeDesc->Count-BackStart)-1);
+//    glBindVertexArray(FrontShapeDesc->VAO);
+    glDrawArrays(GL_LINE_LOOP, (GLsizei)BackStart, (FrontShapeDesc->Count-BackStart));
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     pShader->release();

@@ -48,11 +48,11 @@ void main()
     vec3 wColor = material.Ambient;
 
 
-        if (useDefaultColor)
-            wColor *= DefaultColor;
+    if (useDefaultColor)
+        wColor *= DefaultColor;
 
 // ambient
-    vec3 wAmbient = 0.05 * wColor; // old
+    vec3 wAmbient = 0.7 * wColor; // old
 //    vec3 wAmbient =  wColor * light.Color; // new1
 //    vec3 wAmbient = light.Ambient * wColor; // new
 

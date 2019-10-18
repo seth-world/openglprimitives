@@ -7,7 +7,7 @@
 
 #define Vertice_type glm::vec3
 #define Color_type glm::vec3
-#define TextCoords_type glm::vec2
+#define TexCoords_type glm::vec2
 
 
 #define   __POSITION_ATR_NAME__ "aPosition"

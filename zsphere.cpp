@@ -61,7 +61,7 @@ void ZSphere::set(float radius, int sectors, int stacks, bool smooth)
     if(smooth)
         buildVerticesSmooth();
     else
-        buildVerticesFlat();
+        buildVertices();
 
     ZObject::setComputeNormals(false);
     ZObject::setComputeTexCoords(false);
@@ -92,7 +92,7 @@ void ZSphere::setSmooth(bool smooth)
     if(smooth)
         buildVerticesSmooth();
     else
-        buildVerticesFlat();
+        buildVertices();
 }
 
 
@@ -141,7 +141,7 @@ void ZSphere::GLsetup()
     glNormalPointer(GL_FLOAT, interleavedStride, &interleavedVertices[0].normal);
     glTexCoordPointer(2, GL_FLOAT, interleavedStride, &interleavedVertices[0].textcoords);
 
-    glDrawElements(GL_TRIANGLES, (unsigned int)indices.size(), GL_UNSIGNED_INT, indices.data());
+    glDrawElements(GL_TRIANGLES, (unsigned int)Indices.size(), GL_UNSIGNED_INT, Indices.data());
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
@@ -158,7 +158,7 @@ void ZSphere::draw() const
     glNormalPointer(GL_FLOAT, interleavedStride, &interleavedVertices[0].normal);
     glTexCoordPointer(2, GL_FLOAT, interleavedStride, &interleavedVertices[0].textcoords);
 
-    glDrawElements(GL_TRIANGLES, (unsigned int)indices.size(), GL_UNSIGNED_INT, indices.data());
+    glDrawElements(GL_TRIANGLES, (unsigned int)Indices.size(), GL_UNSIGNED_INT, Indices.data());
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
@@ -214,8 +214,16 @@ void ZSphere::draw() const
 ///////////////////////////////////////////////////////////////////////////////
 void ZSphere::updateRadius()
 {
-    float scale = sqrtf(radius * radius / ( vertices_only[0].x * vertices_only[0].x +
-                                            vertices_only[0].y * vertices_only[10].y +
+    float scale = sqrtf(radius * radius / ( vertices[0].point.x * vertices[0].point.x +
+                                            vertices[0].point.y * vertices[0].point.y +
+                                            vertices[0].point.z * vertices[0].point.z));
+
+    for(long i = 0; i < vertices.count(); i ++)
+                {
+                vertices[i].point *= scale;
+                }
+  /*  float scale = sqrtf(radius * radius / ( vertices_only[0].x * vertices_only[0].x +
+                                            vertices_only[0].y * vertices_only[0].y +
                                             vertices_only[0].z * vertices_only[0].z));
 
     std::size_t i, j;
@@ -231,8 +239,9 @@ void ZSphere::updateRadius()
         interleavedVertices[j].point   *= scale;
 //        interleavedVertices[j+1] *= scale;
 //        interleavedVertices[j+2] *= scale;
-    }
 
+    }
+*/
     ZObject::setComputeNormals(false);
     ZObject::setComputeTexCoords(false);
 }
@@ -247,14 +256,15 @@ void ZSphere::clearArrays()
  /*   std::vector<float>().swap(vertices);
     std::vector<float>().swap(normals);
     std::vector<float>().swap(texCoords);
-    std::vector<unsigned int>().swap(indices);
+    std::vector<unsigned int>().swap(Indices);
     std::vector<unsigned int>().swap(lineIndices);
     */
-    vertices_only.clear();
-    normals.clear();
-    texCoords.clear();
+//    vertices_only.clear();
+//    normals.clear();
+//    texCoords.clear();
     lineIndices.clear();
-    indices.clear();
+    Indices.clear();
+    vertices.clear();
 }
 
 
@@ -297,22 +307,25 @@ void ZSphere::buildVerticesSmooth()
             // vertex position
             x = xy * cosf(sectorAngle);             // r * cos(u) * cos(v)
             y = xy * sinf(sectorAngle);             // r * cos(u) * sin(v)
-            addVertex(x, y, z);
+//            addVertex(x, y, z);
 
             // normalized vertex normal
             nx = x * lengthInv;
             ny = y * lengthInv;
             nz = z * lengthInv;
-            addNormal(nx, ny, nz);
+//            addNormal(nx, ny, nz);
 
             // vertex tex coord between [0, 1]
             s = (float)j / sectorCount;
             t = (float)i / stackCount;
-            addTexCoord(s, t);
+//            addTexCoord(s, t);
+
+            vertices << ZVertice(x,y,z,nx,ny,nz,s,t);
+
         }// for j
     }//for i
 
-    // indices
+    // Indices
     //  k1--k1+1
     //  |  / |
     //  | /  |
@@ -334,7 +347,7 @@ void ZSphere::buildVerticesSmooth()
             if(i != (stackCount-1))
             {
                 addIndices(k1+1, k2, k2+1); // k1+1---k2---k2+1
-            }this->computeNormals();
+            }
 
 
             // vertical lines for all stacks
@@ -349,7 +362,7 @@ void ZSphere::buildVerticesSmooth()
     }
 
     // generate interleaved vertex array as well
-    buildInterleavedVertices();
+    //buildInterleavedVertices();
 }
 
 
@@ -358,7 +371,7 @@ void ZSphere::buildVerticesSmooth()
 // generate vertices with flat shading
 // each triangle is independent (no shared vertices)
 ///////////////////////////////////////////////////////////////////////////////
-void ZSphere::buildVerticesFlat()
+void ZSphere::buildVertices()
 {
     const float PI = 3.1415926f;
 
@@ -400,7 +413,9 @@ void ZSphere::buildVerticesFlat()
     clearArrays();
 
     Vertex v1, v2, v3, v4;                          // 4 vertex positions and tex coords
-    zbs::ZArray<float> n;                           // 1 face normal
+//    zbs::ZArray<float> n;                           // 1 face normal
+    Vertice_type        wNormal;                    // 1 face normal
+    ZVertice            wPoint;                     // storage unit : vertices - normals - texture coords
 
     int i, j, k, vi1, vi2;
     int index = 0;                                  // index for vertex
@@ -422,10 +437,21 @@ void ZSphere::buildVerticesFlat()
 
             // if 1st stack and last stack, store only 1 triangle per sector
             // otherwise, store 2 triangles (quad) per sector
-            if(i == 0) // a triangle for first stack ==========================
+            if(i == 0) // a triangle for first stack v1 v2 v4 ==========================
             {
                 // put a triangle
-                addVertex(v1.x, v1.y, v1.z);
+                wNormal = computeFaceNormal(v1.x,v1.y,v1.z, v2.x,v2.y,v2.z, v4.x,v4.y,v4.z);
+
+                vertices << ZVertice(v1.x,v1.y,v1.z,wNormal.x,wNormal.y,wNormal.z,v1.s,v1.t);
+                vertices << ZVertice(v2.x,v2.y,v2.z,wNormal.x,wNormal.y,wNormal.z,v2.s,v2.t);
+                vertices << ZVertice(v4.x,v4.y,v4.z,wNormal.x,wNormal.y,wNormal.z,v4.s,v4.t);
+                // put Indices of 1 triangle
+                Indices.push_back(index);
+                Indices.push_back(index+1);
+                Indices.push_back(index+2);
+
+
+   /*             addVertex(v1.x, v1.y, v1.z);
                 addVertex(v2.x, v2.y, v2.z);
                 addVertex(v4.x, v4.y, v4.z);
 
@@ -435,23 +461,44 @@ void ZSphere::buildVerticesFlat()
                 addTexCoord(v4.s, v4.t);
 
                 // put normal
-                n = computeFaceNormal(v1.x,v1.y,v1.z, v2.x,v2.y,v2.z, v4.x,v4.y,v4.z);
+                wNormal = computeFaceNormal(v1.x,v1.y,v1.z, v2.x,v2.y,v2.z, v4.x,v4.y,v4.z);
+                normals.push_back(wNormal);
+                normals.push_back(wNormal);
+                normals.push_back(wNormal);
+
+                // put Indices of 1 triangle
+                Indices.push_back(index);
+                Indices.push_back(index+1);
+                Indices.push_back(index+2);
+
                 for(k = 0; k < 3; ++k)  // same normals for 3 vertices
                 {
                     addNormal(n[0], n[1], n[2]);
                 }
 
-                // put indices of 1 triangle
+                // put Indices of 1 triangle
                 addIndices(index, index+1, index+2);
-
-                // indices for line (first stack requires only vertical line)
+*/
+                // Indices for line (first stack requires only vertical line)
                 lineIndices.push_back(index);
                 lineIndices.push_back(index+1);
 
                 index += 3;     // for next
             }
-            else if(i == (stackCount-1)) // a triangle for last stack =========
+            else if(i == (stackCount-1)) // a triangle for last stack  v1 v2 v3 =========
             {
+                wNormal = computeFaceNormal(v1.x,v1.y,v1.z, v2.x,v2.y,v2.z, v3.x,v3.y,v3.z);
+
+                vertices << ZVertice(v1.x,v1.y,v1.z,wNormal.x,wNormal.y,wNormal.z,v1.s,v1.t);
+                vertices << ZVertice(v2.x,v2.y,v2.z,wNormal.x,wNormal.y,wNormal.z,v2.s,v2.t);
+                vertices << ZVertice(v3.x,v3.y,v3.z,wNormal.x,wNormal.y,wNormal.z,v3.s,v3.t);
+
+                // put Indices of 1 triangle
+                Indices.push_back(index);
+                Indices.push_back(index+1);
+                Indices.push_back(index+2);
+
+     /*
                 // put a triangle
                 addVertex(v1.x, v1.y, v1.z);
                 addVertex(v2.x, v2.y, v2.z);
@@ -463,16 +510,28 @@ void ZSphere::buildVerticesFlat()
                 addTexCoord(v3.s, v3.t);
 
                 // put normal
+                wNormal = computeFaceNormal(v1.x,v1.y,v1.z, v2.x,v2.y,v2.z, v3.x,v3.y,v3.z);
+                normals.push_back(wNormal);
+                normals.push_back(wNormal);
+                normals.push_back(wNormal);
+                // put Indices of 1 triangle
+                Indices.push_back(index);
+                Indices.push_back(index+1);
+                Indices.push_back(index+2);
+*/
+/*
+                // put normal
                 n = computeFaceNormal(v1.x,v1.y,v1.z, v2.x,v2.y,v2.z, v3.x,v3.y,v3.z);
                 for(k = 0; k < 3; ++k)  // same normals for 3 vertices
                 {
                     addNormal(n[0], n[1], n[2]);
                 }
 
-                // put indices of 1 triangle
+                // put Indices of 1 triangle
                 addIndices(index, index+1, index+2);
+*/
 
-                // indices for lines (last stack requires both vert/hori lines)
+                // Indices for lines (last stack requires both vert/hori lines)
                 lineIndices.push_back(index);
                 lineIndices.push_back(index+1);
                 lineIndices.push_back(index);
@@ -482,6 +541,24 @@ void ZSphere::buildVerticesFlat()
             }
             else // 2 triangles for others ====================================
             {
+                // put quad vertices: v1-v2-v3-v4
+                wNormal = computeFaceNormal(v1.x,v1.y,v1.z, v2.x,v2.y,v2.z, v3.x,v3.y,v3.z);
+
+                vertices << ZVertice(v1.x,v1.y,v1.z,wNormal.x,wNormal.y,wNormal.z,v1.s,v1.t);
+                vertices << ZVertice(v2.x,v2.y,v2.z,wNormal.x,wNormal.y,wNormal.z,v2.s,v2.t);
+                vertices << ZVertice(v3.x,v3.y,v3.z,wNormal.x,wNormal.y,wNormal.z,v3.s,v3.t);
+                vertices << ZVertice(v4.x,v4.y,v4.z,wNormal.x,wNormal.y,wNormal.z,v4.s,v4.t);
+
+                // put Indices of quad (2 triangles)
+                Indices.push_back(index);
+                Indices.push_back(index+1);
+                Indices.push_back(index+2);
+
+                Indices.push_back(index+2);
+                Indices.push_back(index+1);
+                Indices.push_back(index+3);
+
+ /*
                 // put quad vertices: v1-v2-v3-v4
                 addVertex(v1.x, v1.y, v1.z);
                 addVertex(v2.x, v2.y, v2.z);
@@ -495,17 +572,31 @@ void ZSphere::buildVerticesFlat()
                 addTexCoord(v4.s, v4.t);
 
                 // put normal
+                wNormal = computeFaceNormal(v1.x,v1.y,v1.z, v2.x,v2.y,v2.z, v3.x,v3.y,v3.z);
+                normals.push_back(wNormal);
+                normals.push_back(wNormal);
+                normals.push_back(wNormal);
+                // put Indices of quad (2 triangles)
+                Indices.push_back(index);
+                Indices.push_back(index+1);
+                Indices.push_back(index+2);
+
+                Indices.push_back(index+2);
+                Indices.push_back(index+1);
+                Indices.push_back(index+3);
+
+                // put normal
                 n = computeFaceNormal(v1.x,v1.y,v1.z, v2.x,v2.y,v2.z, v3.x,v3.y,v3.z);
                 for(k = 0; k < 4; ++k)  // same normals for 4 vertices
                 {
                     addNormal(n[0], n[1], n[2]);
                 }
 
-                // put indices of quad (2 triangles)
+                // put Indices of quad (2 triangles)
                 addIndices(index, index+1, index+2);
                 addIndices(index+2, index+1, index+3);
-
-                // indices for lines
+*/
+                // Indices for lines
                 lineIndices.push_back(index);
                 lineIndices.push_back(index+1);
                 lineIndices.push_back(index);
@@ -517,7 +608,7 @@ void ZSphere::buildVerticesFlat()
     }// for i
 
     // generate interleaved vertex array as well
-    buildInterleavedVertices();
+//    buildInterleavedVertices();
 }//buildVerticesFlat
 
 
@@ -534,7 +625,7 @@ void ZSphere::buildInterleavedVertices()
     long count = vertices_only.size();
     for(i = 0; i < count; i ++)
     {
-        Vertice_type wN=normals[i];
+ //       Vertice_type wN=normals[i];
         ZObject::vertices.push_back(ZVertice(vertices_only[i],normals[i],texCoords[i]));
         //interleavedVertices.push_back(ZVertice(vertices[i],normals[i],texCoords[i]));
 
@@ -550,9 +641,9 @@ void ZSphere::buildInterleavedVertices()
         interleavedVertices.push_back(texCoords[j+1]);
         */
     }
-    for(i = 0; i < indices.count(); i ++)
+    for(i = 0; i < Indices.count(); i ++)
     {
-        ZObject::Indices.push_back(indices[i]);
+        ZObject::Indices.push_back(Indices[i]);
     }
 }
 
@@ -588,7 +679,7 @@ void ZSphere::addNormal(float nx, float ny, float nz)
 ///////////////////////////////////////////////////////////////////////////////
 void ZSphere::addTexCoord(float s, float t)
 {
-    texCoords.push_back(TextCoords_type(s, t));
+    texCoords.push_back(TexCoords_type(s, t));
 //    texCoords.push_back(s);
 //    texCoords.push_back(t);
 }
@@ -596,13 +687,13 @@ void ZSphere::addTexCoord(float s, float t)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// add 3 indices to array
+// add 3 Indices to array
 ///////////////////////////////////////////////////////////////////////////////
 void ZSphere::addIndices(unsigned int i1, unsigned int i2, unsigned int i3)
 {
-    indices.push_back(i1);
-    indices.push_back(i2);
-    indices.push_back(i3);
+    Indices.push_back(i1);
+    Indices.push_back(i2);
+    Indices.push_back(i3);
 }
 
 
@@ -611,13 +702,18 @@ void ZSphere::addIndices(unsigned int i1, unsigned int i2, unsigned int i3)
 // return face normal of a triangle v1-v2-v3
 // if a triangle has no surface (normal length = 0), then return a zero vector
 ///////////////////////////////////////////////////////////////////////////////
-zbs::ZArray<float> ZSphere::computeFaceNormal(float x1, float y1, float z1,  // v1
+/*zbs::ZArray<float> ZSphere::computeFaceNormal(float x1, float y1, float z1,  // v1
                                              float x2, float y2, float z2,  // v2
-                                             float x3, float y3, float z3)  // v3
+                                             float x3, float y3, float z3)  // v3*/
+Vertice_type ZSphere::computeFaceNormal(float x1, float y1, float z1,  // v1
+                                        float x2, float y2, float z2,  // v2
+                                        float x3, float y3, float z3)  // v3
 {
     const float EPSILON = 0.000001f;
+    Vertice_type wNormal=Vertice_type(0.0f,0.0f,0.0f); // default return value (0,0,0)
 
-    zbs::ZArray<float> normal(3, 0.0f);     // default return value (0,0,0)
+//    zbs::ZArray<float> normal;
+//    normal.addValues(3, 0.0f);     // default return value (0,0,0)
     float nx, ny, nz;
 
     // find 2 edge vectors: v1-v2, v1-v3
@@ -635,14 +731,20 @@ zbs::ZArray<float> ZSphere::computeFaceNormal(float x1, float y1, float z1,  // 
 
     // normalize only if the length is > 0
     float length = sqrtf(nx * nx + ny * ny + nz * nz);
+
+
     if(length > EPSILON)
     {
         // normalize
         float lengthInv = 1.0f / length;
-        normal[0] = nx * lengthInv;
+        wNormal.x= nx * lengthInv;
+        wNormal.y = ny * lengthInv;
+        wNormal.z = nz * lengthInv;
+ /*       normal[0] = nx * lengthInv;
         normal[1] = ny * lengthInv;
-        normal[2] = nz * lengthInv;
+        normal[2] = nz * lengthInv;*/
     }
 
-    return normal;
+//    return normal;
+    return wNormal;
 }

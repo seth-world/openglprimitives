@@ -37,7 +37,7 @@ public:
     void setupGLShape(ZShader* pShader);
     void drawGLShape(ZShader* pShader);
 
-    GLuint                      BackStart=0;
+    GLint                       BackStart=0;
     ZGLObjDescriptor*           FrontShapeDesc=nullptr;
 //    ZGLObjDescriptor*           BackShapeDesc=nullptr;
     zbs::ZArray<Vertice_type>   FrontShape;

@@ -152,8 +152,8 @@ ZObject::computeTexCoords()
 
     for (long wi=0;wi<vertices.size();wi++)
     {
-        vertices[wi].textcoords.x = (vertices[wi].point.x - xmin) / wXDividor;
-        vertices[wi].textcoords.y = (vertices[wi].point.y - ymin) / wYDividor;
+        vertices[wi].texcoords.x = (vertices[wi].point.x - xmin) / wXDividor;
+        vertices[wi].texcoords.y = (vertices[wi].point.y - ymin) / wYDividor;
     }
     return;
 }//computeTexCoords
@@ -208,11 +208,11 @@ ZObject::_setupGL_ObjectArray(ZShader *pShader,  uint8_t pShaderSetupOpt )
         if (havetoComputeTexCoords())
                     this->computeTexCoords();
         /* debug */
-            zbs::ZArray<TextCoords_type> wTexCoords=toFlatTexCoords();
+            zbs::ZArray<TexCoords_type> wTexCoords=toFlatTexCoords();
             glGenBuffers(1, &GLDescriptor->TexVBO);
             glBindBuffer(GL_ARRAY_BUFFER, GLDescriptor->TexVBO);
             glBufferData(GL_ARRAY_BUFFER, wTexCoords.usedSize(), wTexCoords.data(), GL_STATIC_DRAW);
-            glVertexAttribPointer(GLDescriptor->getTexCoordsAttribute(pShader), 3, GL_FLOAT, GL_FALSE, (GLsizei)sizeof(TextCoords_type), (void*)0);
+            glVertexAttribPointer(GLDescriptor->getTexCoordsAttribute(pShader), 3, GL_FLOAT, GL_FALSE, (GLsizei)sizeof(TexCoords_type), (void*)0);
             glEnableVertexAttribArray(GLDescriptor->TexCoordsAttribArray);
         /* end debug */
 
@@ -539,22 +539,22 @@ ZObject::toFlatNormals()
 }//toFlatNormals
 
 
-zbs::ZArray<TextCoords_type>
+zbs::ZArray<TexCoords_type>
 ZObject::toFlatTexCoords()
 {
-    zbs::ZArray<TextCoords_type> wFlat;
+    zbs::ZArray<TexCoords_type> wFlat;
     if (hasIndices())
     {
         for (size_t wi=0;wi<Indices.size();wi++)
         {
-            wFlat.push_back(vertices[Indices[wi]].textcoords);
+            wFlat.push_back(vertices[Indices[wi]].texcoords);
         }
         return wFlat;
     }
 
     for (size_t wi=0;wi<vertices.size();wi++)
     {
-        wFlat.push_back(vertices[wi].textcoords);
+        wFlat.push_back(vertices[wi].texcoords);
     }
     return wFlat;
 }//toFlatTexCoords
@@ -563,14 +563,14 @@ void
 ZObject::print(int pLimit,FILE* pOutput)
 {
     long wVCount=vertices.size();
-    if (vertices.size()<pLimit)
+    if (vertices.size()>pLimit)
                 wVCount=pLimit;
 
     long wICount=Indices.size();
-    if (Indices.size()<pLimit)
+    if (Indices.size()>pLimit)
                 wICount=pLimit;
     long wNVCount=ZANormVisu.size();
-    if (ZANormVisu.size()<pLimit)
+    if (ZANormVisu.size()>pLimit)
                 wICount=pLimit;
     char wLimitChar[20];
     if (pLimit<0)
@@ -605,8 +605,8 @@ ZObject::print(int pLimit,FILE* pOutput)
                     vertices[wi].normal.x,
                     vertices[wi].normal.y,
                     vertices[wi].normal.z,
-                    vertices[wi].textcoords.x,
-                    vertices[wi].textcoords.y);
+                    vertices[wi].texcoords.x,
+                    vertices[wi].texcoords.y);
             }
 
         fprintf (pOutput,"Indices count <%ld> displayed <%ld> <%s>\n"

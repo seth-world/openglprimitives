@@ -26,26 +26,17 @@ ZVertice::ZVertice(Vertice_type pPoint,Vertice_type pNormal)
     color=Color_type(0.0f,0.0f,0.0f);
     textcoords=TextCoords_type(0.0f,0.0f);
 }*/
-ZVertice::ZVertice(Vertice_type pPoint,Vertice_type pNormal,TextCoords_type pTextCoords)
+ZVertice::ZVertice(Vertice_type pPoint,Vertice_type pNormal,TexCoords_type pTextCoords)
 {
     point=pPoint;
     normal=pNormal;
 //    color=Color_type(0.0f,0.0f,0.0f);
-    textcoords=pTextCoords;
+    texcoords=pTextCoords;
 }
 ZVertice::ZVertice(Vertice_type pPoint)
 {
     point=pPoint;
 //    color=Color_type(0.0f,0.0f,0.0f);
     normal=Vertice_type(0.0f,0.0f,0.0f);
-    textcoords=TextCoords_type(0.0f,0.0f);
-}
-
-void
-ZVertice::add(Vertice_type pPoint,Vertice_type pNormal,TextCoords_type pTextCoords)
-{
-    point=pPoint;
-    normal=pNormal;
-//    color=Color_type(0.0f,0.0f,0.0f);;
-    textcoords=pTextCoords;
+    texcoords=TexCoords_type(0.0f,0.0f);
 }

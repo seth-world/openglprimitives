@@ -27,7 +27,7 @@
 
 #define __CANDY_SHADER__  materialShader
 #define __COLOR_SHADER__    colorShader
-#define __SPHERE_SHADER__   colorShader
+#define __SPHERE_SHADER__   materialShader
 //#define __SPHERE_SHADER__   textureShader
 #define __PIPE_SHADER__     colorShader
 
@@ -108,7 +108,7 @@ int main()
     const float wDepth=0.2f;
 
 
-    ZCandy wCandy = generateCandy(wHigh,wWidth,wDepth,"Candy");
+    ZCandy wCandy = generateCandy(wHigh,wWidth,wDepth,true,"Candy");
 
     Vertice_type wC1=Vertice_type(0.8f,0.9f,0.0f);
 
@@ -120,9 +120,9 @@ int main()
 
     ZObject* wPipe = generateRegularCylinder(ZGreyColor,wC1,wC2,0.05f,50,ZObject::Flat,"Pipe");
 
-    ZSphere wSphere(0.10f,18,9,false, "Sphere");
+    ZSphere wSphere(0.10f,18,9,true, "Sphere");
 
-
+    wSphere.print(20); /* list 20 max element of ZObject */
 
 //=============================================================================
 
@@ -199,15 +199,6 @@ int main()
     wCandy.setupGLNormalVisu(&lampShader);
     wCandy.setupGLShape(&lampShader);
 
-//    wBox.setTexture("wood.png");
-
-
-
-//    __SPHERE_SHADER__.use();
-//    __SPHERE_SHADER__.setInt("TextureSampler",0);
-//    __TEXTURE_SHADER__.setBool ("BlinnPhong",true);
-
-
 /* Pipe GL set-up */
     wPipe->setDefaultPosition(Vertice_type(0.5f,0.5f,0.5f));
     wPipe->setDefaultColor(ZGreyColor);
@@ -219,15 +210,15 @@ int main()
                    GL_TRIANGLES,
                   &wTexMetal);
 
-    wSphere.setDefaultPosition(Vertice_type(-0.8f,0.8f,0.0f));
+    wSphere.setDefaultPosition(Vertice_type(-0.8f,0.5f,0.0f));
     wSphere.setDefaultColor(ZBlueColor);
     wSphere.setDefaultAlpha(0.5f);
-//    wSphere.setMaterial(ZBronze);
+    wSphere.setMaterial(ZEmerald);
     wSphere.setComputeNormals(false); /* normals are given by creation algo */
     wSphere.setComputeTexCoords(false);/* texture coords are given by creation algo */
 
     wSphere.setupGL(&__SPHERE_SHADER__,
-                   ZObject::setupVertices+ZObject::setupNormals+ZObject::setupTextures,
+                   ZObject::setupAll,
                    GL_TRIANGLES,
                     &wTexEarth);
 
@@ -352,8 +343,6 @@ Per object matrix:
 
         glm::mat4 mModel = glm::translate(camera.getModel(), wCandy.DefaultPosition);
 
-//        wBox.drawGL(GL_TRIANGLES);
-
 
 //#endif // __COMMENT__
 //        wBox.setShader(&__COLOR_SHADER__);
@@ -438,7 +427,7 @@ Per object matrix:
         __SPHERE_SHADER__.setVec3("DefaultColor", ZBlueColor);
         __SPHERE_SHADER__.setFloat("DefaultAlpha", 0.5f);
 
-        __SPHERE_SHADER__.setMaterial(ZChrome);
+        __SPHERE_SHADER__.setMaterial(ZGold);
 //        __SPHERE_SHADER__.setFloat("material.DiffuseAlpha",1.0f);
 
 
@@ -514,7 +503,7 @@ bool testRebounce (int pKey)
 
 bool testKeyNoRebound(GLFWwindow *window,int pKey)
 {
-   if (glfwGetKey(window, pKey) == GLFW_RELEASE)
+   if (glfwGetKey(window, pKey) == GLFW_PRESS)
     {
 //       return true;
        return testRebounce(pKey);
@@ -533,7 +522,7 @@ inline bool testKeyEntered(GLFWwindow *window,int pKey)
 
 #define _TESTKEY_(__Key__) testKeyEntered(window,__Key__)
 
-#define _TESTKEY_NOREBOUND_(__Key__) testKeyEntered(window,__Key__)
+#define _TESTKEY_NOREBOUND_(__Key__) testKeyNoRebound(window,__Key__)
 
 void processInput(GLFWwindow *window)
 {

@@ -179,7 +179,7 @@ public:
     zbs::ZArray<Vertice_type> toRawVertices();
     zbs::ZArray<Vertice_type> toRawNormals();
 
-    zbs::ZArray<TextCoords_type> toFlatTexCoords();
+    zbs::ZArray<TexCoords_type> toFlatTexCoords();
 
 //    zbs::ZArray<Color_type> toFlatColors();
 
@@ -260,7 +260,7 @@ public:
 
     size_t verticeOffset = 0;
     size_t normalOffset=offsetof(ZVertice,normal);
-    size_t textureOffset = offsetof(ZVertice,textcoords);
+    size_t textureOffset = offsetof(ZVertice,texcoords);
 
     zbs::ZArray<ZVertice>           vertices;
     zbs::ZArray<const char*>        VName;
