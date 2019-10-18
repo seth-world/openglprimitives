@@ -192,12 +192,16 @@ public:
     ZTexture* setTexture(const char* pTextureName); /* creates a new texture */
     void setTexture(ZTexture* pTexture); /* re-use an existing texture */
 
-    ZTexture* getTexture() {return GLDescriptor->Texture;} /* share already set texture to other objects */
+    ZTexture* getTexture() {return getGLDescriptor()->Texture;} /* share already set texture to other objects */
 
-    void setUseTexture(bool pOnOff) {GLDescriptor->setUseTexture(pOnOff);}
+    void setUseTexture(bool pOnOff)
+        {
+        getGLDescriptor()->setUseTexture(pOnOff);
+        }
+
 
     bool hasTexture() ;
-    bool useTexture() {return GLDescriptor->UseTexture;}
+    bool useTexture() {return getGLDescriptor()->UseTexture;}
 
 
     void _setupGL_ObjectArray(ZShader* pShader,  uint8_t pShaderSetupOpt );
@@ -225,8 +229,8 @@ public:
 
     void setDefaultPosition(Vertice_type pPosition) {DefaultPosition=pPosition;}
 
-    void setUseDefaultColor(bool pOnOff) {GLDescriptor->useDefaultColor(pOnOff);}
-    void setUseDefaultAlpha(bool pOnOff) {GLDescriptor->useDefaultAlpha(pOnOff);}
+    void setUseDefaultColor(bool pOnOff) {getGLDescriptor()->useDefaultColor(pOnOff);}
+    void setUseDefaultAlpha(bool pOnOff) {getGLDescriptor()->useDefaultAlpha(pOnOff);}
 
    void setShader(ZShader* pShader) {Shader=pShader;}
 
@@ -248,6 +252,18 @@ public:
     void generateNormVisu();
     void setMaterial(const ZMaterial& pMaterial) {Material=pMaterial;}
 
+private:
+    inline ZGLObjDescriptor* getGLDescriptor()
+    {
+        if (GLDescriptor!=nullptr)
+                return GLDescriptor;
+        fprintf(stderr,"ZObject-F-GLDESCNULL Object descriptor has not been initialized for object <%s>.\n"
+                "    invoke setupGL() prior using GLDescriptor.\n",Name);
+        abort();
+//        exit (EXIT_FAILURE);
+    }
+
+public:
     ZMaterial                   Material=ZChrome ;
 
     ZGLObjDescriptor*            GLDescriptor=nullptr;

@@ -101,6 +101,7 @@ DIST          = ../shaders/material.fs \
 		../shaders/sphereshader.vs \
 		../shaders/znormvisu.fs \
 		../shaders/znormvisu.vs \
+		../shaders/ztexture.fs \
 		../shaders/ztexture_initial.fs \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/spec_pre.prf \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/common/unix.conf \

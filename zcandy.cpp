@@ -53,7 +53,11 @@ void ZCandy::setupGLShape(ZShader* pShader)
 
 void ZCandy::drawGLShape(ZShader* pShader)
 {
+    float wLineWidth;
+    glGetFloatv(GL_LINE_WIDTH,&wLineWidth); /* get current line width */
+
     pShader->use();
+    glLineWidth(2.0);
     glBindBuffer(GL_ARRAY_BUFFER, FrontShapeDesc->VBO);
     glBindVertexArray(FrontShapeDesc->VAO);
     /* draw front shape up until BackStart */
@@ -61,6 +65,7 @@ void ZCandy::drawGLShape(ZShader* pShader)
     /* draw back shape from BackStart till end */
 //    glBindVertexArray(FrontShapeDesc->VAO);
     glDrawArrays(GL_LINE_LOOP, (GLsizei)BackStart, (FrontShapeDesc->Count-BackStart));
+    glLineWidth(wLineWidth);/* restore line width to its previous value */
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     pShader->release();

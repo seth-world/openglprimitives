@@ -88,4 +88,5 @@ DISTFILES += \
     shaders/sphereshader.vs \
     shaders/znormvisu.fs \
     shaders/znormvisu.vs \
+    shaders/ztexture.fs \
     shaders/ztexture_initial.fs

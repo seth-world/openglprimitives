@@ -462,17 +462,20 @@ ZObject::setupGLShape(ZShader* pShader)
 void
 ZObject::drawGLShape(ZShader* pShader)
 {
+float wLineWidth;
+    glGetFloatv(GL_LINE_WIDTH,&wLineWidth); /* get current line width */
     if (pShader==nullptr)
         {
         fprintf (stderr,"ZObject::drawGL-F-MissShader   Shader definition is missing for ZObject <%s>\n",Name);
         exit (EXIT_FAILURE);
         }
+    glLineWidth(2.0f);
     pShader->use();
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLShapeDesc->EBO);
     glBindVertexArray(GLShapeDesc->VAO);
 
     glDrawElements(GL_LINE_LOOP, ShapeIndices.count(), GL_UNSIGNED_INT, 0);
-
+    glLineWidth(wLineWidth);/* restore line width to its previous value */
     return;
 } // drawGLNormalVisu
 
