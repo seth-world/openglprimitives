@@ -1,4 +1,9 @@
+#ifdef __USE_GLAD__
 #include <glad/glad.h>
+#else
+#include <GL/glew.h>
+#endif
+
 #include </usr/include/GLFW/glfw3.h>
 
 #include <iostream>
@@ -23,9 +28,12 @@
 #include <zsphere.h>
 #include <ztexture.h>
 
-#define __CANDY_SHADER__  textureShader
+#include <ztextrenderer.h>
+#include <zgltext.h>
+
+#define __CANDY_SHADER__    colorShader
 #define __COLOR_SHADER__    colorShader
-#define __SPHERE_SHADER__   textureShader
+#define __SPHERE_SHADER__   colorShader
 //#define __SPHERE_SHADER__   textureShader
 #define __PIPE_SHADER__     colorShader
 
@@ -49,7 +57,38 @@ bool firstMouse = true;
 // timing
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+bool err65539Once=false;
+void errorCallback_Glfw(int pErr,const char* pErrString)
+{
+    if (pErr==65539L)
+    {
+        if (!err65539Once)
+            {
+            fprintf(stderr,"GLFW-ERR Some glfw errors raised with id <%d> <%s> \n"
+                    "          Following errors of same id (<%d>) will be ignored...\n",pErr,pErrString,pErr);
+            err65539Once = true;
+            }
+            return;
+    }
+    fprintf(stderr,"GLFW-ERR glfw error <%d> <%s> \n",pErr,pErrString);
+}
 
+bool GLAbortOnFailure=false;
+
+void GLAPIENTRY
+MessageCallback( GLenum source,
+                 GLenum type,
+                 GLuint id,
+                 GLenum severity,
+                 GLsizei length,
+                 const GLchar* message,
+                 const void* userParam )
+{
+  fprintf( stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+           ( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ),
+            type, severity, message );
+  return;
+}
 
 Vertice_type objectLocation=glm::vec3(0.0f, 0.0f, 0.0f);
 GLFWcursor* DefaultCursor=nullptr;
@@ -63,6 +102,9 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+
+    glfwSetErrorCallback(errorCallback_Glfw);
 
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // uncomment this statement to fix compilation on OS X
@@ -86,10 +128,12 @@ int main()
 
     glfwSetMouseButtonCallback(window, mouse_button_callback);
 
+
+
     HandCursor=glfwCreateStandardCursor(GLFW_HAND_CURSOR);
     DefaultCursor=glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
     CurrentCursor=DefaultCursor;
-
+#if __USE_GLAD__
     // glad: load all OpenGL function pointers
     // ---------------------------------------
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -98,9 +142,38 @@ int main()
         glfwTerminate();
         abort();
     }
+#else
+    glewExperimental = GL_TRUE;
+    GLenum err = glewInit();
+    if (err != GLEW_OK )
+    {
+      /* Problem: glewInit failed, something is seriously wrong. */
+      fprintf(stderr, "Glew-Init Error: %s\n", glewGetErrorString(err));
+      glfwTerminate();
+      abort();
+    }
+    if (!GLEW_VERSION_2_0) {
+        fprintf(stderr, "Glew-Init Error : No support for OpenGL 2.0 found\n");
+        abort();
+    }
+#endif
+#ifdef __USE_GLAD__
     printf("Using OpenGL version %d.%d\n", GLVersion.major, GLVersion.minor);
-//=================================Objects Vertices creation ============================================
+#else
+    printf("Using OpenGL glew version %d.%d OpenGL version %d.%d\n", GLEW_VERSION_MAJOR, GLEW_VERSION_MINOR,GL_MAJOR_VERSION,GL_MINOR_VERSION);
+#endif
 
+
+    GLResources->registerGLWindow(window);
+
+    // During init, enable debug output
+    glEnable              ( GL_DEBUG_OUTPUT );
+
+    GLAbortOnFailure=true;
+    glDebugMessageCallback( (GLDEBUGPROC) MessageCallback, &GLAbortOnFailure );
+
+
+//=================================Objects Vertices creation ============================================
     const float wHigh=0.5f;
     const float wWidth=0.5f;
     const float wDepth=0.2f;
@@ -120,7 +193,7 @@ int main()
 
     ZSphere wSphere(0.10f,18,9,true, "Sphere");
 
-    wSphere.print(20); /* list 20 max element of ZObject */
+//    wSphere.print(20); /* list 20 max element of ZObject */
 
 //=============================================================================
 
@@ -131,6 +204,36 @@ int main()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 //    glEnable( GL_POLYGON_SMOOTH );
 
+
+    // Define the viewport dimensions
+    glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+
+
+    ZTextRenderer wText(GL_TEXTURE0);
+
+    ZGLText wTextArchi(GLResources->getGLWindowSize().x,
+                             GLResources->getGLWindowSize().y,
+                             GL_TEXTURE0);
+    ZGLText wTextFT(GLResources->getGLWindowSize().x,
+                          GLResources->getGLWindowSize().y,
+                          GL_TEXTURE0);
+//    wText.LoadFont("FreeSans.ttf", 12);
+
+    wText.addFont("FreeSans.ttf",12,"AtlasFreeSans12");
+
+    wText.addFont("FreeSans.ttf",48,"AtlasFreeSans48");
+
+    wText.addFont("FreeSans.ttf",24,"AtlasFreeSans24");
+
+    wText.addFont("DroidSansMono.ttf",24,"DroidSansMono24");
+
+    wText.addFont("Architex.ttf",24,"AtlasArchitex24");
+
+    wText.addFont("SCRIPTIN.ttf",48,"AtlasScriptina48");
+
+    wTextArchi.LoadFont("Architex.ttf",48,"Architex48");
+    wTextFT.LoadFont("FreeSans.ttf",48,"FreeSans48");
+
     // build and compile our shader zprogram
     // ------------------------------------
 //    ZShader lightingShader(Resources.getShaderPath("zbasic_lighting.vs").c_str(), Resources.getShaderPath("zbasic_lighting.fs").c_str());
@@ -138,7 +241,6 @@ int main()
     ZObject* wLamp =boxSetup(0.05f,0.05f,0.05f,wLampComponents,"Lamp"); /* same shape as wBox (but scaled down ) */
     wLampComponents.generateShape(*wLamp);
 
-    printf ("Lamp Indices\n");
 //    wLamp->print(20);
 
 
@@ -151,6 +253,7 @@ int main()
                    ZObject::setupVertices,
                    GL_TRIANGLES);
 
+    lampShader.use();
     lampShader.setVec3("DefaultColor",ZYellowBright);
 
     wLamp->setupGLShape(&lampShader);
@@ -160,9 +263,9 @@ int main()
 
     ZShader textureShader("zlighting.vs", "ztexture.fs","TextureShader");
 
-    ZShader colorShader("zlighting.vs", "zcolor_lighting.fs","ColorShader");
+    ZShader colorShader("zlighting.vs", "zcolor.fs","ColorShader");
 
-    ZShader materialShader("zlighting.vs", "zmaterial_lighting.fs","MaterialShader");
+    ZShader materialShader("zlighting.vs", "zmaterial.fs","MaterialShader");
 
     // lamp object
     camera.setLightPosition(glm::vec3(1.0f, 0.2f, 1.0f));
@@ -171,17 +274,17 @@ int main()
 //==============GL Objects setup======================================
 
 /* process box */
-//    unsigned int BoxVBO, BoxVAO, BoxNormVBO;/* Box GL identifiers */
+//    unsigned int BoxVBO, BoxVAO, BoxNormVBO;/* Box GL identifiers */    glBindVertexArray(VAO);
 
-    ZTexture wTexWoodFloor("wood.png");
+    ZTexture wTexWoodFloor("wood.png",GL_TEXTURE1);
 
-    ZTexture wTexTissueGrey("tissuegrey.jpeg");
-    ZTexture wTexTissueBluePale("tissueblue.png");
-    ZTexture wTexTissueBrown("tissuebrownbure.jpeg");
-    ZTexture wTexMetal("metal.png");
+    ZTexture wTexTissueGrey("tissuegrey.jpeg",GL_TEXTURE1);
+    ZTexture wTexTissueBluePale("tissueblue.png",GL_TEXTURE1);
+    ZTexture wTexTissueBrown("tissuebrownbure.jpeg",GL_TEXTURE1);
+    ZTexture wTexMetal("metal.png",GL_TEXTURE1);
 
-    ZTexture wTexMoon("moon1024.bmp");
-    ZTexture wTexEarth("earth2048.bmp");
+    ZTexture wTexMoon("moon1024.bmp",GL_TEXTURE1);
+    ZTexture wTexEarth("earth2048.bmp",GL_TEXTURE1);
 
     wCandy.setupGL(&__CANDY_SHADER__,
                    ZObject::setupAll,
@@ -191,7 +294,7 @@ int main()
     wCandy.setDefaultColorAll(ZBlueColor);
     wCandy.setDefaultAlphaAll(0.5f);
 
-    wCandy.setUseTextureAll(true);
+    wCandy.setUseTextureAll(false);
 
 
     wCandy.setupGLNormalVisu(&lampShader);
@@ -212,7 +315,7 @@ int main()
     wSphere.setDefaultColor(ZBlueColor);
     wSphere.setDefaultAlpha(0.5f);
     wSphere.setMaterial(ZEmerald);
-    wSphere.setComputeNormals(false); /* normals are given by creation algo */
+    wSphere.setComputeNormals(true); /* normals are given by creation algo */
     wSphere.setComputeTexCoords(false);/* texture coords are given by creation algo */
 
     wSphere.setupGL(&__SPHERE_SHADER__,
@@ -251,6 +354,33 @@ int main()
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT);
+
+//        wText.RenderText("This is sample text", 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
+
+        wText.renderTextByName("This is a sample text AtlasScriptina48",-0.8f,0.2f,ZBlueColor,"AtlasScriptina48");
+
+
+        wText.renderTextByName("abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMN AtlasArchitex48",-0.8f,0.8f,ZBlueColor,"AtlasFreeSans48");
+
+
+        wText.renderTextByName("abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMN AtlasFreeSans24",-0.9f,0.0f,ZRedMedium,"AtlasFreeSans24");
+
+
+        wText.renderTextByName("abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMN DroidSansMono24",-0.9f,-0.2f,ZYellowSpecular,"DroidSansMono24");
+
+        wTextArchi.RenderText("New more longer text with s letter rendered.",
+                           3.0f,3.0f,
+                           1.0f,
+                           ZRedMedium);
+
+        wTextFT.RenderText("New text with s letter rendered.",
+                           0.0f,0.0f,
+                           1.0f,
+                           ZBlueColor);
+
+
+        wText.renderTextByName("This is a sample text THIS IS A SAMPLE TEXT 1234567890  FreeSans12",-0.2f,-0.8f,ZWhiteColor,"AtlasFreeSans12");
+
 
         // render lamp object
         lampShader.use();
@@ -323,8 +453,8 @@ Per object matrix:
 
         __CANDY_SHADER__.use();
 
-        __CANDY_SHADER__.setInt("TextureSampler",0);
-        __CANDY_SHADER__.setBool ("BlinnPhong",true);
+        __CANDY_SHADER__.setInt("TextureSampler",wCandy.getTexture()->getTextureEngineNumber());
+        __CANDY_SHADER__.setBool ("BlinnPhong",false);
 
         __CANDY_SHADER__.setMat4("mProjection", mProjection);
         __CANDY_SHADER__.setMat4("mNormal", mNormal);
@@ -337,9 +467,13 @@ Per object matrix:
         __CANDY_SHADER__.setVec3("viewPosition", camera.CameraPosition);
 
         __CANDY_SHADER__.setVec3("DefaultColor", ZBlueColor);
-        __CANDY_SHADER__.setFloat("DefaultAlpha", 0.5f);
+        __CANDY_SHADER__.setFloat("DefaultAlpha", 0.2f);
+        __CANDY_SHADER__.setBool("UseDefaultAlpha", true);
+
+        __CANDY_SHADER__.setMaterial(ZSilver);
+
         wTexWoodFloor.bind();
-        wCandy.drawGL(&__CANDY_SHADER__);
+ //       wCandy.drawGL(&__CANDY_SHADER__);
 
         lampShader.use();
         lampShader.setMat4("mModel", mModel);
@@ -348,6 +482,9 @@ Per object matrix:
         lampShader.setMat4("mView", mView);
         lampShader.setVec3("DefaultColor", ZGreySilver);
 //        wCandy.drawGLShape(&lampShader);
+
+ //       wText.renderText("This is a new sample text",-0.6f,-0.6f,ZBlueColor,0);
+
 
         if (camera.useNormalVectors)
             {
@@ -385,22 +522,22 @@ Per object matrix:
         wPipe->setDefaultColor(ZGreyColor);
         wPipe->setDefaultAlpha(0.5f);
 
-        wPipe->drawGL(&__PIPE_SHADER__,GL_TRIANGLES);
+//        wPipe->drawGL(&__PIPE_SHADER__,GL_TRIANGLES);
 
 /* sphere */
 
         __SPHERE_SHADER__.use();
 
         glm::mat4 mSphereModel=glm::translate(camera.getModel(), wSphere.DefaultPosition);
-        mSphereModel=glm::rotate(mSphereModel,(float)glm::radians(270.0f),glm::vec3(1.0,0.0,0.0));
+ //       mSphereModel=glm::rotate(mSphereModel,(float)glm::radians(270.0f),glm::vec3(1.0,0.0,0.0));
 
-        mSphereModel=glm::rotate(mSphereModel,(float)glfwGetTime(),glm::vec3(0.0,0.0,1.0));
+ //       mSphereModel=glm::rotate(mSphereModel,(float)glfwGetTime(),glm::vec3(0.0,0.0,1.0));
 
         __SPHERE_SHADER__.setMat4("mModel", mSphereModel);
 
         __SPHERE_SHADER__.setMat4("mProjection", mProjection);
 
-        mNormal=glm::rotate(mNormal,(float)glfwGetTime(),glm::vec3(0.0,0.0,1.0));
+ //       mNormal=glm::rotate(mNormal,(float)glfwGetTime(),glm::vec3(0.0,0.0,1.0));
 
 
         __SPHERE_SHADER__.setMat4("mNormal", mNormal);
@@ -415,8 +552,8 @@ Per object matrix:
 
         __SPHERE_SHADER__.setMaterial(ZGold);
 
-        __SPHERE_SHADER__.setInt("TextureSampler",0);
-        __SPHERE_SHADER__.setBool ("BlinnPhong",true);
+        __SPHERE_SHADER__.setInt("TextureSampler",wSphere.getTexture()->getTextureEngineNumber());
+        __SPHERE_SHADER__.setBool ("BlinnPhong",false);
 
 //        __SPHERE_SHADER__.setFloat("material.DiffuseAlpha",1.0f);
 
@@ -427,11 +564,17 @@ Per object matrix:
         wSphere.setUseDefaultColor(false);
         wSphere.setUseDefaultAlpha(false);
         wTexEarth.bind();
-        wSphere.drawGL(&__SPHERE_SHADER__,GL_TRIANGLES);
+//        wSphere.drawGL(&__SPHERE_SHADER__,GL_TRIANGLES);
+
+
 
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+  //      wText.RenderText("This is sample text", 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -440,7 +583,8 @@ Per object matrix:
         camera.cancelRedraw();
 
         glfwPollEvents();
-    }
+
+    }//while (!glfwWindowShouldClose(window))
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
@@ -657,6 +801,12 @@ void processInput(GLFWwindow *window)
         camera.ProcessKeyboard(LIGHTFORWARD, accelerator);
         return;
         }
+    if (_TESTKEY_( GLFW_KEY_DELETE ))
+        {
+        camera.ProcessKeyboard(LIGHTORIGIN, accelerator);
+        return;
+        }
+
 
     /* toggle keys */
 

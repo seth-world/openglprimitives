@@ -1,5 +1,9 @@
 #include "zcandy.h"
-
+#ifdef __USE_GLAD__
+#include <glad/glad.h>
+#else
+#include <GL/glew.h>
+#endif
 void ZCandy::setupGLShape(ZShader* pShader)
 {
     pShader->use();

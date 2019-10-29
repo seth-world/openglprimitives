@@ -1,4 +1,6 @@
 #include <zshader.h>
+#include <zglconstants.h>
+#include <ztexture.h>
 
 ZShader::ZShader(const char* pVertexPath, const char* pFragmentPath, const char* pName )
 {
@@ -18,7 +20,7 @@ ZShader::ZShader(const char* pVertexPath, const char* pFragmentPath, const char*
     fShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
     gShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
 
-    fprintf(stdout,"\n Vertex path <%s> \nFragment path <%s>\n",wVertexPath.c_str(),wFragmentPath.c_str());
+    fprintf(stdout,"\nVertex path <%s> \nFragment path <%s>\n",wVertexPath.c_str(),wFragmentPath.c_str());
     try
     {
         std::stringstream vShaderStream, fShaderStream;
@@ -99,7 +101,7 @@ ZShader::ZShader(const char* pVertexPath, const char* pFragmentPath, const char*
     fShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
     gShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
 
-    fprintf(stdout," Vertex path <%s> \nFragment path <%s>\n",wVertexPath.c_str(),wFragmentPath.c_str());
+    fprintf(stdout,"Vertex path <%s> \nFragment path <%s>\n",wVertexPath.c_str(),wFragmentPath.c_str());
     try
     {
         std::stringstream vShaderStream, fShaderStream;
@@ -184,6 +186,11 @@ ZShader::ZShader(const char* pVertexPath, const char* pFragmentPath, const char*
 
 }// ZShader CTOR 2
 
+void ZShader::setupTexSampler(ZTexture* pTexture)
+{
+    setInt(__TEXTURESAMPLER__,pTexture->getTextureEngineNumber());
+    return ;
+}
 
 void ZShader::setMaterial(const ZMaterial& pMaterial)
 {

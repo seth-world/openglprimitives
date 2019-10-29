@@ -1,4 +1,9 @@
+#ifdef __USE_GLAD__
 #include <glad/glad.h>
+#else
+#include <GL/glew.h>
+#endif
+
 #include <GLFW/glfw3.h>
 #include <stb_image.h>
 

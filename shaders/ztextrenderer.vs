@@ -1,11 +1,8 @@
 #version 330 core
-layout (location = 0) in vec4 vertex; // <vec2 pos, vec2 tex>
-out vec2 TexCoords;
+attribute vec4 TextCoords;
+varying vec2 texpos;
 
-uniform mat4 projection;
-
-void main()
-{
-    gl_Position = projection * vec4(vertex.xy, 0.0, 1.0);
-    TexCoords = vertex.zw;
-} 
+void main(void) {
+  gl_Position = vec4(TextCoords.xy, 0, 1);
+  texpos = TextCoords.zw;
+}

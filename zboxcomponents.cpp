@@ -8,7 +8,6 @@ void ZBoxComponents::setup(const float pHigh,
     TopY = (pHigh /2.0f) ;
     LowY  =  - (pHigh /2.0f) ;
 
-
     RightX = (pWidth / 2.0f);
     LeftX = - (pWidth / 2.0f);
 
@@ -119,7 +118,7 @@ void ZBoxComponents::generateShape(ZObject& pObject)
 } // ZBoxComponents::generateShape
 
 
-void ZBoxComponents::_cloneFrom (ZBoxComponents& pIn)
+void ZBoxComponents::_cloneFrom (const ZBoxComponents &pIn)
 {
 
     TopY=pIn.TopY ;

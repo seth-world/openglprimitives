@@ -12,13 +12,17 @@
 #ifdef _WIN32
 #include <windows.h>    // include windows.h to avoid thousands of compile errors even though this class is not depending on Windows
 #endif
-
-#ifdef __APPLE__
-#include <OpenGL/gl.h>
+#ifdef __USE_GLAD__
+#include <glad/glad.h>
 #else
-#include <GL/gl.h>
-//#include <glad/glad.h>
+#include <GL/glew.h>
 #endif
+//#ifdef __APPLE__
+//#include <OpenGL/gl.h>
+//#else
+//#include <GL/gl.h>
+//#include <glad/glad.h>
+//#endif
 
 #include <iostream>
 #include <iomanip>

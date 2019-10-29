@@ -1,7 +1,13 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+
+#ifdef __USE_GLAD__
 #include <glad/glad.h>
+#else
+#include <GL/glew.h>
+#endif
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <stdio.h>
@@ -261,9 +267,20 @@ public:
          case TOGGLE_MOUSE:
              toggleMouse();
              return;
-//         case RESET_POSITION:
-//             resetPosition();
+         case LIGHTORIGIN:
+             LightPosition=DefaultLightPosition;
+             scheduleRedraw();
              return;
+         case RESET_POSITION:
+             RotationAngle=0.0f;
+             RotationAxis=glm::vec3(0.0f);
+             Rotation=false;
+             setModelIdentity();
+             resetPositions();
+
+             return;
+         default:
+            break;
 
         }// swich
 

@@ -1,7 +1,11 @@
 #ifndef ZBOXCOMPONENTS_H
 #define ZBOXCOMPONENTS_H
-
+#ifdef __USE_GLAD__
 #include <glad/glad.h>
+#else
+#include <GL/glew.h>
+#endif
+
 #include <zvertice.h>
 
 class ZObject;
@@ -20,9 +24,9 @@ public:
         _cloneFrom(pIn);
     }
 
-    ZBoxComponents& operator=(ZBoxComponents&pIn) {_cloneFrom(pIn); return *this;}
+    ZBoxComponents& operator=(const ZBoxComponents&pIn) {_cloneFrom(pIn); return *this;}
 
-    void _cloneFrom (ZBoxComponents& pIn);
+    void _cloneFrom (const ZBoxComponents& pIn);
 
     void setup(const float pHigh,
                    const float pWidth,

@@ -1,5 +1,12 @@
 #ifndef ZMATERIAL_H
 #define ZMATERIAL_H
+
+#ifdef __USE_GLAD__
+#include <glad/glad.h>
+#else
+#include <GL/glew.h>
+#endif
+
 #include <glm/glm.hpp>
 
 class ZMaterial{

@@ -1248,8 +1248,6 @@ ZBoxComponents pComponents;
 //    strcpy (wName,pName);
 //    strcat (wName,"_ArcFL");
     ZObject* wArcFL = generate_Arc(pComponents.FLMid,wRadius,10,ZObject::DirLeft,ZObject::Front,"ArcFL");
-
-    wArcFL->print(20);
 //    wArcFL.setDrawFigure(GL_TRIANGLE_FAN);
     wCandy.add(wArcFL);
 //    strcpy (wName,pName);
@@ -1260,7 +1258,6 @@ ZBoxComponents pComponents;
 //    strcpy (wName,pName);
 //    strcat (wName,"ArcFR");
     ZObject* wArcFR = generate_Arc(pComponents.FRMid,wRadius,10,ZObject::DirRight,ZObject::Front,"ArcFR");/* generate front arc forward (right) */
-    wArcFR->print(20);
 //    wArcFR.setDrawFigure(GL_TRIANGLE_FAN);
     wCandy.add(wArcFR);
 //    strcpy (wName,pName);

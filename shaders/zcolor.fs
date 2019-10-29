@@ -44,8 +44,8 @@ uniform bool useDefaultAlpha;
 void main()
 {
     // ambient
-    float ambientStrength = 0.4;
-    vec3 wAmbient = ambientStrength * DefaultColor;
+    float wAmbientStrength = 0.4;
+    vec3 wAmbient = wAmbientStrength * DefaultColor;
 //    vec3 wAmbient = material.Ambient * light.Color;
   	
     // diffuse 
@@ -55,11 +55,11 @@ void main()
  //   vec3 wDiffuse = diff * light.Color;
     vec3 wDiffuse = diff * vec3(0.6);
     // specular
-    float specularStrength = 0.5;
+    float wSpecularStrength = 0.5;
     vec3 viewDir = normalize(viewPosition - fs_in.Position);
     vec3 reflectDir = reflect(-lightDir, norm);  
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-    vec3 wSpecular = specularStrength * spec * DefaultColor;
+    vec3 wSpecular = wSpecularStrength * spec * DefaultColor;
 //    vec3 wspecular = material.Specular * spec * light.Color;
         
     vec3 result = (wAmbient + wDiffuse + wSpecular) * DefaultColor;

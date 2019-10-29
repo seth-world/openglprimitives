@@ -1,6 +1,12 @@
 #ifndef ZCANDY_H
 #define ZCANDY_H
 
+#ifdef __USE_GLAD__
+#include <glad/glad.h>
+#else
+#include <GL/glew.h>
+#endif
+
 #define __USE_ZARRAY_COPY_CONTRUCTOR__
 #include <zresource.h>
 #include <zmetaobject.h>

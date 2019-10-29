@@ -1,8 +1,13 @@
 #ifndef ZGLOBJDESCRIPTOR_H
 #define ZGLOBJDESCRIPTOR_H
+#ifdef __USE_GLAD__
+#include <glad/glad.h>
+#else
+#include <GL/glew.h>
+#endif
 
 #include <glm/glm.hpp>
-#include <glad/glad.h>
+
 #include <zglconstants.h>
 #include <zshader.h>
 

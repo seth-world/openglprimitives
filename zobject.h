@@ -1,13 +1,19 @@
 #ifndef ZOBJECT_H
 #define ZOBJECT_H
 
+#ifdef __USE_GLAD__
+#include <glad/glad.h>
+#else
+#include <GL/glew.h>
+#endif
+
 #define __USE_ZARRAY_COPY_CONTRUCTOR__
 
-//#include <vector>
 #include <ztoolset/zarray.h>
-#include <glm/glm.hpp>
 
-#include <glad/glad.h>
+
+
+#include <glm/glm.hpp>
 #include <zshader.h>
 
 #include <zvertice.h>
@@ -221,7 +227,7 @@ public:
     void drawGLNormalVisu(ZShader* pShader);
     void drawGLShape(ZShader* pShader);
 
-    void print(int pLimit=-1, FILE* pOutput=stdout);
+    void print(int pLimit=-1, FILE* pOutput=stdout) const;
 
     void setDefaultColor(Color_type pColor) {DefaultColor=pColor;}
     void setDefaultAlpha(float pAlpha) {DefaultAlpha=pAlpha;}
@@ -294,7 +300,7 @@ public:
     bool                            ComputeTexCoords=true;
     float                           NormalVisuSize=0.04f;
     zbs::ZArray<Vertice_type>       ZANormVisu;
-    zbs::ZArray<GLuint>             ShapeIndices;
+    zbs::ZArray<unsigned int>       ShapeIndices;
     ObjType                         Type=None;
 };
 

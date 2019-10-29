@@ -1,6 +1,12 @@
 #ifndef ZVERTICES_H
 #define ZVERTICES_H
 
+#ifdef __USE_GLAD__
+#include <glad/glad.h>
+#else
+#include <GL/glew.h>
+#endif
+
 #include <glm/glm.hpp>
 #include <zglconstants.h>
 

@@ -1,8 +1,6 @@
 #ifndef ZGLCONSTANTS_H
 #define ZGLCONSTANTS_H
 
-#include <glad/glad.h>
-
 #include <glm/glm.hpp>
 
 #define Vertice_type glm::vec3
@@ -14,12 +12,21 @@
 #define __NORMAL_ATR_NAME__ "aNormal"
 #define __TEXCOORDS_ATR_NAME__ "aTexCoord"
 
-const GLuint cst_defaultPositionLocation = 0;
-const GLuint cst_defaultNormalLocation = 1;
-const GLuint cst_defaultTexCoordsLocation = 2;
+#define __TEXTURESAMPLER__ "TextureSampler"
+
+#define __TEXTCOLOR__   "TextColor"
+
+const unsigned int cst_defaultPositionLocation = 0;
+const unsigned int cst_defaultNormalLocation = 1;
+const unsigned int cst_defaultTexCoordsLocation = 2;
+
+const Color_type ZBlackColor(0.0f, 0.0f, 0.0f);
+const Color_type ZWhiteColor(1.0f, 1.0f, 1.0f);
 
 const Color_type ZBlueColor(0.5f, 0.8f, 1.0f);
 const Color_type ZGreyColor(0.8, 0.8, 0.8);
+
+const Color_type ZRedMedium(0.952, 0.207, 0.207);
 
 const Color_type ZWhiteAmbient(0.125f,0.125f,0.125f);
 const Color_type ZWhiteDiffuse(0.894, 0.898, 0.898);

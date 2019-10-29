@@ -17,7 +17,7 @@ CXX           = g++
 DEFINES       = -DQT_QML_DEBUG
 CFLAGS        = -pipe -g -Wall -W -fPIC $(DEFINES)
 CXXFLAGS      = -pipe -g -std=gnu++1z -Wall -W -fPIC $(DEFINES)
-INCPATH       = -I../../TestOpenGl -I. -I../glad/include -I../../opengl/glad/include -I../../opengl/glm -I../../opengl/LearnOpenGL-master/includes -I../../opengl/LearnOpenGL-master/build/configuration -I../../zbasesystem -I../../opengl/freeglut-3.2.1/include -I../../ui3dg/ui3d-app -I/opt/Qt/5.12.4/gcc_64/mkspecs/linux-g++
+INCPATH       = -I../../TestOpenGl -I. -I../glad/include -I../../opengl/glad/include -I../../opengl/glm -I../../opengl/LearnOpenGL-master/includes -I../../opengl/LearnOpenGL-master/build/configuration -I../../zbasesystem -I../../opengl/freeglut-3.2.1/include -isystem /usr/include/freetype2 -I/opt/Qt/5.12.4/gcc_64/mkspecs/linux-g++
 QMAKE         = /opt/Qt/5.12.4/gcc_64/bin/qmake
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d
@@ -40,7 +40,7 @@ DISTNAME      = TestOpenGL1.0.0
 DISTDIR = /home/gerard/Development/TestOpenGl/build-TestOpenGL-Desktop_Qt_5_12_4_GCC_64bit-Debug/.tmp/TestOpenGL1.0.0
 LINK          = g++
 LFLAGS        = 
-LIBS          = $(SUBLIBS) /home/gerard/Development/zbasesystem/zbaselib/bin/debug/libzbaselib.a /home/gerard/Development/opengl/freeglut-3.2.1/lib/libglut.so -lglfw -ldl -lpthread -lGL -lglut   
+LIBS          = $(SUBLIBS) /home/gerard/Development/zbasesystem/zbaselib/bin/debug/libzbaselib.a -lglfw -ldl -lpthread -lGL -lGLEW -lfreetype   
 AR            = ar cqs
 RANLIB        = 
 SED           = sed
@@ -56,34 +56,36 @@ SOURCES       = ../Bmp.cpp \
 		../zboxcomponents.cpp \
 		../zcandy.cpp \
 		../zglobjdescriptor.cpp \
+		../zgltext.cpp \
 		../zmetaobject.cpp \
 		../zresource.cpp \
 		../zshader.cpp \
 		../zsphere.cpp \
 		../main.cpp \
 		../../opengl/LearnOpenGL-master/src/stb_image.cpp \
-		../glad/src/glad.c \
 		../zobject.cpp \
 		../zobjectfunctions.cpp \
+		../ztextrenderer.cpp \
 		../ztexture.cpp \
 		../zvertice.cpp 
 OBJECTS       = Bmp.o \
 		zboxcomponents.o \
 		zcandy.o \
 		zglobjdescriptor.o \
+		zgltext.o \
 		zmetaobject.o \
 		zresource.o \
 		zshader.o \
 		zsphere.o \
 		main.o \
 		stb_image.o \
-		glad.o \
 		zobject.o \
 		zobjectfunctions.o \
+		ztextrenderer.o \
 		ztexture.o \
 		zvertice.o
 DIST          = ../shaders/material.fs \
-		../shaders/zcolor_lighting.fs \
+		../shaders/zcolor.fs \
 		../shaders/zbasic_lighting.vs \
 		../shaders/zbasic_lighting_copy.fs \
 		../shaders/zbasic_lighting_copy.vs \
@@ -99,10 +101,17 @@ DIST          = ../shaders/material.fs \
 		../shaders/normalvisu.gs \
 		../shaders/normalvisu.vs \
 		../shaders/sphereshader.vs \
+		../shaders/textrenderer.fs \
+		../shaders/textrenderer.vs \
+		../shaders/zgltext.fs \
+		../shaders/zgltext.vs \
+		../shaders/zmaterial.fs \
 		../shaders/znormvisu.fs \
 		../shaders/znormvisu.vs \
+		../shaders/ztextrenderer.fs \
+		../shaders/ztextrenderer.vs \
+		../shaders/ztextrenderer_copy.fs \
 		../shaders/ztexture.fs \
-		../shaders/ztexture_initial.fs \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/spec_pre.prf \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/common/unix.conf \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/common/linux.conf \
@@ -296,31 +305,34 @@ DIST          = ../shaders/material.fs \
 		Bmp.h \
 		zboxcomponents.h \
 		zcandy.h \
+		zconfig.h \
 		zglconstants.h \
 		zglobjdescriptor.h \
+		zgltext.h \
 		zmetaobject.h \
 		zresource.h \
 		zsphere.h \
-		glad/include/glad/glad.h \
 		zshader.h \
 		camera.h \
 		zmaterial.h \
 		zobject.h \
 		zobjectfunctions.h \
+		ztextrenderer.h \
 		ztexture.h \
 		zvertice.h ../Bmp.cpp \
 		../zboxcomponents.cpp \
 		../zcandy.cpp \
 		../zglobjdescriptor.cpp \
+		../zgltext.cpp \
 		../zmetaobject.cpp \
 		../zresource.cpp \
 		../zshader.cpp \
 		../zsphere.cpp \
 		../main.cpp \
 		../../opengl/LearnOpenGL-master/src/stb_image.cpp \
-		../glad/src/glad.c \
 		../zobject.cpp \
 		../zobjectfunctions.cpp \
+		../ztextrenderer.cpp \
 		../ztexture.cpp \
 		../zvertice.cpp
 QMAKE_TARGET  = TestOpenGL
@@ -762,6 +774,7 @@ Bmp.o: ../Bmp.cpp ../Bmp.h
 zboxcomponents.o: ../zboxcomponents.cpp ../zboxcomponents.h \
 		../glad/include/glad/glad.h \
 		../glad/include/KHR/khrplatform.h \
+		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
 		../zvertice.h \
 		../../opengl/glm/glm/glm.hpp \
 		../../opengl/glm/glm/detail/_fixes.hpp \
@@ -858,7 +871,7 @@ zboxcomponents.o: ../zboxcomponents.cpp ../zboxcomponents.h \
 		../zglconstants.h \
 		../../../TestOpenGl/zobject.h \
 		../../zbasesystem/ztoolset/zarray.h \
-		../../ui3dg/ui3d-app/zconfig.h \
+		../zconfig.h \
 		../../zbasesystem/zconfig_general.h \
 		../../zbasesystem/zremote/zconfig_network.h \
 		../../zbasesystem/ztoolset/zerror_min.h \
@@ -868,13 +881,17 @@ zboxcomponents.o: ../zboxcomponents.cpp ../zboxcomponents.h \
 		../../zbasesystem/ztoolset/zatomicconvert.h \
 		../zshader.h \
 		../zresource.h \
+		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
 		../zmaterial.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o zboxcomponents.o ../zboxcomponents.cpp
 
 zcandy.o: ../zcandy.cpp ../zcandy.h \
+		../glad/include/glad/glad.h \
+		../glad/include/KHR/khrplatform.h \
+		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
 		../zresource.h \
 		../../zbasesystem/ztoolset/zarray.h \
-		../../ui3dg/ui3d-app/zconfig.h \
+		../zconfig.h \
 		../../zbasesystem/zconfig_general.h \
 		../../zbasesystem/zremote/zconfig_network.h \
 		../../zbasesystem/ztoolset/zerror_min.h \
@@ -882,10 +899,6 @@ zcandy.o: ../zcandy.cpp ../zcandy.h \
 		../../zbasesystem/zthread/zmutex.h \
 		../../zbasesystem/ztoolset/ztime.h \
 		../../zbasesystem/ztoolset/zatomicconvert.h \
-		../zmetaobject.h \
-		../zglconstants.h \
-		../glad/include/glad/glad.h \
-		../glad/include/KHR/khrplatform.h \
 		../../opengl/glm/glm/glm.hpp \
 		../../opengl/glm/glm/detail/_fixes.hpp \
 		../../opengl/glm/glm/fwd.hpp \
@@ -978,6 +991,9 @@ zcandy.o: ../zcandy.cpp ../zcandy.h \
 		../../opengl/glm/glm/detail/func_integer.inl \
 		../../opengl/glm/glm/detail/func_integer_simd.inl \
 		../../opengl/glm/glm/simd/integer.h \
+		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
+		../zmetaobject.h \
+		../zglconstants.h \
 		../../../TestOpenGl/zobject.h \
 		../zshader.h \
 		../zmaterial.h \
@@ -985,6 +1001,9 @@ zcandy.o: ../zcandy.cpp ../zcandy.h \
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o zcandy.o ../zcandy.cpp
 
 zglobjdescriptor.o: ../zglobjdescriptor.cpp ../zglobjdescriptor.h \
+		../glad/include/glad/glad.h \
+		../glad/include/KHR/khrplatform.h \
+		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
 		../../opengl/glm/glm/glm.hpp \
 		../../opengl/glm/glm/detail/_fixes.hpp \
 		../../opengl/glm/glm/fwd.hpp \
@@ -1077,13 +1096,11 @@ zglobjdescriptor.o: ../zglobjdescriptor.cpp ../zglobjdescriptor.h \
 		../../opengl/glm/glm/detail/func_integer.inl \
 		../../opengl/glm/glm/detail/func_integer_simd.inl \
 		../../opengl/glm/glm/simd/integer.h \
-		../glad/include/glad/glad.h \
-		../glad/include/KHR/khrplatform.h \
 		../zglconstants.h \
 		../zshader.h \
 		../zresource.h \
 		../../zbasesystem/ztoolset/zarray.h \
-		../../ui3dg/ui3d-app/zconfig.h \
+		../zconfig.h \
 		../../zbasesystem/zconfig_general.h \
 		../../zbasesystem/zremote/zconfig_network.h \
 		../../zbasesystem/ztoolset/zerror_min.h \
@@ -1091,13 +1108,132 @@ zglobjdescriptor.o: ../zglobjdescriptor.cpp ../zglobjdescriptor.h \
 		../../zbasesystem/zthread/zmutex.h \
 		../../zbasesystem/ztoolset/ztime.h \
 		../../zbasesystem/ztoolset/zatomicconvert.h \
+		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
 		../zmaterial.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o zglobjdescriptor.o ../zglobjdescriptor.cpp
 
-zmetaobject.o: ../zmetaobject.cpp ../zmetaobject.h \
-		../zglconstants.h \
+zgltext.o: ../zgltext.cpp ../zresource.h \
 		../glad/include/glad/glad.h \
 		../glad/include/KHR/khrplatform.h \
+		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
+		../../zbasesystem/ztoolset/zarray.h \
+		../zconfig.h \
+		../../zbasesystem/zconfig_general.h \
+		../../zbasesystem/zremote/zconfig_network.h \
+		../../zbasesystem/ztoolset/zerror_min.h \
+		../../zbasesystem/ztoolset/zlimit.h \
+		../../zbasesystem/zthread/zmutex.h \
+		../../zbasesystem/ztoolset/ztime.h \
+		../../zbasesystem/ztoolset/zatomicconvert.h \
+		../../opengl/glm/glm/glm.hpp \
+		../../opengl/glm/glm/detail/_fixes.hpp \
+		../../opengl/glm/glm/fwd.hpp \
+		../../opengl/glm/glm/detail/type_int.hpp \
+		../../opengl/glm/glm/detail/setup.hpp \
+		../../opengl/glm/glm/simd/platform.h \
+		../../opengl/glm/glm/detail/type_float.hpp \
+		../../opengl/glm/glm/detail/type_vec.hpp \
+		../../opengl/glm/glm/detail/precision.hpp \
+		../../opengl/glm/glm/detail/type_mat.hpp \
+		../../opengl/glm/glm/vec2.hpp \
+		../../opengl/glm/glm/detail/type_vec2.hpp \
+		../../opengl/glm/glm/detail/_swizzle.hpp \
+		../../opengl/glm/glm/detail/_swizzle_func.hpp \
+		../../opengl/glm/glm/detail/type_vec2.inl \
+		../../opengl/glm/glm/vec3.hpp \
+		../../opengl/glm/glm/detail/type_vec3.hpp \
+		../../opengl/glm/glm/detail/type_vec3.inl \
+		../../opengl/glm/glm/vec4.hpp \
+		../../opengl/glm/glm/detail/type_vec4.hpp \
+		../../opengl/glm/glm/detail/type_vec4.inl \
+		../../opengl/glm/glm/detail/type_vec4_simd.inl \
+		../../opengl/glm/glm/mat2x2.hpp \
+		../../opengl/glm/glm/detail/type_mat2x2.hpp \
+		../../opengl/glm/glm/detail/type_mat2x2.inl \
+		../../opengl/glm/glm/detail/func_matrix.hpp \
+		../../opengl/glm/glm/mat2x3.hpp \
+		../../opengl/glm/glm/detail/type_mat2x3.hpp \
+		../../opengl/glm/glm/detail/type_mat2x3.inl \
+		../../opengl/glm/glm/mat2x4.hpp \
+		../../opengl/glm/glm/detail/type_mat2x4.hpp \
+		../../opengl/glm/glm/detail/type_mat2x4.inl \
+		../../opengl/glm/glm/mat3x2.hpp \
+		../../opengl/glm/glm/detail/type_mat3x2.hpp \
+		../../opengl/glm/glm/detail/type_mat3x2.inl \
+		../../opengl/glm/glm/mat3x3.hpp \
+		../../opengl/glm/glm/detail/type_mat3x3.hpp \
+		../../opengl/glm/glm/detail/type_mat3x3.inl \
+		../../opengl/glm/glm/mat3x4.hpp \
+		../../opengl/glm/glm/detail/type_mat3x4.hpp \
+		../../opengl/glm/glm/detail/type_mat3x4.inl \
+		../../opengl/glm/glm/mat4x2.hpp \
+		../../opengl/glm/glm/detail/type_mat4x2.hpp \
+		../../opengl/glm/glm/detail/type_mat4x2.inl \
+		../../opengl/glm/glm/mat4x3.hpp \
+		../../opengl/glm/glm/detail/type_mat4x3.hpp \
+		../../opengl/glm/glm/detail/type_mat4x3.inl \
+		../../opengl/glm/glm/mat4x4.hpp \
+		../../opengl/glm/glm/detail/type_mat4x4.hpp \
+		../../opengl/glm/glm/detail/type_mat4x4.inl \
+		../../opengl/glm/glm/detail/type_mat4x4_simd.inl \
+		../../opengl/glm/glm/detail/func_matrix.inl \
+		../../opengl/glm/glm/geometric.hpp \
+		../../opengl/glm/glm/detail/func_geometric.hpp \
+		../../opengl/glm/glm/detail/func_geometric.inl \
+		../../opengl/glm/glm/detail/func_exponential.hpp \
+		../../opengl/glm/glm/detail/type_vec1.hpp \
+		../../opengl/glm/glm/detail/type_vec1.inl \
+		../../opengl/glm/glm/detail/func_exponential.inl \
+		../../opengl/glm/glm/detail/func_vector_relational.hpp \
+		../../opengl/glm/glm/detail/func_vector_relational.inl \
+		../../opengl/glm/glm/detail/func_vector_relational_simd.inl \
+		../../opengl/glm/glm/detail/_vectorize.hpp \
+		../../opengl/glm/glm/detail/func_exponential_simd.inl \
+		../../opengl/glm/glm/simd/exponential.h \
+		../../opengl/glm/glm/detail/func_common.hpp \
+		../../opengl/glm/glm/detail/func_common.inl \
+		../../opengl/glm/glm/detail/func_common_simd.inl \
+		../../opengl/glm/glm/simd/common.h \
+		../../opengl/glm/glm/detail/func_geometric_simd.inl \
+		../../opengl/glm/glm/simd/geometric.h \
+		../../opengl/glm/glm/detail/func_matrix_simd.inl \
+		../../opengl/glm/glm/simd/matrix.h \
+		../../opengl/glm/glm/trigonometric.hpp \
+		../../opengl/glm/glm/detail/func_trigonometric.hpp \
+		../../opengl/glm/glm/detail/func_trigonometric.inl \
+		../../opengl/glm/glm/detail/func_trigonometric_simd.inl \
+		../../opengl/glm/glm/exponential.hpp \
+		../../opengl/glm/glm/common.hpp \
+		../../opengl/glm/glm/packing.hpp \
+		../../opengl/glm/glm/detail/func_packing.hpp \
+		../../opengl/glm/glm/detail/func_packing.inl \
+		../../opengl/glm/glm/detail/type_half.hpp \
+		../../opengl/glm/glm/detail/type_half.inl \
+		../../opengl/glm/glm/detail/func_packing_simd.inl \
+		../../opengl/glm/glm/matrix.hpp \
+		../../opengl/glm/glm/vector_relational.hpp \
+		../../opengl/glm/glm/integer.hpp \
+		../../opengl/glm/glm/detail/func_integer.hpp \
+		../../opengl/glm/glm/detail/func_integer.inl \
+		../../opengl/glm/glm/detail/func_integer_simd.inl \
+		../../opengl/glm/glm/simd/integer.h \
+		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
+		../../opengl/glm/glm/gtc/matrix_transform.hpp \
+		../../opengl/glm/glm/gtc/constants.hpp \
+		../../opengl/glm/glm/gtc/constants.inl \
+		../../opengl/glm/glm/gtc/matrix_transform.inl \
+		../zgltext.h \
+		../zglconstants.h \
+		../ztexture.h \
+		../zshader.h \
+		../zmaterial.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o zgltext.o ../zgltext.cpp
+
+zmetaobject.o: ../zmetaobject.cpp ../zmetaobject.h \
+		../glad/include/glad/glad.h \
+		../glad/include/KHR/khrplatform.h \
+		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
+		../zglconstants.h \
 		../../opengl/glm/glm/glm.hpp \
 		../../opengl/glm/glm/detail/_fixes.hpp \
 		../../opengl/glm/glm/fwd.hpp \
@@ -1191,7 +1327,7 @@ zmetaobject.o: ../zmetaobject.cpp ../zmetaobject.h \
 		../../opengl/glm/glm/detail/func_integer_simd.inl \
 		../../opengl/glm/glm/simd/integer.h \
 		../../zbasesystem/ztoolset/zarray.h \
-		../../ui3dg/ui3d-app/zconfig.h \
+		../zconfig.h \
 		../../zbasesystem/zconfig_general.h \
 		../../zbasesystem/zremote/zconfig_network.h \
 		../../zbasesystem/ztoolset/zerror_min.h \
@@ -1202,13 +1338,17 @@ zmetaobject.o: ../zmetaobject.cpp ../zmetaobject.h \
 		../../../TestOpenGl/zobject.h \
 		../zshader.h \
 		../zresource.h \
+		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
 		../zmaterial.h \
 		../zvertice.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o zmetaobject.o ../zmetaobject.cpp
 
 zresource.o: ../zresource.cpp ../zresource.h \
+		../glad/include/glad/glad.h \
+		../glad/include/KHR/khrplatform.h \
+		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
 		../../zbasesystem/ztoolset/zarray.h \
-		../../ui3dg/ui3d-app/zconfig.h \
+		../zconfig.h \
 		../../zbasesystem/zconfig_general.h \
 		../../zbasesystem/zremote/zconfig_network.h \
 		../../zbasesystem/ztoolset/zerror_min.h \
@@ -1216,10 +1356,6 @@ zresource.o: ../zresource.cpp ../zresource.h \
 		../../zbasesystem/zthread/zmutex.h \
 		../../zbasesystem/ztoolset/ztime.h \
 		../../zbasesystem/ztoolset/zatomicconvert.h \
-		../ztexture.h \
-		../glad/include/glad/glad.h \
-		../glad/include/KHR/khrplatform.h \
-		../../../TestOpenGl/zobject.h \
 		../../opengl/glm/glm/glm.hpp \
 		../../opengl/glm/glm/detail/_fixes.hpp \
 		../../opengl/glm/glm/fwd.hpp \
@@ -1312,6 +1448,9 @@ zresource.o: ../zresource.cpp ../zresource.h \
 		../../opengl/glm/glm/detail/func_integer.inl \
 		../../opengl/glm/glm/detail/func_integer_simd.inl \
 		../../opengl/glm/glm/simd/integer.h \
+		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
+		../ztexture.h \
+		../../../TestOpenGl/zobject.h \
 		../zshader.h \
 		../zmaterial.h \
 		../zvertice.h \
@@ -1321,6 +1460,7 @@ zresource.o: ../zresource.cpp ../zresource.h \
 zshader.o: ../zshader.cpp ../zshader.h \
 		../glad/include/glad/glad.h \
 		../glad/include/KHR/khrplatform.h \
+		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
 		../../opengl/glm/glm/glm.hpp \
 		../../opengl/glm/glm/detail/_fixes.hpp \
 		../../opengl/glm/glm/fwd.hpp \
@@ -1415,7 +1555,7 @@ zshader.o: ../zshader.cpp ../zshader.h \
 		../../opengl/glm/glm/simd/integer.h \
 		../zresource.h \
 		../../zbasesystem/ztoolset/zarray.h \
-		../../ui3dg/ui3d-app/zconfig.h \
+		../zconfig.h \
 		../../zbasesystem/zconfig_general.h \
 		../../zbasesystem/zremote/zconfig_network.h \
 		../../zbasesystem/ztoolset/zerror_min.h \
@@ -1423,14 +1563,18 @@ zshader.o: ../zshader.cpp ../zshader.h \
 		../../zbasesystem/zthread/zmutex.h \
 		../../zbasesystem/ztoolset/ztime.h \
 		../../zbasesystem/ztoolset/zatomicconvert.h \
-		../zmaterial.h
+		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
+		../zmaterial.h \
+		../zglconstants.h \
+		../ztexture.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o zshader.o ../zshader.cpp
 
 zsphere.o: ../zsphere.cpp ../glad/include/glad/glad.h \
 		../glad/include/KHR/khrplatform.h \
+		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
 		../zsphere.h \
 		../../zbasesystem/ztoolset/zarray.h \
-		../../ui3dg/ui3d-app/zconfig.h \
+		../zconfig.h \
 		../../zbasesystem/zconfig_general.h \
 		../../zbasesystem/zremote/zconfig_network.h \
 		../../zbasesystem/ztoolset/zerror_min.h \
@@ -1535,11 +1679,13 @@ zsphere.o: ../zsphere.cpp ../glad/include/glad/glad.h \
 		../../../TestOpenGl/zobject.h \
 		../zshader.h \
 		../zresource.h \
+		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
 		../zmaterial.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o zsphere.o ../zsphere.cpp
 
 main.o: ../main.cpp ../glad/include/glad/glad.h \
 		../glad/include/KHR/khrplatform.h \
+		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
 		../../opengl/glm/glm/glm.hpp \
 		../../opengl/glm/glm/detail/_fixes.hpp \
 		../../opengl/glm/glm/fwd.hpp \
@@ -1651,7 +1797,7 @@ main.o: ../main.cpp ../glad/include/glad/glad.h \
 		../zshader.h \
 		../zresource.h \
 		../../zbasesystem/ztoolset/zarray.h \
-		../../ui3dg/ui3d-app/zconfig.h \
+		../zconfig.h \
 		../../zbasesystem/zconfig_general.h \
 		../../zbasesystem/zremote/zconfig_network.h \
 		../../zbasesystem/ztoolset/zerror_min.h \
@@ -1659,6 +1805,7 @@ main.o: ../main.cpp ../glad/include/glad/glad.h \
 		../../zbasesystem/zthread/zmutex.h \
 		../../zbasesystem/ztoolset/ztime.h \
 		../../zbasesystem/ztoolset/zatomicconvert.h \
+		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
 		../zmaterial.h \
 		../../../TestOpenGl/zobject.h \
 		../zobjectfunctions.h \
@@ -1666,19 +1813,20 @@ main.o: ../main.cpp ../glad/include/glad/glad.h \
 		../zcandy.h \
 		../zmetaobject.h \
 		../zsphere.h \
-		../ztexture.h
+		../ztexture.h \
+		../ztextrenderer.h \
+		../zgltext.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o ../main.cpp
 
 stb_image.o: ../../opengl/LearnOpenGL-master/src/stb_image.cpp ../../opengl/LearnOpenGL-master/includes/stb_image.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o stb_image.o ../../opengl/LearnOpenGL-master/src/stb_image.cpp
 
-glad.o: ../glad/src/glad.c ../glad/include/glad/glad.h \
-		../glad/include/KHR/khrplatform.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o glad.o ../glad/src/glad.c
-
-zobject.o: ../zobject.cpp ../zobject.h \
+zobject.o: ../zobject.cpp ../glad/include/glad/glad.h \
+		../glad/include/KHR/khrplatform.h \
+		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
+		../zobject.h \
 		../../zbasesystem/ztoolset/zarray.h \
-		../../ui3dg/ui3d-app/zconfig.h \
+		../zconfig.h \
 		../../zbasesystem/zconfig_general.h \
 		../../zbasesystem/zremote/zconfig_network.h \
 		../../zbasesystem/ztoolset/zerror_min.h \
@@ -1778,10 +1926,9 @@ zobject.o: ../zobject.cpp ../zobject.h \
 		../../opengl/glm/glm/detail/func_integer.inl \
 		../../opengl/glm/glm/detail/func_integer_simd.inl \
 		../../opengl/glm/glm/simd/integer.h \
-		../glad/include/glad/glad.h \
-		../glad/include/KHR/khrplatform.h \
 		../zshader.h \
 		../zresource.h \
+		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
 		../zmaterial.h \
 		../zvertice.h \
 		../zglconstants.h \
@@ -1794,7 +1941,7 @@ zobject.o: ../zobject.cpp ../zobject.h \
 
 zobjectfunctions.o: ../zobjectfunctions.cpp ../zobjectfunctions.h \
 		../../zbasesystem/ztoolset/zarray.h \
-		../../ui3dg/ui3d-app/zconfig.h \
+		../zconfig.h \
 		../../zbasesystem/zconfig_general.h \
 		../../zbasesystem/zremote/zconfig_network.h \
 		../../zbasesystem/ztoolset/zerror_min.h \
@@ -1898,7 +2045,9 @@ zobjectfunctions.o: ../zobjectfunctions.cpp ../zobjectfunctions.h \
 		../glad/include/glad/glad.h \
 		../glad/include/KHR/khrplatform.h \
 		../zshader.h \
+		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
 		../zresource.h \
+		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
 		../zmaterial.h \
 		../zvertice.h \
 		../zglconstants.h \
@@ -1908,12 +2057,12 @@ zobjectfunctions.o: ../zobjectfunctions.cpp ../zobjectfunctions.h \
 		../zmetaobject.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o zobjectfunctions.o ../zobjectfunctions.cpp
 
-ztexture.o: ../ztexture.cpp ../ztexture.h \
-		../glad/include/glad/glad.h \
+ztextrenderer.o: ../ztextrenderer.cpp ../glad/include/glad/glad.h \
 		../glad/include/KHR/khrplatform.h \
+		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
 		../zresource.h \
 		../../zbasesystem/ztoolset/zarray.h \
-		../../ui3dg/ui3d-app/zconfig.h \
+		../zconfig.h \
 		../../zbasesystem/zconfig_general.h \
 		../../zbasesystem/zremote/zconfig_network.h \
 		../../zbasesystem/ztoolset/zerror_min.h \
@@ -1921,10 +2070,6 @@ ztexture.o: ../ztexture.cpp ../ztexture.h \
 		../../zbasesystem/zthread/zmutex.h \
 		../../zbasesystem/ztoolset/ztime.h \
 		../../zbasesystem/ztoolset/zatomicconvert.h \
-		../../opengl/LearnOpenGL-master/includes/stb_image.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o ztexture.o ../ztexture.cpp
-
-zvertice.o: ../zvertice.cpp ../zvertice.h \
 		../../opengl/glm/glm/glm.hpp \
 		../../opengl/glm/glm/detail/_fixes.hpp \
 		../../opengl/glm/glm/fwd.hpp \
@@ -2017,9 +2162,225 @@ zvertice.o: ../zvertice.cpp ../zvertice.h \
 		../../opengl/glm/glm/detail/func_integer.inl \
 		../../opengl/glm/glm/detail/func_integer_simd.inl \
 		../../opengl/glm/glm/simd/integer.h \
+		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
+		../../opengl/glm/glm/gtc/matrix_transform.hpp \
+		../../opengl/glm/glm/gtc/constants.hpp \
+		../../opengl/glm/glm/gtc/constants.inl \
+		../../opengl/glm/glm/gtc/matrix_transform.inl \
+		../ztextrenderer.h \
 		../zglconstants.h \
+		../ztexture.h \
+		../zshader.h \
+		../zmaterial.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o ztextrenderer.o ../ztextrenderer.cpp
+
+ztexture.o: ../ztexture.cpp ../ztexture.h \
 		../glad/include/glad/glad.h \
-		../glad/include/KHR/khrplatform.h
+		../glad/include/KHR/khrplatform.h \
+		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
+		../zresource.h \
+		../../zbasesystem/ztoolset/zarray.h \
+		../zconfig.h \
+		../../zbasesystem/zconfig_general.h \
+		../../zbasesystem/zremote/zconfig_network.h \
+		../../zbasesystem/ztoolset/zerror_min.h \
+		../../zbasesystem/ztoolset/zlimit.h \
+		../../zbasesystem/zthread/zmutex.h \
+		../../zbasesystem/ztoolset/ztime.h \
+		../../zbasesystem/ztoolset/zatomicconvert.h \
+		../../opengl/glm/glm/glm.hpp \
+		../../opengl/glm/glm/detail/_fixes.hpp \
+		../../opengl/glm/glm/fwd.hpp \
+		../../opengl/glm/glm/detail/type_int.hpp \
+		../../opengl/glm/glm/detail/setup.hpp \
+		../../opengl/glm/glm/simd/platform.h \
+		../../opengl/glm/glm/detail/type_float.hpp \
+		../../opengl/glm/glm/detail/type_vec.hpp \
+		../../opengl/glm/glm/detail/precision.hpp \
+		../../opengl/glm/glm/detail/type_mat.hpp \
+		../../opengl/glm/glm/vec2.hpp \
+		../../opengl/glm/glm/detail/type_vec2.hpp \
+		../../opengl/glm/glm/detail/_swizzle.hpp \
+		../../opengl/glm/glm/detail/_swizzle_func.hpp \
+		../../opengl/glm/glm/detail/type_vec2.inl \
+		../../opengl/glm/glm/vec3.hpp \
+		../../opengl/glm/glm/detail/type_vec3.hpp \
+		../../opengl/glm/glm/detail/type_vec3.inl \
+		../../opengl/glm/glm/vec4.hpp \
+		../../opengl/glm/glm/detail/type_vec4.hpp \
+		../../opengl/glm/glm/detail/type_vec4.inl \
+		../../opengl/glm/glm/detail/type_vec4_simd.inl \
+		../../opengl/glm/glm/mat2x2.hpp \
+		../../opengl/glm/glm/detail/type_mat2x2.hpp \
+		../../opengl/glm/glm/detail/type_mat2x2.inl \
+		../../opengl/glm/glm/detail/func_matrix.hpp \
+		../../opengl/glm/glm/mat2x3.hpp \
+		../../opengl/glm/glm/detail/type_mat2x3.hpp \
+		../../opengl/glm/glm/detail/type_mat2x3.inl \
+		../../opengl/glm/glm/mat2x4.hpp \
+		../../opengl/glm/glm/detail/type_mat2x4.hpp \
+		../../opengl/glm/glm/detail/type_mat2x4.inl \
+		../../opengl/glm/glm/mat3x2.hpp \
+		../../opengl/glm/glm/detail/type_mat3x2.hpp \
+		../../opengl/glm/glm/detail/type_mat3x2.inl \
+		../../opengl/glm/glm/mat3x3.hpp \
+		../../opengl/glm/glm/detail/type_mat3x3.hpp \
+		../../opengl/glm/glm/detail/type_mat3x3.inl \
+		../../opengl/glm/glm/mat3x4.hpp \
+		../../opengl/glm/glm/detail/type_mat3x4.hpp \
+		../../opengl/glm/glm/detail/type_mat3x4.inl \
+		../../opengl/glm/glm/mat4x2.hpp \
+		../../opengl/glm/glm/detail/type_mat4x2.hpp \
+		../../opengl/glm/glm/detail/type_mat4x2.inl \
+		../../opengl/glm/glm/mat4x3.hpp \
+		../../opengl/glm/glm/detail/type_mat4x3.hpp \
+		../../opengl/glm/glm/detail/type_mat4x3.inl \
+		../../opengl/glm/glm/mat4x4.hpp \
+		../../opengl/glm/glm/detail/type_mat4x4.hpp \
+		../../opengl/glm/glm/detail/type_mat4x4.inl \
+		../../opengl/glm/glm/detail/type_mat4x4_simd.inl \
+		../../opengl/glm/glm/detail/func_matrix.inl \
+		../../opengl/glm/glm/geometric.hpp \
+		../../opengl/glm/glm/detail/func_geometric.hpp \
+		../../opengl/glm/glm/detail/func_geometric.inl \
+		../../opengl/glm/glm/detail/func_exponential.hpp \
+		../../opengl/glm/glm/detail/type_vec1.hpp \
+		../../opengl/glm/glm/detail/type_vec1.inl \
+		../../opengl/glm/glm/detail/func_exponential.inl \
+		../../opengl/glm/glm/detail/func_vector_relational.hpp \
+		../../opengl/glm/glm/detail/func_vector_relational.inl \
+		../../opengl/glm/glm/detail/func_vector_relational_simd.inl \
+		../../opengl/glm/glm/detail/_vectorize.hpp \
+		../../opengl/glm/glm/detail/func_exponential_simd.inl \
+		../../opengl/glm/glm/simd/exponential.h \
+		../../opengl/glm/glm/detail/func_common.hpp \
+		../../opengl/glm/glm/detail/func_common.inl \
+		../../opengl/glm/glm/detail/func_common_simd.inl \
+		../../opengl/glm/glm/simd/common.h \
+		../../opengl/glm/glm/detail/func_geometric_simd.inl \
+		../../opengl/glm/glm/simd/geometric.h \
+		../../opengl/glm/glm/detail/func_matrix_simd.inl \
+		../../opengl/glm/glm/simd/matrix.h \
+		../../opengl/glm/glm/trigonometric.hpp \
+		../../opengl/glm/glm/detail/func_trigonometric.hpp \
+		../../opengl/glm/glm/detail/func_trigonometric.inl \
+		../../opengl/glm/glm/detail/func_trigonometric_simd.inl \
+		../../opengl/glm/glm/exponential.hpp \
+		../../opengl/glm/glm/common.hpp \
+		../../opengl/glm/glm/packing.hpp \
+		../../opengl/glm/glm/detail/func_packing.hpp \
+		../../opengl/glm/glm/detail/func_packing.inl \
+		../../opengl/glm/glm/detail/type_half.hpp \
+		../../opengl/glm/glm/detail/type_half.inl \
+		../../opengl/glm/glm/detail/func_packing_simd.inl \
+		../../opengl/glm/glm/matrix.hpp \
+		../../opengl/glm/glm/vector_relational.hpp \
+		../../opengl/glm/glm/integer.hpp \
+		../../opengl/glm/glm/detail/func_integer.hpp \
+		../../opengl/glm/glm/detail/func_integer.inl \
+		../../opengl/glm/glm/detail/func_integer_simd.inl \
+		../../opengl/glm/glm/simd/integer.h \
+		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
+		../../opengl/LearnOpenGL-master/includes/stb_image.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o ztexture.o ../ztexture.cpp
+
+zvertice.o: ../zvertice.cpp ../zvertice.h \
+		../glad/include/glad/glad.h \
+		../glad/include/KHR/khrplatform.h \
+		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
+		../../opengl/glm/glm/glm.hpp \
+		../../opengl/glm/glm/detail/_fixes.hpp \
+		../../opengl/glm/glm/fwd.hpp \
+		../../opengl/glm/glm/detail/type_int.hpp \
+		../../opengl/glm/glm/detail/setup.hpp \
+		../../opengl/glm/glm/simd/platform.h \
+		../../opengl/glm/glm/detail/type_float.hpp \
+		../../opengl/glm/glm/detail/type_vec.hpp \
+		../../opengl/glm/glm/detail/precision.hpp \
+		../../opengl/glm/glm/detail/type_mat.hpp \
+		../../opengl/glm/glm/vec2.hpp \
+		../../opengl/glm/glm/detail/type_vec2.hpp \
+		../../opengl/glm/glm/detail/_swizzle.hpp \
+		../../opengl/glm/glm/detail/_swizzle_func.hpp \
+		../../opengl/glm/glm/detail/type_vec2.inl \
+		../../opengl/glm/glm/vec3.hpp \
+		../../opengl/glm/glm/detail/type_vec3.hpp \
+		../../opengl/glm/glm/detail/type_vec3.inl \
+		../../opengl/glm/glm/vec4.hpp \
+		../../opengl/glm/glm/detail/type_vec4.hpp \
+		../../opengl/glm/glm/detail/type_vec4.inl \
+		../../opengl/glm/glm/detail/type_vec4_simd.inl \
+		../../opengl/glm/glm/mat2x2.hpp \
+		../../opengl/glm/glm/detail/type_mat2x2.hpp \
+		../../opengl/glm/glm/detail/type_mat2x2.inl \
+		../../opengl/glm/glm/detail/func_matrix.hpp \
+		../../opengl/glm/glm/mat2x3.hpp \
+		../../opengl/glm/glm/detail/type_mat2x3.hpp \
+		../../opengl/glm/glm/detail/type_mat2x3.inl \
+		../../opengl/glm/glm/mat2x4.hpp \
+		../../opengl/glm/glm/detail/type_mat2x4.hpp \
+		../../opengl/glm/glm/detail/type_mat2x4.inl \
+		../../opengl/glm/glm/mat3x2.hpp \
+		../../opengl/glm/glm/detail/type_mat3x2.hpp \
+		../../opengl/glm/glm/detail/type_mat3x2.inl \
+		../../opengl/glm/glm/mat3x3.hpp \
+		../../opengl/glm/glm/detail/type_mat3x3.hpp \
+		../../opengl/glm/glm/detail/type_mat3x3.inl \
+		../../opengl/glm/glm/mat3x4.hpp \
+		../../opengl/glm/glm/detail/type_mat3x4.hpp \
+		../../opengl/glm/glm/detail/type_mat3x4.inl \
+		../../opengl/glm/glm/mat4x2.hpp \
+		../../opengl/glm/glm/detail/type_mat4x2.hpp \
+		../../opengl/glm/glm/detail/type_mat4x2.inl \
+		../../opengl/glm/glm/mat4x3.hpp \
+		../../opengl/glm/glm/detail/type_mat4x3.hpp \
+		../../opengl/glm/glm/detail/type_mat4x3.inl \
+		../../opengl/glm/glm/mat4x4.hpp \
+		../../opengl/glm/glm/detail/type_mat4x4.hpp \
+		../../opengl/glm/glm/detail/type_mat4x4.inl \
+		../../opengl/glm/glm/detail/type_mat4x4_simd.inl \
+		../../opengl/glm/glm/detail/func_matrix.inl \
+		../../opengl/glm/glm/geometric.hpp \
+		../../opengl/glm/glm/detail/func_geometric.hpp \
+		../../opengl/glm/glm/detail/func_geometric.inl \
+		../../opengl/glm/glm/detail/func_exponential.hpp \
+		../../opengl/glm/glm/detail/type_vec1.hpp \
+		../../opengl/glm/glm/detail/type_vec1.inl \
+		../../opengl/glm/glm/detail/func_exponential.inl \
+		../../opengl/glm/glm/detail/func_vector_relational.hpp \
+		../../opengl/glm/glm/detail/func_vector_relational.inl \
+		../../opengl/glm/glm/detail/func_vector_relational_simd.inl \
+		../../opengl/glm/glm/detail/_vectorize.hpp \
+		../../opengl/glm/glm/detail/func_exponential_simd.inl \
+		../../opengl/glm/glm/simd/exponential.h \
+		../../opengl/glm/glm/detail/func_common.hpp \
+		../../opengl/glm/glm/detail/func_common.inl \
+		../../opengl/glm/glm/detail/func_common_simd.inl \
+		../../opengl/glm/glm/simd/common.h \
+		../../opengl/glm/glm/detail/func_geometric_simd.inl \
+		../../opengl/glm/glm/simd/geometric.h \
+		../../opengl/glm/glm/detail/func_matrix_simd.inl \
+		../../opengl/glm/glm/simd/matrix.h \
+		../../opengl/glm/glm/trigonometric.hpp \
+		../../opengl/glm/glm/detail/func_trigonometric.hpp \
+		../../opengl/glm/glm/detail/func_trigonometric.inl \
+		../../opengl/glm/glm/detail/func_trigonometric_simd.inl \
+		../../opengl/glm/glm/exponential.hpp \
+		../../opengl/glm/glm/common.hpp \
+		../../opengl/glm/glm/packing.hpp \
+		../../opengl/glm/glm/detail/func_packing.hpp \
+		../../opengl/glm/glm/detail/func_packing.inl \
+		../../opengl/glm/glm/detail/type_half.hpp \
+		../../opengl/glm/glm/detail/type_half.inl \
+		../../opengl/glm/glm/detail/func_packing_simd.inl \
+		../../opengl/glm/glm/matrix.hpp \
+		../../opengl/glm/glm/vector_relational.hpp \
+		../../opengl/glm/glm/integer.hpp \
+		../../opengl/glm/glm/detail/func_integer.hpp \
+		../../opengl/glm/glm/detail/func_integer.inl \
+		../../opengl/glm/glm/detail/func_integer_simd.inl \
+		../../opengl/glm/glm/simd/integer.h \
+		../zglconstants.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o zvertice.o ../zvertice.cpp
 
 ####### Install

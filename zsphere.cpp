@@ -16,8 +16,11 @@
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #else
+#ifdef __USE_GLAD__
 #include <glad/glad.h>
-//#include <GL/gl.h>
+#else
+#include <GL/glew.h>
+#endif
 #endif
 
 #include <iostream>
@@ -37,9 +40,9 @@ const int MIN_STACK_COUNT  = 2;
 // ctor
 ///////////////////////////////////////////////////////////////////////////////
 ZSphere::ZSphere(float radius, int sectors, int stacks, bool smooth,const char* pName) :
-    ZObject(pName,ZObject::Sphere), interleavedStride(sizeof(ZVertice))
+    ZObject(pName,ZObject::Sphere)
 {
-    set(radius, sectors, stacks, smooth);
+    generate(radius, sectors, stacks, smooth);
 }
 
 
@@ -47,7 +50,7 @@ ZSphere::ZSphere(float radius, int sectors, int stacks, bool smooth,const char* 
 ///////////////////////////////////////////////////////////////////////////////
 // setters
 ///////////////////////////////////////////////////////////////////////////////
-void ZSphere::set(float radius, int sectors, int stacks, bool smooth)
+void ZSphere::generate(float radius, int sectors, int stacks, bool smooth)
 {
     this->radius = radius;
     this->sectorCount = sectors;
@@ -75,12 +78,12 @@ void ZSphere::setRadius(float radius)
 
 void ZSphere::setSectorCount(int sectors)
 {
-    set(radius, sectors, stackCount, smooth);
+    generate(radius, sectors, stackCount, smooth);
 }
 
 void ZSphere::setStackCount(int stacks)
 {
-    set(radius, sectorCount, stacks, smooth);
+    generate(radius, sectorCount, stacks, smooth);
 }
 
 void ZSphere::setSmooth(bool smooth)
@@ -100,18 +103,19 @@ void ZSphere::setSmooth(bool smooth)
 ///////////////////////////////////////////////////////////////////////////////
 // print itself
 ///////////////////////////////////////////////////////////////////////////////
-void ZSphere::printSelf() const
+void ZSphere::print(const int pLimit,FILE*pOutput) const
 {
-    std::cout << "===== Sphere =====\n"
+    std::cout << "===== Sphere " << Name << "=====\n"
               << "        Radius: " << radius << "\n"
               << "  Sector Count: " << sectorCount << "\n"
               << "   Stack Count: " << stackCount << "\n"
               << "Smooth Shading: " << (smooth ? "true" : "false") << "\n"
               << "Triangle Count: " << getTriangleCount() << "\n"
               << "   Index Count: " << getIndexCount() << "\n"
-              << "  Vertex Count: " << getVertexCount() << "\n"
-              << "  Normal Count: " << getNormalCount() << "\n"
-              << "TexCoord Count: " << getTexCoordCount() << std::endl;
+              << "  Vertex Count: " << vertices.count() << "\n" << std::endl;
+
+    ZObject::print(pLimit,pOutput);
+
 }
 /*
 void ZSphere::GLsetup()
@@ -313,6 +317,7 @@ void ZSphere::buildVerticesSmooth()
             nx = x * lengthInv;
             ny = y * lengthInv;
             nz = z * lengthInv;
+
 //            addNormal(nx, ny, nz);
 
             // vertex tex coord between [0, 1]

@@ -4,19 +4,22 @@
 
 ZTexture::ZTexture( GLenum pTextureEngine)
 {
+    glActiveTexture(pTextureEngine);
     GLResources->registerTexture(this);
     TextureEngine=pTextureEngine;
+    glGenTextures(1,&Id);
 }
 ZTexture::ZTexture(const char* pPath , GLenum pTextureEngine)
 {
     GLResources->registerTexture(this);
     TextureEngine=pTextureEngine;
+//    glGenTextures(1,&Id);  -- gentexture is made within load2D()
     load2D(pPath);
 }
 
 void ZTexture::bind()
 {
-    glEnable(GL_TEXTURE_2D);
+//    glEnable(GL_TEXTURE_2D);  // not allowed in opengl 3.3
     glActiveTexture(TextureEngine);
     glBindTexture(GL_TEXTURE_2D, Id);
 }

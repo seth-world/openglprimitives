@@ -1,6 +1,15 @@
+#ifdef __USE_GLAD__
+#include <glad/glad.h>
+#else
+#include <GL/glew.h>
+#endif
+
 #include "zobject.h"
+
 #include <zobjectfunctions.h>
 #include <ztexture.h>
+
+
 
 //Vertice_type CalculateSurfaceNormal (Vertice_type* pTriangle,ZObject::NormalDirection pFront);
 
@@ -563,7 +572,7 @@ ZObject::toFlatTexCoords()
 }//toFlatTexCoords
 
 void
-ZObject::print(int pLimit,FILE* pOutput)
+ZObject::print(int pLimit,FILE* pOutput) const
 {
     long wVCount=vertices.size();
     if (vertices.size()>pLimit)
@@ -670,6 +679,7 @@ ZObject::computeNormals()
     Vertice_type wTriangle[3];
     zbs::ZArray<Vertice_type> pReturn;
     long wNormIdx=0;
+    NormalDirection wND=ZObject::Compute ; /* default : compute normals */
     for (unsigned int wi=0;wi<vertices.size();wi=wi+3)
        {
         if ((vertices.size()-wi)<3)
@@ -677,15 +687,20 @@ ZObject::computeNormals()
           fprintf (stderr," Vertices object are not grouped per triangle\n");
           return ;
         }
-        if (wNormIdx>=VNormalDir.size())
+        if (VNormalDir.size())
         {
-        fprintf (stderr,
-                 " computeNormal-E-IVNORM Normal directions are not homogeneous per triangles for object <%s>\n"
-                 " May be normals have to be forced   (setComputeNormals(false))\n",
-                 Name);
-        exit (EXIT_FAILURE);
+            if (wNormIdx>=VNormalDir.size())
+                {
+                fprintf (stderr,
+                         " computeNormal-E-IVNORM Normal directions are not homogeneous per triangles for object <%s>\n"
+                         " May be normals have to be forced   (setComputeNormals(false))\n",
+                         Name);
+                exit (EXIT_FAILURE);
+                }
+            wND=VNormalDir[wNormIdx];
         }
-       switch (VNormalDir[wNormIdx])
+//       switch (VNormalDir[wNormIdx])
+        switch (wND)
            {
            case ZObject::Front:
                wNormal= ZObject::NDirFront;
