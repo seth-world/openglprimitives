@@ -48,7 +48,7 @@ ZTextRenderer::ZTextRenderer(GLenum pTexture)
     TextShader=new ZShader("ztextrenderer.vs", "ztextrenderer.fs", "TextRenderer");
 
 //    this->TextShader->setMat4Transpose("mProjection", glm::ortho(0.0f, static_cast<GLfloat>(pWidth), static_cast<GLfloat>(pHeight), 0.0f));
-//    this->TextShader->setMat4("mProjection", glm::ortho(0.0f, static_cast<GLfloat>(pWidth), static_cast<GLfloat>(pHeight), 0.0f));
+//    this->TextShader->use();
 //    this->TextShader->setInt("TextSampler", Texture->getTextureEngineNumber());
     // Configure VAO/VBO for texture quads
     glGenVertexArrays(1, &this->VAO);
@@ -59,9 +59,15 @@ ZTextRenderer::ZTextRenderer(GLenum pTexture)
     int wTextCoordsAttLocation=TextShader->getNamedAttributeLocation("TextCoords",true); /* abort on error option set*/
     glEnableVertexAttribArray(wTextCoordsAttLocation);
 
-    glVertexAttribPointer(wTextCoordsAttLocation, 4, GL_FLOAT, GL_FALSE, 0, 0);
-/*    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, nullptr, GL_DYNAMIC_DRAW);
-    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(wTextCoordsAttLocation,
+                          4, GL_FLOAT,  /* 4 vertices position <x,y> texture <x,y> */
+                          GL_FALSE,     /* no normalization : float is kept */
+                          0,            /* no stride */
+                          nullptr);     /* no offset within buffer */
+
+/*
+   glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, nullptr, GL_DYNAMIC_DRAW);
+   glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), nullptr);
 */
     glBindBuffer(GL_ARRAY_BUFFER, 0);

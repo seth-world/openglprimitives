@@ -62,22 +62,34 @@ class Character {
 public:
 
     Character()=default;
-    Character(GLuint pTexId,ZTexture* pTexture,glm::ivec2 pSize, glm::ivec2 pBearing,GLuint pAdvance)
+    Character(ZTexture* pTexture,
+              glm::ivec2 pSize,
+              glm::ivec2 pBearing,
+              GLuint pAdvance,
+              long pxMin,
+              long pyMin,
+              long pxMax,
+              long pyMax)
     {
-        TextureID=pTexId;
+//        TextureID=pTexId;
         Texture=pTexture;
         Size=pSize;
         Bearing=pBearing;
         Advance=pAdvance;
+        xMin=pxMin;
+        xMax=pxMax;
+        yMin=pyMin;
+        yMax=pyMax;
+
     }
     Character(Character& pIn) {memmove (this,&pIn,sizeof(Character));}
 
-    GLuint TextureID;   // ID handle of the glyph texture
+//    GLuint TextureID;   // ID handle of the glyph texture
     ZTexture* Texture;
     glm::ivec2 Size;    // Size of glyph
     glm::ivec2 Bearing; // Offset from baseline to left/top of glyph
     GLuint Advance;     // Horizontal offset to advance to next glyph
-
+    long     xMin, yMin, xMax ,yMax ; // BBox
     Character& operator = (const Character &pIn)
     {
         memmove (this,&pIn,sizeof(Character));
@@ -92,7 +104,13 @@ public:
     void clear()
     {
         memset (Tab,0,sizeof(Tab));
+        FontHeight=0;
+        MaxBearingH=0;
+        MaxBearingW=0;
     }
+    long FontHeight=0;
+    FT_Int MaxBearingH=0;
+    FT_Int MaxBearingW=0;
     Character& operator [] (int pIdx) {return Tab[pIdx];}
 
 };
@@ -122,9 +140,12 @@ public:
     void RenderText(std::string pText,
                     GLfloat pPosX, GLfloat pPosY,
                     GLfloat pScale,
-                    const glm::vec3 pColor = glm::vec3(1.0f));
+                    const Color_type pColor = Color_type(1.0f));
 
-
+    void render(std::string pText,
+                GLfloat pPosX, GLfloat pPosY,
+                GLfloat pScale,
+                const Color_type pColor);
     /** adds a new font
      *  pFontPath : file name which will be searched within default font path
      *  pFontsize : height in pixels of the font
@@ -141,6 +162,7 @@ private:
     // Render state
     GLuint VAO, VBO;
     GLenum TextureEngine=GL_TEXTURE0;
+    GLuint Width, Height;
 };
 
 

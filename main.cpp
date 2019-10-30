@@ -357,29 +357,68 @@ int main()
 
 //        wText.RenderText("This is sample text", 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
 
-        wText.renderTextByName("This is a sample text AtlasScriptina48",-0.8f,0.2f,ZBlueColor,"AtlasScriptina48");
+
+        wText.renderTextByName("This is a sample text AtlasScriptina48",
+                               -0.8f,0.2f,
+                               ZBlueColor,
+                               "AtlasScriptina48");
 
 
-        wText.renderTextByName("abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMN AtlasArchitex48",-0.8f,0.8f,ZBlueColor,"AtlasFreeSans48");
+        wText.renderTextByName("abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMN AtlasArchitex48",
+                               -0.8f,0.8f,
+                               ZBlueColor,
+                               "AtlasFreeSans48");
 
 
-        wText.renderTextByName("abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMN AtlasFreeSans24",-0.9f,0.0f,ZRedMedium,"AtlasFreeSans24");
+        wText.renderTextByName("abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMN AtlasFreeSans24",
+                               -0.9f,0.0f,
+                               ZRedMedium,
+                               "AtlasFreeSans24");
 
 
         wText.renderTextByName("abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMN DroidSansMono24",-0.9f,-0.2f,ZYellowSpecular,"DroidSansMono24");
 
-        wTextArchi.RenderText("New more longer text with s letter rendered.",
-                           3.0f,3.0f,
+
+        glm::mat4 textModel = glm::mat4(1.0f);
+        textModel =  glm::translate(camera.getModel(), glm::vec3(0.0f, 0.0f, 0.0f));
+        textModel = glm::rotate(textModel,glm::radians(180.0f),glm::vec3(1.0f, 0.0f, 0.0f)); /* to do : avoid rotation */
+
+        glm::mat4 textView = camera.GetViewMatrix();
+        glm::mat4 textProjection = glm::perspective(glm::radians(camera.Zoom),
+                                                    (float)SCR_WIDTH / (float)SCR_HEIGHT,
+                                                    0.1f,
+                                                    100.0f);
+        wTextArchi.TextShader->use();
+        wTextArchi.TextShader->setMat4("mModel", textModel);
+        wTextArchi.TextShader->setMat4("mView", textView);
+        wTextArchi.TextShader->setMat4("mProjection", textProjection);
+
+//        glm::mat4 textProjection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+
+//        wTextArchi.TextShader->setMat4("mProjection", textProjection);
+
+        wTextArchi.render("New more longer text with s letter rendered.",
+                           -0.6f,-0.4f,
                            1.0f,
                            ZRedMedium);
 
-        wTextFT.RenderText("New text with s letter rendered.",
+        wTextFT.TextShader->use();
+        wTextFT.TextShader->setMat4("mModel", textModel);
+        wTextFT.TextShader->setMat4("mView", textView);
+        wTextFT.TextShader->setMat4("mProjection", textProjection);
+//        textModel =  glm::translate(glm::mat4(1.0f), glm::vec3(-0.8f, -0.2f, 0.2f));
+//        textModel = glm::mat4(1.0f);
+//        wTextFT.TextShader->setMat4("mModel", textModel);
+        wTextFT.render("New text with gpwhdlq letter rendered.",
                            0.0f,0.0f,
                            1.0f,
                            ZBlueColor);
 
 
-        wText.renderTextByName("This is a sample text THIS IS A SAMPLE TEXT 1234567890  FreeSans12",-0.2f,-0.8f,ZWhiteColor,"AtlasFreeSans12");
+        wText.renderTextByName("This is a sample text THIS IS A SAMPLE TEXT 1234567890  FreeSans12",
+                               -0.2f,-0.8f,
+                               ZWhiteColor,
+                               "AtlasFreeSans12");
 
 
         // render lamp object
@@ -390,8 +429,10 @@ int main()
         lampModel = glm::rotate(lampModel,(float)glfwGetTime(),glm::vec3(1.0f, 0.5f, 0.2f));
 
         glm::mat4 lampView = camera.GetViewMatrix();
-
-        glm::mat4 lampProjection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 lampProjection = glm::perspective(glm::radians(camera.Zoom),
+                                                    (float)SCR_WIDTH / (float)SCR_HEIGHT,
+                                                    0.1f,
+                                                    100.0f);
 
         /* remark : no normal matrix for lampShader */
         lampShader.setMat4("mProjection", lampProjection);
