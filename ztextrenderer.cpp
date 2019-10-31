@@ -45,7 +45,8 @@ ZTextRenderer::ZTextRenderer(GLenum pTexture)
 {
     TextureEngine=pTexture;
     // Load and configure shader
-    TextShader=new ZShader("ztextrenderer.vs", "ztextrenderer.fs", "TextRenderer");
+//    TextShader=new ZShader("ztextrenderer.vs", "ztextrenderer.fs", "TextRenderer");
+    TextShader=new ZShader("zgltext.vs", "zgltext.fs", "TextRenderer(zgltext)");
 
 //    this->TextShader->setMat4Transpose("mProjection", glm::ortho(0.0f, static_cast<GLfloat>(pWidth), static_cast<GLfloat>(pHeight), 0.0f));
 //    this->TextShader->use();
@@ -70,6 +71,9 @@ ZTextRenderer::ZTextRenderer(GLenum pTexture)
    glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), nullptr);
 */
+    TextShader->use();
+    this->TextShader->setInt("TextureSampler", ZTexture::getTextureEngineNumber(TextureEngine));
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
@@ -115,16 +119,17 @@ FontAtlas::FontAtlas(const char* pFont, int pFontSize, const char* pName,GLenum 
 
     unsigned int wCurrentWidth = 0;
     unsigned int wCurrentHeight = 0;
-    TexWidth = 0;
-    TexHeight = 0;
+    TexSumWidth = 0;
+    TexSumHeight = 0;
 
 //      memset(CharAtlas, 0, sizeof CharAtlas);
     int wErrNb=0;
     const int MaxFontErr=10;
     const int MaxCharCode=128;
      /* Find minimum size for a texture holding all visible ASCII characters */
-     for (int wChar = 32; wChar < 128; wChar++)
+     for (FT_ULong wChar = 32; wChar < 128; wChar++)
      {
+//         wFTerr=FT_Load_Char(wFace, wChar, FT_LOAD_BITMAP_METRICS_ONLY);
          wFTerr=FT_Load_Char(wFace, wChar, FT_LOAD_RENDER);
          if (wFTerr!=FT_Err_Ok)
          {
@@ -133,7 +138,7 @@ FontAtlas::FontAtlas(const char* pFont, int pFontSize, const char* pName,GLenum 
                  {
                  fprintf (stderr,
                           "FontAtlas::Load-E Freetype error while loading glyph from library.\n"
-                          "    font <%s> character code <%d>\n"
+                          "    font <%s> character code <%lu>\n"
                           "    Error <%d>  <%s>\n",
                           pFont,
                           wChar,
@@ -146,7 +151,7 @@ FontAtlas::FontAtlas(const char* pFont, int pFontSize, const char* pName,GLenum 
             {
             fprintf (stderr,
                      "FontAtlas::Load-F Fatal error width overflow\n"
-                     " for character code <%d>\n"
+                     " for character code <%lu>\n"
                      "   bitmap size <%d>\n"
                      "   Maximum width for texture is <%d>\n",
                      wChar,
@@ -156,8 +161,8 @@ FontAtlas::FontAtlas(const char* pFont, int pFontSize, const char* pName,GLenum 
             }
          if (wCurrentWidth + GlyphSlot->bitmap.width + 1 >= __TEX_MAXWIDTH__)  /* jump to new 'line' */
          {
-             TexWidth = std::max(TexWidth, wCurrentWidth);
-             TexHeight += wCurrentHeight;
+             TexSumWidth = std::max(TexSumWidth, wCurrentWidth);
+             TexSumHeight += wCurrentHeight;
              wCurrentWidth = 0;
              wCurrentHeight = 0;
          }
@@ -165,8 +170,8 @@ FontAtlas::FontAtlas(const char* pFont, int pFontSize, const char* pName,GLenum 
          wCurrentHeight = std::max(wCurrentHeight, GlyphSlot->bitmap.rows);
      } // for (int wChar = 32; wChar < 128; wChar++)
 
-     TexWidth = std::max(TexWidth, wCurrentWidth);
-     TexHeight += wCurrentHeight;
+     TexSumWidth = std::max(TexSumWidth, wCurrentWidth);
+     TexSumHeight += wCurrentHeight;
 
      /* Create a texture that will be used to hold all ASCII glyphs */
 
@@ -182,7 +187,7 @@ FontAtlas::FontAtlas(const char* pFont, int pFontSize, const char* pName,GLenum 
      glTexImage2D(GL_TEXTURE_2D,
                   0,
                   GL_RED,
-                  (GLsizei)TexWidth, (GLsizei)TexHeight,
+                  (GLsizei)TexSumWidth, (GLsizei)TexSumHeight,
                   0,
                   GL_RED,
                   GL_UNSIGNED_BYTE,
@@ -218,17 +223,17 @@ FontAtlas::FontAtlas(const char* pFont, int pFontSize, const char* pName,GLenum 
                  {
                  fprintf (stderr,
                           "ZTextRenderer::LOADCH-E Freetype error while loading glyph from library.\n"
-                          "    font file <%s> character code <%c>\n"
+                          "    font file <%s> character code <%lu>\n"
                           "    Error <%d>  <%s>\n",
                           pFont,
-                          (int)wChar,
+                          wChar,
                           wFTerr,
                           getFTErrorString( wFTerr));
                  }
              continue;
             }
 
-         if (ox + GlyphSlot->bitmap.width + 1 >= __TEX_MAXWIDTH__)
+         if (ox + (int)GlyphSlot->bitmap.width + 1 >= __TEX_MAXWIDTH__)
             {
              oy += wCurrentHeight;
              wCurrentHeight = 0;
@@ -244,17 +249,32 @@ FontAtlas::FontAtlas(const char* pFont, int pFontSize, const char* pName,GLenum 
                          GL_UNSIGNED_BYTE,
                          GlyphSlot->bitmap.buffer);
 
-         CharAtlas[wChar].advanceX = GlyphSlot->advance.x >> 6;
-         CharAtlas[wChar].advanceY = GlyphSlot->advance.y >> 6;
+//         CharAtlas[wChar].advanceX = GlyphSlot->advance.x >> 6;
+//         CharAtlas[wChar].advanceY = GlyphSlot->advance.y >> 6;
 
-         CharAtlas[wChar].bitmapWidth = GlyphSlot->bitmap.width;
-         CharAtlas[wChar].bitmapHeight = GlyphSlot->bitmap.rows;
+         CharAtlas[wChar].Advance.x = (int)(GlyphSlot->advance.x >> 6);
+         CharAtlas[wChar].Advance.y = (int)(GlyphSlot->advance.y >> 6);
 
-         CharAtlas[wChar].bitmapLeft = GlyphSlot->bitmap_left;
-         CharAtlas[wChar].bitmapTop = GlyphSlot->bitmap_top;
 
-         CharAtlas[wChar].texX = ox / (float)TexWidth;
-         CharAtlas[wChar].texY = oy / (float)TexHeight;
+         CharAtlas[wChar].Coef = (double)wFace->glyph->advance.x/(double)wFace->glyph->linearHoriAdvance;
+         /* in order to use GlyphSlot->advance.y  FT_LOAD_VERTICAL_LAYOUT must be set using FT_Load_Char
+          * but this option is marked as "not safe" in freetype doc and should be avoided */
+         if (GlyphSlot->advance.y ==0)
+            {
+             CharAtlas[wChar].Advance.y = (int)(GlyphSlot->linearVertAdvance *CharAtlas[wChar].Coef);
+            }
+
+         CharAtlas[wChar].bitmap.width = GlyphSlot->bitmap.width;
+         CharAtlas[wChar].bitmap.height = GlyphSlot->bitmap.rows;
+
+//         CharAtlas[wChar].bitmapLeft = GlyphSlot->bitmap_left;
+//         CharAtlas[wChar].bitmapTop = GlyphSlot->bitmap_top;
+
+         CharAtlas[wChar].bitmap.left = GlyphSlot->bitmap_left;
+         CharAtlas[wChar].bitmap.top = GlyphSlot->bitmap_top;
+
+         CharAtlas[wChar].texX = ox / (float)TexSumWidth;
+         CharAtlas[wChar].texY = oy / (float)TexSumHeight;
 
          wCurrentHeight = std::max(wCurrentHeight, GlyphSlot->bitmap.rows);
          ox += GlyphSlot->bitmap.width + 1;
@@ -264,7 +284,7 @@ FontAtlas::FontAtlas(const char* pFont, int pFontSize, const char* pName,GLenum 
              "FontAtlas-I For font <%s> <%d> generated a %d x %d (%d kb) texture atlas with <%d> errors\n",
              pFont,
              pFontSize,
-             TexWidth, TexHeight, TexWidth * TexHeight / 1024,
+             TexSumWidth, TexSumHeight, TexSumWidth * TexSumHeight / 1024,
              wErrNb);
 
      FT_Done_Face(wFace);
@@ -291,51 +311,106 @@ ZTextRenderer::getFontIndex(const char*pName)
     return 0L;
 }
 
+
 void
-ZTextRenderer::renderTextByName(const char *pText,
-                                float pX, float pY,
-                                float pSx, float pSy,
+ZTextRenderer::renderByName(const char *pText,
+                            glm::vec3 pPosition,
                                 glm::vec3  pColor,
                                 const char* pName)
 {
 
     long wFontIndex=getFontIndex(pName);
-    renderText(pText,
-               pX,pY,
-               pSx,pSy,
+    render(pText,
+           pPosition,
                pColor,
                wFontIndex);
     return;
 }
 void
-ZTextRenderer::renderTextByName(const char *pText,
-                                float pX, float pY,
+ZTextRenderer::renderVerticalByName(const char *pText,
+                                    glm::vec3 pPosition,
                                 glm::vec3  pColor,
                                 const char* pName)
 {
 
     long wFontIndex=getFontIndex(pName);
-    renderText(pText,
-               pX,pY,
-               pColor,
-               wFontIndex);
+    renderVertical(pText,
+                   pPosition,
+                   pColor,
+                   wFontIndex);
     return;
 }
 void
-ZTextRenderer::renderTextScaledByName(const char *pText,
-                            float pX, float pY,
+ZTextRenderer::renderScaledByName(const char *pText,
+                            glm::vec3 pPosition,
                             glm::vec3 pColor,
                             float pScale,
                             const char* pName)
 {
 
     long wFontIndex=getFontIndex(pName);
-    renderTextScaled(pText,
-                     pX,pY,
+    renderScaled(pText,
+                     pPosition,
                      pColor,
                      pScale,
                      wFontIndex);
     return;
+}
+
+void
+ZTextRenderer::render(const char *pText,
+                      glm::vec3 pPosition,
+                      glm::vec3 pColor,
+                      long  pFontIndex)
+{
+    glm::vec2 wWSize = GLResources->getGLWindowSize();
+
+    float sx = 2.0f / wWSize.x;
+    float sy = 2.0f / wWSize.y;
+
+    _render(pText,
+               pPosition,
+               sx, sy,
+               pColor,
+               pFontIndex);
+
+}
+void
+ZTextRenderer::renderVertical(const char *pText,
+                              glm::vec3 pPosition,
+                              glm::vec3 pColor,
+                              long  pFontIndex)
+{
+    glm::vec2 wWSize = GLResources->getGLWindowSize();
+
+    float sx = 2.0f / wWSize.x;
+    float sy = 2.0f / wWSize.y;
+
+    _renderVertical(pText,
+               pPosition,
+               sx, sy,
+               pColor,
+               pFontIndex);
+
+}
+void
+ZTextRenderer::renderScaled(const char *pText,
+                            glm::vec3 pPosition,
+                            const Color_type pColor,
+                            float pScale,
+                            long  pFontIndex)
+{
+    glm::vec2 wWSize = GLResources->getGLWindowSize();
+
+    float sx = pScale * 2.0f / wWSize.x;
+    float sy = pScale * 2.0f / wWSize.y;
+
+    _render(pText,
+               pPosition,
+               sx, sy,
+               pColor,
+               pFontIndex);
+
 }
 
 /**
@@ -343,15 +418,14 @@ ZTextRenderer::renderTextScaledByName(const char *pText,
  * Rendering starts at coordinates (x, y), z is always 0.
  * The pixel coordinates that the FreeType2 library uses are scaled by (sx, sy).
  */
-/* Replacement char : used when character code in out of range */
-#define __REPLACEMENT_CHAR__ 0x3F
+
 
 void
-ZTextRenderer::renderText(const char *pText,
-                          float pX, float pY,
-                          float pSx, float pSy,
-                          glm::vec3 pColor,
-                          long  pFontIndex)
+ZTextRenderer::_render(const char *pText,
+                       glm::vec3 pPosition,
+                       float pSx, float pSy,
+                       glm::vec3 pColor,
+                       long  pFontIndex)
 {
     if ((pFontIndex < 0)||(pFontIndex>=FontList.count()))
         {
@@ -360,13 +434,6 @@ ZTextRenderer::renderText(const char *pText,
                  FontList.count()-1L);
         }
 
-/*    fprintf (stdout,
-             "\n\nUsing font name <%s> index <%ld>\nText to render <%s>\n"
-             "----------------------------------------------------------\n",
-             FontList[pFontIndex]->Name,
-             pFontIndex,
-             pText);
-*/
     GLboolean wBlendEnabled;
 
     glGetBooleanv(	GL_BLEND, &wBlendEnabled);
@@ -384,6 +451,7 @@ ZTextRenderer::renderText(const char *pText,
 //    TextShader->setInt("TextSampler",wFont->Texture->getTextureEngineNumber()); /* hopefully we'll set TextSampler to 1 */
     TextShader->setupTexSampler(wFont->Texture);
     TextShader->setVec3(__TEXTCOLOR__,pColor);
+    TextShader->setFloat(__TEXTPOSZ__,pPosition.z); /* set text depth (z coord) */
 
     /* Set up the VBO for our vertex data */
  /*   int wTextCoordsAttLocation=(GLuint)glGetAttribLocation(TextShader->getShaderId(),"TextCoords");
@@ -393,7 +461,7 @@ ZTextRenderer::renderText(const char *pText,
         abort();
     }
 */
-    int wTextCoordsAttLocation=TextShader->getNamedAttributeLocation("TextCoords",true);
+    int wTextCoordsAttLocation=TextShader->getNamedAttributeLocation("TextCoords",true);/*with abort on error option set*/
     glBindVertexArray(VAO);
     glEnableVertexAttribArray(wTextCoordsAttLocation);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -422,31 +490,49 @@ ZTextRenderer::renderText(const char *pText,
 //        fprintf(stdout," char <%c> code <%d>\n",*p,*p);
 
         /* Calculate the vertex and texture coordinates */
-        float x2 = pX + wFont->CharAtlas[wCharCode].bitmapLeft * pSx;
-        float y2 = -pY - wFont->CharAtlas[wCharCode].bitmapTop * pSy;
-        float w = wFont->CharAtlas[wCharCode].bitmapWidth * pSx;
-        float h = wFont->CharAtlas[wCharCode].bitmapHeight * pSy;
+        float x2 = pPosition.x + wFont->CharAtlas[wCharCode].bitmap.left * pSx;
+        float y2 = -pPosition.y - wFont->CharAtlas[wCharCode].bitmap.top * pSy;
+
+
+        float w = wFont->CharAtlas[wCharCode].bitmap.width * pSx;
+        float h = wFont->CharAtlas[wCharCode].bitmap.height * pSy;
+
+
 
         /* Advance the cursor to the start of the next character */
-        pX += wFont->CharAtlas[wCharCode].advanceX * pSx;
-        pY += wFont->CharAtlas[wCharCode].advanceY * pSy;
+        pPosition.x += wFont->CharAtlas[wCharCode].Advance.x * pSx;
+
+//        pPosition.x += wFont->CharAtlas[wCharCode].advanceX * pSx;
+//        pY += wFont->CharAtlas[wCharCode].advanceY * pSy;  //only for vertical layout otherwise pY remains the same
 
         /* Skip glyphs that have no pixels */
         if (!w || !h)
                 continue;
 
         wCoords[wC++] = (textPoint) {
-        x2, -y2, wFont->CharAtlas[wCharCode].texX, wFont->CharAtlas[wCharCode].texY};
+                x2, -y2,
+                wFont->CharAtlas[wCharCode].texX,  // texture s coord
+                wFont->CharAtlas[wCharCode].texY}; // texture t coord
         wCoords[wC++] = (textPoint) {
-        x2 + w, -y2, wFont->CharAtlas[wCharCode].texX + wFont->CharAtlas[wCharCode].bitmapWidth / wFont->TexWidth, wFont->CharAtlas[wCharCode].texY};
+                x2 + w, -y2,
+                wFont->CharAtlas[wCharCode].texX + wFont->CharAtlas[wCharCode].bitmap.width / wFont->TexSumWidth,// texture s coord
+                wFont->CharAtlas[wCharCode].texY};// texture t coord
         wCoords[wC++] = (textPoint) {
-        x2, -y2 - h, wFont->CharAtlas[wCharCode].texX, wFont->CharAtlas[wCharCode].texY + wFont->CharAtlas[wCharCode].bitmapHeight / wFont->TexHeight};
+                x2, -y2 - h, // point <x , y>
+                wFont->CharAtlas[wCharCode].texX, // texture s coord
+                wFont->CharAtlas[wCharCode].texY + wFont->CharAtlas[wCharCode].bitmap.height / wFont->TexSumHeight};// texture t coord
         wCoords[wC++] = (textPoint) {
-        x2 + w, -y2, wFont->CharAtlas[*p].texX + wFont->CharAtlas[wCharCode].bitmapWidth / wFont->TexWidth, wFont->CharAtlas[wCharCode].texY};
+                x2 + w, -y2,// point <x , y>
+                wFont->CharAtlas[*p].texX + wFont->CharAtlas[wCharCode].bitmap.width / wFont->TexSumWidth,// texture s coord
+                wFont->CharAtlas[wCharCode].texY};// texture t coord
         wCoords[wC++] = (textPoint) {
-        x2, -y2 - h, wFont->CharAtlas[wCharCode].texX, wFont->CharAtlas[wCharCode].texY + wFont->CharAtlas[wCharCode].bitmapHeight / wFont->TexHeight};
+                x2, -y2 - h, // point <x , y>
+                wFont->CharAtlas[wCharCode].texX, // texture s coord
+                wFont->CharAtlas[wCharCode].texY + wFont->CharAtlas[wCharCode].bitmap.height / wFont->TexSumHeight};// texture t coord
         wCoords[wC++] = (textPoint) {
-        x2 + w, -y2 - h, wFont->CharAtlas[wCharCode].texX + wFont->CharAtlas[wCharCode].bitmapWidth / wFont->TexWidth, wFont->CharAtlas[wCharCode].texY + wFont->CharAtlas[wCharCode].bitmapHeight / wFont->TexHeight};
+                x2 + w, -y2 - h, // point <x , y>
+                wFont->CharAtlas[wCharCode].texX + wFont->CharAtlas[wCharCode].bitmap.width / wFont->TexSumWidth, // texture s coord
+                wFont->CharAtlas[wCharCode].texY + wFont->CharAtlas[wCharCode].bitmap.height / wFont->TexSumHeight};// texture t coord
     }//for (p = (const uint8_t *)pText; *p; p++)
 
     /* Draw all the character on the screen in one go */
@@ -461,43 +547,124 @@ ZTextRenderer::renderText(const char *pText,
 
     if (!wBlendEnabled) /* restore blend state */
             glDisable(GL_BLEND);
-}
+}//_render
 
 void
-ZTextRenderer::renderText(const char *pText,
-                          float pX, float pY,
-                          glm::vec3 pColor,
-                          long  pFontIndex)
+ZTextRenderer::_renderVertical(const char *pText,
+                       glm::vec3 pPosition,
+                       float pSx, float pSy,
+                       glm::vec3 pColor,
+                       long  pFontIndex)
 {
-    glm::vec2 wWSize = GLResources->getGLWindowSize();
+    if ((pFontIndex < 0)||(pFontIndex>=FontList.count()))
+        {
+        fprintf (stderr,"ZTextRenderer::renderText-E Invalid font index : given <%ld> while must be in range of [<0>,<%ld>]\n",
+                 pFontIndex,
+                 FontList.count()-1L);
+        }
 
-    float sx = 2.0f / wWSize.x;
-    float sy = 2.0f / wWSize.y;
+    GLboolean wBlendEnabled;
 
-    renderText(pText,
-               pX,pY,
-               sx, sy,
-               pColor,
-               pFontIndex);
+    glGetBooleanv(	GL_BLEND, &wBlendEnabled);
+    if (!wBlendEnabled)
+            glEnable(GL_BLEND);
 
-}
+    FontAtlas * wFont=FontList[pFontIndex];
+    const uint8_t *p;
 
-void
-ZTextRenderer::renderTextScaled(const char *pText,
-                                float pX, float pY,
-                                const Color_type pColor,
-                                float pScale,
-                                long  pFontIndex)
-{
-    glm::vec2 wWSize = GLResources->getGLWindowSize();
+    /* Use the texture containing the atlas */
+    wFont->Texture->bind();
 
-    float sx = pScale * 2.0f / wWSize.x;
-    float sy = pScale * 2.0f / wWSize.y;
+    TextShader->use();
 
-    renderText(pText,
-               pX,pY,
-               sx, sy,
-               pColor,
-               pFontIndex);
+    TextShader->setupTexSampler(wFont->Texture);
+    TextShader->setVec3(__TEXTCOLOR__,pColor);
+    TextShader->setFloat(__TEXTPOSZ__,pPosition.z); /* set text depth (z coord) */
 
-}
+    /* Set up the VBO for our vertex data */
+
+    int wTextCoordsAttLocation=TextShader->getNamedAttributeLocation("TextCoords",true);/*with abort on error option set*/
+    glBindVertexArray(VAO);
+    glEnableVertexAttribArray(wTextCoordsAttLocation);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    glVertexAttribPointer(wTextCoordsAttLocation,
+                          4,        /* four items */
+                          GL_FLOAT, /* type is float */
+                          GL_FALSE, /* not to be normalized : use floating point directly */
+                          0,        /* no stride */
+                          0);       /* no offset from buffer beginning */
+
+    textPoint wCoords[6 * strlen(pText)];
+    int wC = 0;
+
+    uint8_t wCharCode;
+    /* Loop through all characters */
+    for (p = (const uint8_t *)pText; *p; p++)
+        {
+        /* character code must be [32,128] else replacement character is used */
+
+        if ((*p < 32)||(*p > 128))
+                wCharCode = __REPLACEMENT_CHAR__;
+        else
+            wCharCode=*p;
+
+        /* Calculate the vertex and texture coordinates */
+
+//        float x2 = pPosition.x + wFont->CharAtlas[wCharCode].bitmap.left * pSx;
+        float x2 = pPosition.x + ((float)(wFont->MaxWidth - wFont->CharAtlas[wCharCode].bitmap.width)/2.0f) * pSx;
+        float y2 = -pPosition.y - wFont->CharAtlas[wCharCode].bitmap.top * pSy;
+
+
+        float w = wFont->CharAtlas[wCharCode].bitmap.width * pSx;
+        float h = wFont->CharAtlas[wCharCode].bitmap.height * pSy;
+
+        /* Advance the cursor to the start of the next character */
+//        pX += wFont->CharAtlas[wCharCode].advanceX * pSx;//only for horizontal layout otherwise pX remains the same
+//        pPosition.y += wFont->CharAtlas[wCharCode].advanceY * pSy;  //only for vertical layout otherwise pY remains the same
+        pPosition.y -= ((float)(wFont->CharAtlas[wCharCode].Advance.y>>6)) * pSy;  //only for vertical layout otherwise pY remains the same
+//        pPosition.y -= h*1.2 ;
+
+        /* Skip glyphs that have no pixels */
+        if (!w || !h)
+                continue;
+
+        wCoords[wC++] = (textPoint) {
+                x2, -y2,
+                wFont->CharAtlas[wCharCode].texX,  // texture s coord
+                wFont->CharAtlas[wCharCode].texY}; // texture t coord
+        wCoords[wC++] = (textPoint) {
+                x2 + w, -y2,
+                wFont->CharAtlas[wCharCode].texX + wFont->CharAtlas[wCharCode].bitmap.width / wFont->TexSumWidth,// texture s coord
+                wFont->CharAtlas[wCharCode].texY};// texture t coord
+        wCoords[wC++] = (textPoint) {
+                x2, -y2 - h, // point <x , y>
+                wFont->CharAtlas[wCharCode].texX, // texture s coord
+                wFont->CharAtlas[wCharCode].texY + wFont->CharAtlas[wCharCode].bitmap.height / wFont->TexSumHeight};// texture t coord
+        wCoords[wC++] = (textPoint) {
+                x2 + w, -y2,// point <x , y>
+                wFont->CharAtlas[*p].texX + wFont->CharAtlas[wCharCode].bitmap.width / wFont->TexSumWidth,// texture s coord
+                wFont->CharAtlas[wCharCode].texY};// texture t coord
+        wCoords[wC++] = (textPoint) {
+                x2, -y2 - h, // point <x , y>
+                wFont->CharAtlas[wCharCode].texX, // texture s coord
+                wFont->CharAtlas[wCharCode].texY + wFont->CharAtlas[wCharCode].bitmap.height / wFont->TexSumHeight};// texture t coord
+        wCoords[wC++] = (textPoint) {
+                x2 + w, -y2 - h, // point <x , y>
+                wFont->CharAtlas[wCharCode].texX + wFont->CharAtlas[wCharCode].bitmap.width / wFont->TexSumWidth, // texture s coord
+                wFont->CharAtlas[wCharCode].texY + wFont->CharAtlas[wCharCode].bitmap.height / wFont->TexSumHeight};// texture t coord
+    }//for (p = (const uint8_t *)pText; *p; p++)
+
+    /* Draw all the character on the screen in one go */
+    glBufferData(GL_ARRAY_BUFFER, sizeof (wCoords), wCoords, GL_DYNAMIC_DRAW);
+
+//    wFont->Texture->bind();
+
+
+    glDrawArrays(GL_TRIANGLES, 0, wC);
+
+    glDisableVertexAttribArray(wTextCoordsAttLocation);
+
+    if (!wBlendEnabled) /* restore blend state */
+            glDisable(GL_BLEND);
+}//_renderVertical

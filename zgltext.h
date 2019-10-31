@@ -58,37 +58,77 @@ struct Character {
 #include <ztoolset/zarray.h>
 #include <initializer_list>
 
+#ifndef __BMSTRUCT__
+#define __BMSTRUCT__
+struct bmstruct{
+    float width;    // bitmap width
+    float height;   // bitmap height
+    float left;     // bearing left : to draw character must position bearing <top,left>
+    float top;      // bearing top
+};
+#endif
+
+
 class Character {
 public:
 
     Character()=default;
     Character(ZTexture* pTexture,
-              glm::ivec2 pSize,
-              glm::ivec2 pBearing,
-              GLuint pAdvance,
+              long pBitmapWidth,
+              long pBitmapHeight,
+              long pBearingX,
+              long pBearingY,
+              long pAdvanceX,
+              long pAdvanceY,
               long pxMin,
               long pyMin,
               long pxMax,
-              long pyMax)
+              long pyMax,
+              double pCoef)
     {
 //        TextureID=pTexId;
         Texture=pTexture;
-        Size=pSize;
-        Bearing=pBearing;
-        Advance=pAdvance;
+        bitmap.width=pBitmapWidth;
+        bitmap.height=pBitmapHeight;
+
+        bitmap.left=pBearingX;
+        bitmap.top=pBearingY;
+
+/*        Size.x=(int)pBitmapWidth;
+        Size.y=(int)pBitmapHeight;
+        Bearing.x=(int)pBearingX;
+        Bearing.y=(int)pBearingY;
+*/
+        Advance.x=(int)pAdvanceX;
+        Advance.y=(int)pAdvanceY;
         xMin=pxMin;
         xMax=pxMax;
         yMin=pyMin;
         yMax=pyMax;
+        Coef=pCoef;
+/* following is an obsolete fallback  */
+        if (Advance.y==0)
+        {
+           Advance.y=(int)(yMax-yMin);
+        }
 
     }
     Character(Character& pIn) {memmove (this,&pIn,sizeof(Character));}
 
 //    GLuint TextureID;   // ID handle of the glyph texture
     ZTexture* Texture;
-    glm::ivec2 Size;    // Size of glyph
-    glm::ivec2 Bearing; // Offset from baseline to left/top of glyph
-    GLuint Advance;     // Horizontal offset to advance to next glyph
+    /* bitmap information :
+     * width,height : bitmap size
+     * left,top : bearing : Offset from baseline to left/top of glyph
+     */
+    bmstruct bitmap;
+//    glm::ivec2 Size;    // Size of glyph
+//    glm::ivec2 Bearing; // Offset from baseline to left/top of glyph
+
+    glm::ivec2 Advance; // Horizontal (x) or Vertical (y) offset to advance to next glyph
+
+    double     Coef;    // conversion ratio from generic glyph measurement to bitmap metrics
+                        // is equal to (double)wFace->glyph->advance.x/(double)wFace->glyph->linearHoriAdvance
     long     xMin, yMin, xMax ,yMax ; // BBox
     Character& operator = (const Character &pIn)
     {
@@ -107,11 +147,22 @@ public:
         FontHeight=0;
         MaxBearingH=0;
         MaxBearingW=0;
+        MaxWidth=0;
+        MaxHeight=0;
     }
     long FontHeight=0;
     FT_Int MaxBearingH=0;
     FT_Int MaxBearingW=0;
-    Character& operator [] (int pIdx) {return Tab[pIdx];}
+
+    FT_Int MaxWidth=0;
+    FT_Int MaxHeight=0;
+
+    Character& operator [] (int pIdx)
+        {
+        if ((pIdx<32)||(pIdx>128))
+                return Tab[__REPLACEMENT_CHAR__];
+        return Tab[pIdx];
+        }
 
 };
 
@@ -134,18 +185,24 @@ public:
     // Shader used for text rendering
     ZShader* TextShader;
     // Constructor
-    ZGLText(GLuint pWidth, GLuint pHeight,GLenum pTexture);
+    ZGLText(GLenum pTexture=GL_TEXTURE0);
 
     // Renders a string of text using the precompiled list of characters
-    void RenderText(std::string pText,
+ /*   void RenderText(std::string pText,
                     GLfloat pPosX, GLfloat pPosY,
                     GLfloat pScale,
                     const Color_type pColor = Color_type(1.0f));
-
+*/
     void render(std::string pText,
-                GLfloat pPosX, GLfloat pPosY,
+                glm::vec3 pPosition,
                 GLfloat pScale,
                 const Color_type pColor);
+
+    void renderVertical(std::string pText,
+                        glm::vec3 pPosition,
+                        GLfloat pScale,
+                        const Color_type pColor);
+
     /** adds a new font
      *  pFontPath : file name which will be searched within default font path
      *  pFontsize : height in pixels of the font

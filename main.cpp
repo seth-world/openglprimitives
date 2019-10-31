@@ -211,12 +211,8 @@ int main()
 
     ZTextRenderer wText(GL_TEXTURE0);
 
-    ZGLText wTextArchi(GLResources->getGLWindowSize().x,
-                             GLResources->getGLWindowSize().y,
-                             GL_TEXTURE0);
-    ZGLText wTextFT(GLResources->getGLWindowSize().x,
-                          GLResources->getGLWindowSize().y,
-                          GL_TEXTURE0);
+    ZGLText wTextArchi(GL_TEXTURE0);
+    ZGLText wTextFT(GL_TEXTURE0);
 //    wText.LoadFont("FreeSans.ttf", 12);
 
     wText.addFont("FreeSans.ttf",12,"AtlasFreeSans12");
@@ -231,7 +227,12 @@ int main()
 
     wText.addFont("SCRIPTIN.ttf",48,"AtlasScriptina48");
 
+    wText.addFont("Architex.ttf",48,"AtlasArchitex48");
+
+    wText.addFont("FreeSans.ttf",48,"AtlasFreeSans48");
+
     wTextArchi.LoadFont("Architex.ttf",48,"Architex48");
+
     wTextFT.LoadFont("FreeSans.ttf",48,"FreeSans48");
 
     // build and compile our shader zprogram
@@ -358,7 +359,22 @@ int main()
 //        wText.RenderText("This is sample text", 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
 
 
-        wText.renderTextByName("This is a sample text AtlasScriptina48",
+        glm::mat4 textRModel = glm::mat4(1.0f);
+        textRModel =  glm::translate(camera.getModel(), glm::vec3(0.0f, 0.0f, 0.0f));
+ //       textRModel = glm::rotate(textRModel,glm::radians(180.0f),glm::vec3(1.0f, 0.0f, 0.0f)); /* to do : avoid rotation */
+
+        glm::mat4 textRView = camera.GetViewMatrix();
+        glm::mat4 textRProjection = glm::perspective(glm::radians(camera.Zoom),
+                                                    (float)SCR_WIDTH / (float)SCR_HEIGHT,
+                                                    0.1f,
+                                                    100.0f);
+
+        wText.TextShader->use();
+        wText.TextShader->setMat4("mModel", textRModel);
+        wText.TextShader->setMat4("mView", textRView);
+        wText.TextShader->setMat4("mProjection", textRProjection);
+
+/*        wText.renderTextByName("This is a sample text AtlasScriptina48",
                                -0.8f,0.2f,
                                ZBlueColor,
                                "AtlasScriptina48");
@@ -369,14 +385,17 @@ int main()
                                ZBlueColor,
                                "AtlasFreeSans48");
 
-
-        wText.renderTextByName("abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMN AtlasFreeSans24",
-                               -0.9f,0.0f,
+*/
+        wText.renderByName("abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMN AtlasFreeSans24",
+                               glm::vec3(-0.9f,0.0f,0.0f),
                                ZRedMedium,
                                "AtlasFreeSans24");
 
 
-        wText.renderTextByName("abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMN DroidSansMono24",-0.9f,-0.2f,ZYellowSpecular,"DroidSansMono24");
+        wText.renderVerticalByName("New more longer text with s letter rendered.",
+                           glm::vec3(-0.9f,-0.2f,0.0f),
+                           ZRedMedium,
+                           "AtlasFreeSans48");
 
 
         glm::mat4 textModel = glm::mat4(1.0f);
@@ -398,7 +417,7 @@ int main()
 //        wTextArchi.TextShader->setMat4("mProjection", textProjection);
 
         wTextArchi.render("New more longer text with s letter rendered.",
-                           -0.6f,-0.4f,
+                           glm::vec3(-0.6f,-0.4f,0.0f),
                            1.0f,
                            ZRedMedium);
 
@@ -409,16 +428,16 @@ int main()
 //        textModel =  glm::translate(glm::mat4(1.0f), glm::vec3(-0.8f, -0.2f, 0.2f));
 //        textModel = glm::mat4(1.0f);
 //        wTextFT.TextShader->setMat4("mModel", textModel);
-        wTextFT.render("New text with gpwhdlq letter rendered.",
-                           0.0f,0.0f,
+        wTextFT.renderVertical("New text with gpwhdlq letter rendered.",
+                           glm::vec3(0.0f,0.0f,0.0f),
                            1.0f,
                            ZBlueColor);
 
 
-        wText.renderTextByName("This is a sample text THIS IS A SAMPLE TEXT 1234567890  FreeSans12",
-                               -0.2f,-0.8f,
+        wText.renderByName("This is a sample text THIS IS A SAMPLE TEXT 1234567890  FreeSans12",
+                               glm::vec3(-0.2f,-0.8f,0.0f),
                                ZWhiteColor,
-                               "AtlasFreeSans12");
+                               "AtlasFreeSans24");
 
 
         // render lamp object

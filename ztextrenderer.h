@@ -41,28 +41,33 @@
 
 class ZTexture;
 /// Holds all state information relevant to a character as loaded using FreeType
-/*
-struct Character {
-    GLuint TextureID;   // ID handle of the glyph texture
-    ZTexture* Texture;
-    glm::ivec2 Size;    // Size of glyph
-    glm::ivec2 Bearing; // Offset from baseline to left/top of glyph
-    GLuint Advance;     // Horizontal offset to advance to next glyph
-};
-*/
 
+#ifndef __BMSTRUCT__
+#define __BMSTRUCT__
+struct bmstruct{
+    float width;    // bitmap width
+    float height;   // bitmap height
+    float left;     // bearing left : to draw character must position bearing <top,left>
+    float top;      // bearing top
+};
+#endif
 
 struct CharAtlas_struct {
     CharAtlas_struct() {memset(this,0,sizeof(CharAtlas_struct));}
 
-    float advanceX;	// advance.x
-    float advanceY;	// advance.y
+//    float advanceX;	// advance.x
+//    float advanceY;	// advance.y
+/* bitmap information :
+ * width,height : bitmap size
+ * left,top : bearing : Offset from baseline to left/top of glyph
+ */
+    bmstruct bitmap;
 
-    float bitmapWidth;	// bitmap.width;
-    float bitmapHeight;	// bitmap.height;
+    glm::ivec2 Advance; // Horizontal (x) or Vertical (y) offset to advance to next glyph
 
-    float bitmapLeft;	// bitmap_left;
-    float bitmapTop;	// bitmap_top;
+    double     Coef;    // conversion ratio from generic glyph measurement to bitmap metrics
+                        // is equal to (double)wFace->glyph->advance.x/(double)wFace->glyph->linearHoriAdvance
+    long     xMin, yMin, xMax ,yMax ; // BBox
 
     float texX;	// x offset of glyph in texture coordinates
     float texY;	// y offset of glyph in texture coordinates
@@ -91,8 +96,8 @@ private:
         if (Texture!=nullptr)
                 delete Texture;
         Texture = new ZTexture(*pIn.Texture);
-        TexWidth=pIn.TexWidth;
-        TexHeight=pIn.TexHeight;
+        TexSumWidth=pIn.TexSumWidth;
+        TexSumHeight=pIn.TexSumHeight;
         Name=pIn.Name;
 
         memmove(CharAtlas , pIn.CharAtlas, sizeof(CharAtlas));
@@ -102,7 +107,7 @@ public:
     FontAtlas()=delete;
 
     FontAtlas(const char* pFont, int pFontSize, const char* pName, GLenum pTextureEngine);
-    FontAtlas(FontAtlas& pIn) {_cloneFrom(pIn);}
+    FontAtlas(FontAtlas&& pIn) {_cloneFrom(pIn);}
     FontAtlas& operator = (FontAtlas& pIn) {_cloneFrom(pIn); return *this;}
 
     ~FontAtlas() {
@@ -115,23 +120,36 @@ public:
         if (Texture!=nullptr)
                 delete Texture;
         Texture=nullptr;
-        TexWidth=0;
-        TexHeight=0;
+
+        TexSumWidth=0;      // total width for texture including all face characters
+        TexSumHeight=0;     // total height for texture including all face characters
         memset(CharAtlas,0,sizeof(CharAtlas));
         Name=nullptr;
+        FontHeight=0;
+        MaxBearingH=0;
+        MaxBearingW=0;
+        MaxWidth=0;
+        MaxHeight=0;
     }
 
 
 //    GLuint TexCode;		// texture object
-    ZTexture* Texture=nullptr;      // One texture for all characters of Atlas
-    unsigned int TexWidth;			// texture width in pixels
-    unsigned int TexHeight;			// texture height in pixels
+    ZTexture* Texture=nullptr;  // One texture for all characters of a font face (Atlas)
+    unsigned int TexSumWidth=0;	// texture width in pixels
+    unsigned int TexSumHeight=0;	// texture height in pixels
+
+    long FontHeight=0;
+    FT_Int MaxBearingH=0;   // Maximum bearing high (to top of the glyph)
+    FT_Int MaxBearingW=0;   // Maximum bearing width (to left of the glyph)
+
+    FT_Int MaxWidth=0;      // Maximum width for a font character
+    FT_Int MaxHeight=0;     // Maximum height to a font character
+
 
     const char* Name=nullptr; /*internal name :
                                 fonts may be retreived eiher by this name or by its index within FontList */
 
     CharAtlas_struct CharAtlas[128];  /* indice 0 to 31 are not used and wasted : could be optimized */
-
 
 };
 
@@ -148,7 +166,7 @@ public:
     // Constructor
     ZTextRenderer(GLenum pTexture);
     void initAtlas();
-    void renderText(const char *text, float x, float y, float sx, float sy);
+    void _render(const char *text, float x, float y, float sx, float sy);
 
     /** adds a new font to font atlas :
      *  pFontPath : file name which will be searched within default font path
@@ -165,39 +183,50 @@ public:
 
     long getFontIndex(const char*pName);
 
-    void renderText(const char *pText,
-                    float pX, float pY,
+    void _render(const char *pText,
+                    glm::vec3 pPosition,
                     float pSx, float pSy,
                     glm::vec3 pColor,
                     long  pFontIndex);
-    void renderTextByName(const char *pText,
-                          float pX, float pY,
-                          float pSx, float pSy,
-                          glm::vec3 pColor,
-                          const char* pName);
 
-    void renderText(const char *pText,
-                    float pX, float pY,
+    void _renderVertical(const char *pText,
+                         glm::vec3 pPosition,
+                         float pSx, float pSy,
+                         glm::vec3 pColor,
+                         long  pFontIndex);
+
+    void render(const char *pText,
+                    glm::vec3 pPosition,
                     glm::vec3 pColor,
                     long  pFontIndex);
 
-    void renderTextScaled(const char *pText,
-                          float pX, float pY,
-                          const Color_type pColor,
-                          float pScale,
-                          long  pFontIndex);
+    void renderVertical(const char *pText,
+                glm::vec3 pPosition,
+                glm::vec3 pColor,
+                long  pFontIndex);
+
+    void renderScaled(const char *pText,
+                      glm::vec3 pPosition,
+                      const Color_type pColor,
+                      float pScale,
+                      long  pFontIndex);
 
 
-    void renderTextByName(const char *pText,
-                          float pX, float pY,
-                          glm::vec3 pColor,
-                          const char* pName);
+    void renderByName(const char *pText,
+                      glm::vec3 pPosition,
+                      glm::vec3 pColor,
+                      const char* pName);
 
-    void renderTextScaledByName(const char *pText,
-                                float pX, float pY,
-                                glm::vec3 pColor,
-                                float pScale,
-                                const char* pName);
+    void renderVerticalByName(const char *pText,
+                              glm::vec3 pPosition,
+                              glm::vec3 pColor,
+                              const char* pName);
+
+    void renderScaledByName(const char *pText,
+                            glm::vec3 pPosition,
+                            glm::vec3 pColor,
+                            float pScale,
+                            const char* pName);
 
 
     zbs::ZArray<FontAtlas*> FontList;

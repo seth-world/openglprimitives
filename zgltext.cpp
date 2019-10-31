@@ -36,35 +36,20 @@ const char* getFTErrorString(const FT_Error error_code)
 #include <zresource.h>
 #include <zshader.h>
 
+
+
 //#ifdef __COMMENT__
-ZGLText::ZGLText(GLuint pWidth, GLuint pHeight, GLenum pTexture)
+ZGLText::ZGLText( GLenum pTexture)
 {
-    Width=pWidth;
-    Height=pHeight;
+//    Width=pWidth;
+//    Height=pHeight;
+
+    Width=(GLuint)GLResources->getGLWindowSize().x;
+    Height=(GLuint)GLResources->getGLWindowSize().y;
 
     TextureEngine=pTexture;
     // Load and configure shader
     TextShader=new ZShader("zgltext.vs", "zgltext.fs", "ZGLTextShader");
-//    this->TextShader->setMat4Transpose("mProjection", glm::ortho(0.0f, static_cast<GLfloat>(pWidth), static_cast<GLfloat>(pHeight), 0.0f));
-
-//    glm::mat4 mProjection = glm::ortho(0.0f, static_cast<GLfloat>(pWidth), static_cast<GLfloat>(pHeight), 0.0f);
-/*    glm::mat4 ,Projection = glm::perspective(glm::radians(1.0f),
-                                             static_cast<GLfloat>(pWidth)/static_cast<GLfloat>(pHeight),
-                                             0.1f,
-                                             100.0f);*/
-/*    glm::mat4 wProjection = glm::perspective(glm::radians(1.0f),
-                                             1.0f,
-                                             0.1f,
-                                             100.0f);
-
-
-    TextShader->use();
-    this->TextShader->setMat4("mProjection", mProjection);
-*/
-//    int wLoc=glGetUniformLocation(TextShader->ID, "mProjection");
-//    glUniformMatrix4fv(wLoc, 1, GL_TRUE, &wProjection[0][0]);
-
-//    this->TextShader->setMat4("mProjection", glm::ortho(0.0f, static_cast<GLfloat>(pWidth), static_cast<GLfloat>(pHeight), 0.0f));
     TextShader->use();
     this->TextShader->setInt("TextureSampler", ZTexture::getTextureEngineNumber(TextureEngine));
 
@@ -89,19 +74,9 @@ void ZGLText::LoadFont(const char* pFontFile, GLuint pFontSize,const char* pName
 
     // First clear the previously loaded Characters
     this->Characters.clear();
-    // Then initialize and load the FreeType library
-/*    FT_Library ft;
-    FT_Error wFTerr    = FT_Init_FreeType(&ft);
-    if (wFTerr!=FT_Err_Ok) // All functions return a value different than 0 whenever an error occurred
-        {
-            fprintf (stderr,"ZGLText::Load-E Freetype error while initializing library.\n"
-                     "    Error <%d>  <%s>\n",
-                     wFTerr,
-                     getFTErrorString( wFTerr));
-            abort();
-        }
+
     // Load font as face
-*/
+
     FT_Error wFTerr;
     // Load font as face
     FT_Library ft=GLResources->getFreeTypeLibrary();
@@ -172,22 +147,14 @@ void ZGLText::LoadFont(const char* pFontFile, GLuint pFontSize,const char* pName
             }// else
             continue;
         }//if (wFTerr!=FT_Err_Ok)
-    // Generate texture
-/*    glActiveTexture(TextureEngine);
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);*/
 
-    GLuint wTexId=0;
+// Generate texture
     ZTexture* wTexture=nullptr;
 
-    Characters.FontHeight= wFace->size->metrics.height;
 
     if (wFace->glyph->bitmap.buffer!=nullptr)
     {
         wTexture=new ZTexture(TextureEngine);
-        wTexId=wTexture->getId();
-
         wTexture->bind();
 
         glTexImage2D(
@@ -213,38 +180,51 @@ void ZGLText::LoadFont(const char* pFontFile, GLuint pFontSize,const char* pName
 
          }// if bitmap
 
-     Characters.MaxBearingH=std::max(Characters.MaxBearingH,wFace->glyph->bitmap_top);
-     Characters.MaxBearingW=std::max(Characters.MaxBearingH,wFace->glyph->bitmap_left);
-
 // Now store character for later use
         Character character = {
- //           wTexId,     /* = 0 if no bitmap buffer */
             wTexture,   /* = nullptr if no bitmap buffer */
-            glm::ivec2(wFace->glyph->bitmap.width, wFace->glyph->bitmap.rows),
-            glm::ivec2(wFace->glyph->bitmap_left, wFace->glyph->bitmap_top),
-            (GLuint)wFace->glyph->advance.x,
-
+            wFace->glyph->bitmap.width, wFace->glyph->bitmap.rows,
+            wFace->glyph->bitmap_left, wFace->glyph->bitmap_top,
+            wFace->glyph->advance.x , wFace->glyph->advance.y,
             wFace->bbox.xMin,
             wFace->bbox.yMin,
             wFace->bbox.xMax,
-            wFace->bbox.yMax
+            wFace->bbox.yMax,
+            (double)wFace->glyph->advance.x/(double)wFace->glyph->linearHoriAdvance
         };
 
+        Characters.FontHeight= wFace->size->metrics.height;
+
+        Characters.MaxBearingH=std::max(Characters.MaxBearingH,wFace->glyph->bitmap_top);
+        Characters.MaxBearingW=std::max(Characters.MaxBearingW,wFace->glyph->bitmap_left);
+
+        Characters.MaxWidth =std::max(Characters.MaxWidth,(FT_Int)wFace->glyph->bitmap.width);
+        Characters.MaxHeight =std::max(Characters.MaxHeight,(FT_Int)wFace->glyph->bitmap.rows);
 
         Character wCharacter;
 
 //        wCharacter.TextureID=wTexId;
         wCharacter.Texture=wTexture;
-        wCharacter.Size = glm::ivec2(wFace->glyph->bitmap.width, wFace->glyph->bitmap.rows);
-        wCharacter.Bearing=glm::ivec2(wFace->glyph->bitmap_left, wFace->glyph->bitmap_top);
-        wCharacter.Advance=(GLuint)wFace->glyph->advance.x;
+//        wCharacter.Size = glm::ivec2(wFace->glyph->bitmap.width, wFace->glyph->bitmap.rows);
+        wCharacter.bitmap={(float)wFace->glyph->bitmap.width,(float) wFace->glyph->bitmap.rows,
+                           (float)wFace->glyph->bitmap_left, (float)wFace->glyph->bitmap_top};
+//        wCharacter.Bearing=glm::ivec2(wFace->glyph->bitmap_left, wFace->glyph->bitmap_top);
+        wCharacter.Advance.x=(int)wFace->glyph->advance.x;
+        wCharacter.Advance.y=(int)wFace->glyph->advance.y;
 
         wCharacter.xMin=wFace->bbox.xMin;
         wCharacter.yMin=wFace->bbox.yMin;
         wCharacter.xMax=wFace->bbox.xMax;
         wCharacter.yMax=wFace->bbox.yMax;
 
-//        Characters.insert(std::pair<GLchar, Character>(wChar, character));
+        wCharacter.Coef=(double)wFace->glyph->advance.x/(double)wFace->glyph->linearHoriAdvance;
+
+        if ((GLuint)wFace->glyph->advance.y==0) /* if vertical data not generated */
+        {
+           wCharacter.Advance.y=(int)(((double) wFace->glyph->linearVertAdvance)*wCharacter.Coef);
+           character.Advance.y=(int)(((double) wFace->glyph->linearVertAdvance)*wCharacter.Coef);
+        }
+
         Characters[wChar]=character;
     }//for (GLubyte wChar
 
@@ -257,150 +237,53 @@ void ZGLText::LoadFont(const char* pFontFile, GLuint pFontSize,const char* pName
              wSize,
              sizeof(Characters));
 
- //   this->TextShader->setInt("TextSampler", wTexture->getTextureEngineNumber());
-//    this->TextShader->setInt("TextSampler", ZTexture::getTextureEngineNumber(GL_TEXTURE0));
-
     ZTexture::unbind();
-//    glBindTexture(GL_TEXTURE_2D, 0);
     // Destroy FreeType once we're finished
     FT_Done_Face(wFace);
 //    FT_Done_FreeType(ft);
 }//ZGLText::LoadFont
 
-void ZGLText::RenderText(std::string pText,
-                               GLfloat pPosX, GLfloat pPosY,
-                               GLfloat pScale,
-                               const Color_type pColor)
-{
-    // Activate corresponding render state
-    this->TextShader->use();
-    this->TextShader->setVec3(__TEXTCOLOR__, pColor);
-    glActiveTexture(TextureEngine);
-//    glActiveTexture(Texture->getTextureEngine());
-    glBindVertexArray(this->VAO);
-
-//    this->TextShader->setInt("TexSampler",2);
-    /* texture engine is common to all textures (1 texture per character) */
-
-    this->TextShader->setInt(__TEXTURESAMPLER__,ZTexture::getTextureEngineNumber(TextureEngine));
-
-    // Iterate through all characters
-    std::string::const_iterator c;
-    for (c = pText.begin(); c != pText.end(); c++)
-    {
-        Character ch = Characters[*c];
-
-        GLfloat xpos = pPosX + ch.Bearing.x * pScale;
-        GLfloat ypos = pPosY + (this->Characters['H'].Bearing.y - ch.Bearing.y) * pScale;
-//        GLfloat xpos = pPosX ;
-//        GLfloat ypos = pPosY ;
-
-
-        GLfloat w = ch.Size.x * pScale;
-        GLfloat h = ch.Size.y * pScale;
-        if (!ch.Texture) /* if no bitmap (no texture) for this character, advance to next */
-                {
-                pPosX += (ch.Advance >> 6) * pScale; // Bitshift by 6 to get value in pixels (1/64th times 2^6 = 64)
-                continue;
-                }
-        // Update VBO for each character
-        GLfloat vertices[6][4] = {
-            { xpos,     ypos + h,   0.0, 1.0 },
-            { xpos + w, ypos,       1.0, 0.0 },
-            { xpos,     ypos,       0.0, 0.0 },
-
-            { xpos,     ypos + h,   0.0, 1.0 },
-            { xpos + w, ypos + h,   1.0, 1.0 },
-            { xpos + w, ypos,       1.0, 0.0 }
-        };
-
-        // Render glyph texture over quad
-//        glBindTexture(GL_TEXTURE_2D, ch.TextureID);
-
-        ch.Texture->bind();
-        glBindVertexArray(this->VAO);
-
-        // Update content of VBO memory
-        glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
-        glBufferSubData(GL_ARRAY_BUFFER,
-                        0,                  /* offset from begining of father buffer */
-                        sizeof(vertices),   /* size of copied data */
-                        vertices            /* data to copy */
-                        ); // Be sure to use glBufferSubData and not glBufferData
-
-
-
-        // Render quad
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-
-        // Now advance cursors for next glyph
-        pPosX += (ch.Advance >> 6) * pScale; // Bitshift by 6 to get value in pixels (1/64th times 2^6 = 64)
-    }// for
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-//    glBindTexture(GL_TEXTURE_2D, 0);
-
-    ZTexture::unbind();
-}//RenderText
-
 void ZGLText::render(std::string pText,
-                               GLfloat pPosX, GLfloat pPosY,
-                               GLfloat pScale,
-                               const Color_type pColor)
+                     glm::vec3 pPosition,
+                     GLfloat pScale,
+                     const Color_type pColor)
 {
+    GLfloat pPosY=pPosition.y,pPosZ=pPosition.z;
+
     float wWFactor =(float)Width/2.0f;
     float wHFactor =(float)Height/2.0f;
     // Activate corresponding render state
     this->TextShader->use();
     this->TextShader->setVec3(__TEXTCOLOR__, pColor);
-    glActiveTexture(TextureEngine);
-//    glActiveTexture(Texture->getTextureEngine());
-    glBindVertexArray(this->VAO);
-
-//    this->TextShader->setInt("TexSampler",2);
+    this->TextShader->setFloat(__TEXTPOSZ__, pPosZ);
     /* texture engine is common to all textures (1 texture per character) */
 
     this->TextShader->setInt(__TEXTURESAMPLER__,ZTexture::getTextureEngineNumber(TextureEngine));
+
+    glActiveTexture(TextureEngine);
+//    glActiveTexture(Texture->getTextureEngine());
+
+    glBindVertexArray(this->VAO);
 
     // Iterate through all characters
     std::string::const_iterator c;
     for (c = pText.begin(); c != pText.end(); c++)
     {
-        Character ch = Characters[*c];
+        int wCharCode=*c;
+        if ((*c < 32)||(*c > 128))
+                wCharCode = __REPLACEMENT_CHAR__;
 
-        GLfloat xpos = pPosX + (ch.Bearing.x /wWFactor) * pScale;
 
-        float wCp=(this->Characters['H'].Bearing.y - ch.Bearing.y)/wHFactor;
+        Character ch = Characters[wCharCode];
 
-        float wCd=(ch.yMax)/wHFactor;
+        GLfloat xpos = pPosition.x + (ch.bitmap.left /wWFactor) * pScale;
+        GLfloat ypos = pPosition.y + ((this->Characters.MaxBearingH - ch.bitmap.top)/wHFactor ) * pScale;
 
-        float wCn=(wCd-wCp)*pScale;
-
-//        GLfloat ypos = pPosY + ((this->Characters['H'].Bearing.y - ch.Bearing.y)/wHFactor ) * pScale;
-        GLfloat ypos = pPosY + ((this->Characters.MaxBearingH - ch.Bearing.y)/wHFactor ) * pScale;
-//        GLfloat ypos = pPosY + ((ch.Size.y)/wHFactor ) * pScale;
-
-//        GLfloat ypos = pPosY + ((this->Characters.FontHeight - ch.Bearing.y)/wHFactor ) * pScale;
-
-//        GLfloat ypos = pPosY + ((ch.Bearing.y-this->Characters['H'].Bearing.y )/wHFactor ) * pScale;
-//        GLfloat ypos = pPosY + wCn;
-//         GLfloat ypos = pPosY + (((ch.yMax+ch.yMin - ch.Bearing.y)/wHFactor )*pScale);
-//          GLfloat ypos = pPosY + (((ch.yMin + ch.Bearing.y)/wHFactor )*pScale);
-/*        GLfloat ypos;
-        if (ch.yMin<0)
-             ypos = pPosY + (((ch.yMin)/wHFactor )*pScale);
-        else {
-            ypos=pPosY;
-            }
-            */
-//        GLfloat ypos = pPosY - ((this->Characters['H'].Bearing.y - ch.Bearing.y)/wHFactor ) * pScale;
-
-        GLfloat w = (ch.Size.x/wWFactor) * pScale;
-        GLfloat h = (ch.Size.y/wHFactor) * pScale;
+        GLfloat w = (ch.bitmap.width/wWFactor) * pScale;
+        GLfloat h = (ch.bitmap.height/wHFactor) * pScale;
         if (!ch.Texture) /* if no bitmap (no texture) for this character, advance to next */
                 {
-                pPosX += ((float)(ch.Advance >> 6)/wWFactor) * pScale; // Bitshift by 6 to get value in pixels (1/64th times 2^6 = 64)
+                pPosition.x += ((float)(ch.Advance.x >> 6)/wWFactor) * pScale; // Bitshift by 6 to get value in pixels (1/64th times 2^6 = 64)
                 continue;
                 }
 #define __OVER__
@@ -447,7 +330,7 @@ void ZGLText::render(std::string pText,
 
 
         // Now advance cursors for next glyph
-        pPosX += ((float)(ch.Advance >> 6)/wWFactor) * pScale; // Bitshift by 6 to get value in pixels (1/64th times 2^6 = 64)
+        pPosition.x += ((float)(ch.Advance.x >> 6)/wWFactor) * pScale; // Bitshift by 6 to get value in pixels (1/64th times 2^6 = 64)
     }// for
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -456,3 +339,166 @@ void ZGLText::render(std::string pText,
     ZTexture::unbind();
 }// render
 
+void ZGLText::renderVertical(std::string pText,
+                             glm::vec3 pPosition,
+//                               GLfloat pPosX, GLfloat pPosY,
+                               GLfloat pScale,
+                               const Color_type pColor)
+{
+    float wWFactor =(float)Width/2.0f;
+    float wHFactor =(float)Height/2.0f;
+    // Activate corresponding render state
+    this->TextShader->use();
+    this->TextShader->setVec3(__TEXTCOLOR__, pColor);
+    glActiveTexture(TextureEngine);
+//    glActiveTexture(Texture->getTextureEngine());
+    glBindVertexArray(this->VAO);
+
+//    this->TextShader->setInt("TexSampler",2);
+    /* texture engine is common to all textures (1 texture per character) */
+
+    this->TextShader->setInt(__TEXTURESAMPLER__,ZTexture::getTextureEngineNumber(TextureEngine));
+
+    // Iterate through all characters
+    std::string::const_iterator c;
+    for (c = pText.begin(); c != pText.end(); c++)
+    {
+        Character ch = Characters[*c];
+
+        /* when vertical : center character : Maximum width of characters - current width / 2 */
+
+//        GLfloat xpos = pPosition.x + (ch.Bearing.x /wWFactor) * pScale;
+
+        GLfloat xpos = pPosition.x + ((float)(Characters.MaxWidth-ch.bitmap.width) / 2.0f /wWFactor) * pScale;
+
+        GLfloat ypos = pPosition.y + ((this->Characters.MaxBearingH - ch.bitmap.top)/wHFactor ) * pScale;
+
+        GLfloat w = (ch.bitmap.width/wWFactor) * pScale;
+        GLfloat h = (ch.bitmap.height/wHFactor) * pScale;
+        if (!ch.Texture) /* if no bitmap (no texture) for this character, advance to next */
+                {
+                pPosition.y += ((float)(ch.Advance.y >> 6)/wHFactor) * pScale; // Bitshift by 6 to get value in pixels (1/64th times 2^6 = 64)
+                continue;
+                }
+
+        // Update VBO for each character
+
+        GLfloat vertices[6][4] = {
+            { xpos,     ypos + h,   0.0, 1.0 },
+            { xpos + w, ypos,       1.0, 0.0 },
+            { xpos,     ypos,       0.0, 0.0 },
+
+            { xpos,     ypos + h,   0.0, 1.0 },
+            { xpos + w, ypos + h,   1.0, 1.0 },
+            { xpos + w, ypos,       1.0, 0.0 }
+        };
+
+        // Render glyph texture over quad
+//        glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+
+        ch.Texture->bind();
+        glBindVertexArray(this->VAO);
+
+        // Update content of VBO memory
+        glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
+        glBufferSubData(GL_ARRAY_BUFFER,
+                        0,                  /* offset from begining of father buffer */
+                        sizeof(vertices),   /* size of copied data */
+                        vertices            /* data to copy */
+                        ); // Be sure to use glBufferSubData and not glBufferData
+
+        // Render quad : one character
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    // Now advance cursors vertically for next glyph
+        pPosition.y += ((float)(ch.Advance.y >> 6)/wHFactor) * pScale;
+
+    }// for
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+//    glBindTexture(GL_TEXTURE_2D, 0);
+
+    ZTexture::unbind();
+}// renderVertical
+
+#ifdef __COMMENT__
+// former Render text routine
+
+void ZGLText::RenderText(std::string pText,
+                               GLfloat pPosX, GLfloat pPosY,
+                               GLfloat pScale,
+                               const Color_type pColor)
+{
+    // Activate corresponding render state
+    this->TextShader->use();
+    this->TextShader->setVec3(__TEXTCOLOR__, pColor);
+    glActiveTexture(TextureEngine);
+//    glActiveTexture(Texture->getTextureEngine());
+    glBindVertexArray(this->VAO);
+
+//    this->TextShader->setInt("TexSampler",2);
+    /* texture engine is common to all textures (1 texture per character) */
+
+    this->TextShader->setInt(__TEXTURESAMPLER__,ZTexture::getTextureEngineNumber(TextureEngine));
+
+    // Iterate through all characters
+    std::string::const_iterator c;
+    for (c = pText.begin(); c != pText.end(); c++)
+    {
+
+        Character ch = Characters[*c];
+
+        GLfloat xpos = pPosX + ch.Bearing.x * pScale;
+        GLfloat ypos = pPosY + (this->Characters['H'].Bearing.y - ch.Bearing.y) * pScale;
+//        GLfloat xpos = pPosX ;
+//        GLfloat ypos = pPosY ;
+
+
+        GLfloat w = ch.Size.x * pScale;
+        GLfloat h = ch.Size.y * pScale;
+        if (!ch.Texture) /* if no bitmap (no texture) for this character, advance to next */
+                {
+                pPosX += (ch.Advance.x >> 6) * pScale; // Bitshift by 6 to get value in pixels (1/64th times 2^6 = 64)
+                continue;
+                }
+        // Update VBO for each character
+        GLfloat vertices[6][4] = {
+            { xpos,     ypos + h,   0.0, 1.0 },
+            { xpos + w, ypos,       1.0, 0.0 },
+            { xpos,     ypos,       0.0, 0.0 },
+
+            { xpos,     ypos + h,   0.0, 1.0 },
+            { xpos + w, ypos + h,   1.0, 1.0 },
+            { xpos + w, ypos,       1.0, 0.0 }
+        };
+
+        // Render glyph texture over quad
+//        glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+
+        ch.Texture->bind();
+        glBindVertexArray(this->VAO);
+
+        // Update content of VBO memory
+        glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
+        glBufferSubData(GL_ARRAY_BUFFER,
+                        0,                  /* offset from begining of father buffer */
+                        sizeof(vertices),   /* size of copied data */
+                        vertices            /* data to copy */
+                        ); // Be sure to use glBufferSubData and not glBufferData
+
+
+
+        // Render quad
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+
+        // Now advance cursors for next glyph
+        pPosX += (ch.Advance.x >> 6) * pScale; // Bitshift by 6 to get value in pixels (1/64th times 2^6 = 64)
+    }// for
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+//    glBindTexture(GL_TEXTURE_2D, 0);
+
+    ZTexture::unbind();
+}//RenderText
+#endif // __COMMENT__

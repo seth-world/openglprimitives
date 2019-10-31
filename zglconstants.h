@@ -16,6 +16,10 @@
 
 #define __TEXTCOLOR__   "TextColor"
 
+/* z position (depth) for text : set to shader under this name as uniform */
+#define __TEXTPOSZ__ "TextPosZ"
+
+
 const unsigned int cst_defaultPositionLocation = 0;
 const unsigned int cst_defaultNormalLocation = 1;
 const unsigned int cst_defaultTexCoordsLocation = 2;
@@ -42,7 +46,8 @@ const Color_type cst_object_color_default=ZBlueColor;
 
 const Vertice_type ZModelOrigin=Vertice_type(0.0,0.0,0.0);
 
-
+/* Replacement char : used when character code in out of range */
+#define __REPLACEMENT_CHAR__ 0x3F
 
 
 
