@@ -231,9 +231,9 @@ int main()
 
     wText.addFont("FreeSans.ttf",48,"AtlasFreeSans48");
 
-    wTextArchi.LoadFont("Architex.ttf",48,"Architex48");
+    wTextArchi.LoadUSASCII("Architex.ttf",48,"Architex48");
 
-    wTextFT.LoadFont("FreeSans.ttf",48,"FreeSans48");
+    wTextFT.LoadUSASCII("FreeSans.ttf",48,"FreeSans48");
 
     // build and compile our shader zprogram
     // ------------------------------------

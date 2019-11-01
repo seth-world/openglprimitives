@@ -232,8 +232,8 @@ public:
 class UnicodeAtlas
 {
 private:
-    void _cloneFrom(UnicodeAtlas&pIn)
-    {
+    void _cloneFrom(UnicodeAtlas&pIn) {
+//        TexCode=pIn.TexCode;
         if (Texture!=nullptr)
                 delete Texture;
         Texture = new ZTexture(*pIn.Texture);
@@ -243,9 +243,9 @@ private:
 
         for (long wi=0;wi<pIn.Text.count();wi++)
         {
-            UnicodeAtlas_struct* UnicodeChar=new UnicodeAtlas_struct(*pIn.Text[wi]);
-            Text.push(UnicodeChar);
+
         }
+        memmove(CharAtlas , pIn.CharAtlas, sizeof(CharAtlas));
     }
 
 public:
@@ -345,7 +345,7 @@ public:
                          float pSx, float pSy,
                          glm::vec3 pColor,
                          long  pFontIndex);
-/* Unicode rendering for text */
+
     void _render(const uint32_t *pText,
                  glm::vec3 pPosition,
                  float pSx, float pSy,

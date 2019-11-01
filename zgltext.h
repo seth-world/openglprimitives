@@ -211,7 +211,7 @@ public:
      * Returns font index
      */
     // Pre-compiles a list of characters from the given font
-    void LoadFont(const char *pFontFilePath, GLuint pFontSize, const char *pName);
+    void LoadUSASCII(const char *pFontFilePath, GLuint pFontSize, const char *pName);
 
 
 

@@ -11,6 +11,7 @@ ZTexture::ZTexture( GLenum pTextureEngine)
 }
 ZTexture::ZTexture(const char* pPath , GLenum pTextureEngine)
 {
+    glActiveTexture(pTextureEngine);
     GLResources->registerTexture(this);
     TextureEngine=pTextureEngine;
 //    glGenTextures(1,&Id);  -- gentexture is made within load2D()

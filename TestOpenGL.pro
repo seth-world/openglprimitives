@@ -56,6 +56,8 @@ HEADERS += \
     zglconstants.h \
     zglobjdescriptor.h \
     zgltext.h \
+    zglunicode.h \
+    zglunicodecpp \
     zmetaobject.h \
     zresource.h \
     zsphere.h \

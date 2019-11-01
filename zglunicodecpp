@@ -868,7 +868,7 @@ ZTextRenderer::_renderUSASCIIVertical(const char *pText,
 
     if (!wBlendEnabled) /* restore blend state */
             glDisable(GL_BLEND);
-}//_renderUSASCIIVertical
+}//_renderVertical
 
 /* Unicode rendering for text : text must be utf32 */
 void

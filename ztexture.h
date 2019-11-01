@@ -11,9 +11,20 @@
 
 class ZTexture
 {
+private:
+    void _copyFrom(ZTexture& pIn)
+    {
+        deleteGLContext();
+        pIn.Shared=true;    // origin Texture is shared with the current
+        Shared=false;       // but current is not shared
+        Id=pIn.Id;
+        TextureEngine=pIn.TextureEngine;
+    }
 public:
     ZTexture( GLenum pTextureEngine=GL_TEXTURE0);
     ZTexture(const char* pPath , GLenum pTextureEngine=GL_TEXTURE0); /* after openGL context is created */
+
+    ZTexture(ZTexture& pIn) {_copyFrom(pIn);}
 
     ~ZTexture() /* before OpenGL context is deleted */
     {
@@ -21,8 +32,19 @@ public:
         deleteGLContext();
     }
 
+    ZTexture& operator = (ZTexture &pIn) {_copyFrom(pIn); return *this;}
+
     int load2D(char const * path);
     void bind();
+
+    /** Keeps registrated the texture but frees whatever exists within texture
+     * and reallocates a new empty texture according already defined TextureEngine */
+    void reset()
+    {
+        deleteGLContext();
+        glActiveTexture(TextureEngine);
+        glGenTextures(1,&Id);
+    }
 
     static void unbind(){ glBindTexture(GL_TEXTURE_2D, 0);}
 
@@ -33,7 +55,7 @@ public:
     void deleteGLContext()
     {
 
-        if (Id > 0)
+        if ((Id > 0)&&(!Shared)) // internal data is not released if marked shared : only the father may
             glDeleteTextures(1,&Id);
         Id=0;
     }
@@ -62,6 +84,7 @@ public:
 
 GLuint Id=0;
 GLenum TextureEngine;
+bool   Shared=false;
 };
 
 #endif // ZTEXTURE_H

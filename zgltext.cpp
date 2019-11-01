@@ -69,7 +69,7 @@ ZGLText::ZGLText( GLenum pTexture)
     glBindVertexArray(0);
 }//ZGLText::ZGLText
 
-void ZGLText::LoadFont(const char* pFontFile, GLuint pFontSize,const char* pName)
+void ZGLText::LoadUSASCII(const char* pFontFile, GLuint pFontSize,const char* pName)
 {
 
     // First clear the previously loaded Characters
@@ -80,7 +80,11 @@ void ZGLText::LoadFont(const char* pFontFile, GLuint pFontSize,const char* pName
     FT_Error wFTerr;
     // Load font as face
     FT_Library ft=GLResources->getFreeTypeLibrary();
-
+    fprintf (stdout,
+             "ZGLText-I loading font <%s> <%u> internal name <%s>\n",
+             pFontFile,
+             pFontSize,
+             pName);
     FT_Face wFace;
     wFTerr=FT_New_Face(ft, GLResources->getFontPath( pFontFile).c_str(), 0, &wFace);
     if (wFTerr!=FT_Err_Ok)
@@ -93,13 +97,6 @@ void ZGLText::LoadFont(const char* pFontFile, GLuint pFontSize,const char* pName
                  getFTErrorString( wFTerr));
         abort();
     }
-
-    fprintf (stdout,
-             "ZGLText-I loading font <%s> <%u> internal name <%s>\n",
-             pFontFile,
-             pFontSize,
-             pName);
-
     fprintf (stdout,
              "    Number of faces  <%ld> glyphs <%ld> scalable <%s>\n"
              "    Family    <%s> style <%s>\n"
