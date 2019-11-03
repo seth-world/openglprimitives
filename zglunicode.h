@@ -6,8 +6,8 @@
 ** Creative Commons, either version 4 of the License, or (at your
 ** option) any later version.
 ******************************************************************/
-#ifndef ZTEXT_RENDERER_H
-#define ZTEXT_RENDERER_H
+#ifndef ZGLUNICODE_H
+#define ZGLUNICODE_H
 
 #include <map>
 
@@ -51,33 +51,58 @@ struct bmstruct{
     float left;     // bearing left : to draw character must position bearing <top,left>
     float top;      // bearing top
 };
+
 #endif
 
-struct CharAtlas_struct {
-    CharAtlas_struct() {memset(this,0,sizeof(CharAtlas_struct));}
+#ifndef __TEXTPOINT__
+#define __TEXTPOINT__
+struct textPoint
+{
+    GLfloat x;
+    GLfloat y;
+    GLfloat s;
+    GLfloat t;
+};
+#endif
 
-//    float advanceX;	// advance.x
-//    float advanceY;	// advance.y
-/* bitmap information :
- * width,height : bitmap size
- * left,top : bearing : Offset from baseline to left/top of glyph
- */
-    bmstruct bitmap;
-
-    glm::ivec2 Advance; // Horizontal (x) or Vertical (y) offset to advance to next glyph
-
-    double     Coef;    // conversion ratio from generic glyph measurement to bitmap metrics
-                        // is equal to (double)wFace->glyph->advance.x/(double)wFace->glyph->linearHoriAdvance
-    long     xMin, yMin, xMax ,yMax ; // BBox
-
-    float texX;	// x offset of glyph in texture coordinates
-    float texY;	// y offset of glyph in texture coordinates
-} ;
-
-class UnicodeAtlas_struct
+class UnicodeFont
 {
 private:
-    void _cloneFrom(UnicodeAtlas_struct& pIn)
+    void _copyFrom(UnicodeFont&pIn)
+    {
+        Name=pIn.Name;
+        Face=pIn.Face;
+        FontSize=pIn.FontSize;
+        MemResident=pIn.MemResident;
+    }
+public:
+    UnicodeFont()=default;
+
+    UnicodeFont(UnicodeFont&pIn) {}
+
+    UnicodeFont& operator = (UnicodeFont& pIn) {_copyFrom(pIn); return *this;}
+
+    UnicodeFont(const char* pFontPath,unsigned int pFontSize,const char* pName)
+    {
+        if (load(pFontPath,pFontSize,pName)<0)
+            abort();
+    }
+
+    ~UnicodeFont() {FT_Done_Face(Face);}
+
+    long   load(const char* pFontPath,unsigned int pFontSize,const char* pName);
+
+const char* Name=nullptr; /*internal name :
+                            fonts may be retreived eiher by this name or by its index within FontList */
+FT_Face Face;
+FT_UInt FontSize;
+bool    MemResident=false;
+};
+
+class GLUnicodeChar
+{
+private:
+    void _cloneFrom(GLUnicodeChar& pIn)
     {
         clear();
         if (pIn.bitmapBuffer!=nullptr)
@@ -99,18 +124,22 @@ private:
         texSize=pIn.texSize;
     }
 public:
-    UnicodeAtlas_struct()
+    GLUnicodeChar()
     {
-        memset(this,0,sizeof(CharAtlas_struct));
+        clear();
     }
 
-    UnicodeAtlas_struct(UnicodeAtlas_struct& pIn)
+    GLUnicodeChar(GLUnicodeChar& pIn)
     {
     _cloneFrom(pIn);
     }
-    UnicodeAtlas_struct& operator = (UnicodeAtlas_struct& pIn) {_cloneFrom(pIn); return *this;}
+    GLUnicodeChar(GLUnicodeChar* pIn)
+    {
+    _cloneFrom(*pIn);
+    }
+    GLUnicodeChar& operator = (GLUnicodeChar& pIn) {_cloneFrom(pIn); return *this;}
 
-    ~UnicodeAtlas_struct()
+    ~GLUnicodeChar()
     {
         if (bitmapBuffer!=nullptr)
                 free(bitmapBuffer);
@@ -120,7 +149,7 @@ public:
     {
         if (bitmapBuffer!=nullptr)
                 free(bitmapBuffer);
-        memset(this,0,sizeof(this));
+        memset(this,0,sizeof(GLUnicodeChar));
     }
 
 //    float advanceX;	// advance.x
@@ -143,96 +172,17 @@ public:
 
     size_t      bitmapBufferSize=0;
     uint8_t*    bitmapBuffer=nullptr;
-} ;
+} ;//GLUnicode_struct
 
-struct textPoint {
-    GLfloat x;
-    GLfloat y;
-    GLfloat s;
-    GLfloat t;
-};
 
-/**
- * The atlas struct holds a texture that contains the visible US-ASCII characters
- * of a certain font rendered with a certain character height.
- * It also contains an array that contains all the information necessary to
- * generate the appropriate vertex and texture coordinates for each character.
- *
- * After the constructor is run, you don't need to use any FreeType functions anymore.
- */
-class FontAtlas
+#ifdef __COMMENT__
+
+class GLUnicodeWriter
 {
 private:
-    void _cloneFrom(FontAtlas&pIn) {
-//        TexCode=pIn.TexCode;
-        if (Texture!=nullptr)
-                delete Texture;
-        Texture = new ZTexture(*pIn.Texture);
-        TexSumWidth=pIn.TexSumWidth;
-        TexSumHeight=pIn.TexSumHeight;
-        Name=pIn.Name;
-
-        memmove(CharAtlas , pIn.CharAtlas, sizeof(CharAtlas));
-    }
-
-public:
-    FontAtlas()=delete;
-
-    FontAtlas(const char* pFont, unsigned int pFontSize, const char* pName, GLenum pTextureEngine);
-    FontAtlas(FontAtlas&& pIn) {_cloneFrom(pIn);}
-    FontAtlas& operator = (FontAtlas& pIn) {_cloneFrom(pIn); return *this;}
-
-    ~FontAtlas() {
-//        glDeleteTextures(1, &TexCode);
-        delete Texture;
-    }
-    void clear ()
+    void _cloneFrom(GLUnicodeWriter&pIn)
     {
-//        TexCode=0;
-        if (Texture!=nullptr)
-                delete Texture;
-        Texture=nullptr;
 
-        TexSumWidth=0;      // total width for texture including all face characters
-        TexSumHeight=0;     // total height for texture including all face characters
-        memset(CharAtlas,0,sizeof(CharAtlas));
-        Name=nullptr;
-        FontHeight=0;
-        MaxBearingH=0;
-        MaxBearingW=0;
-        MaxWidth=0;
-        MaxHeight=0;
-    }
-
-    void AtlasUSACII(FT_UInt pFontSize, GLenum pTextureEngine);
-    void AtlasUnicode(FT_UInt pFontSize, GLenum pTextureEngine);
-
-//    GLuint TexCode;		// texture object
-    ZTexture* Texture=nullptr;  // One texture for all characters of a font face (Atlas)
-    unsigned int TexSumWidth=0;	// texture width in pixels
-    unsigned int TexSumHeight=0;	// texture height in pixels
-
-    long FontHeight=0;
-    FT_Int MaxBearingH=0;   // Maximum bearing high (to top of the glyph)
-    FT_Int MaxBearingW=0;   // Maximum bearing width (to left of the glyph)
-
-    FT_Int MaxWidth=0;      // Maximum width for a font character
-    FT_Int MaxHeight=0;     // Maximum height to a font character
-
-
-    const char* Name=nullptr; /*internal name :
-                                fonts may be retreived eiher by this name or by its index within FontList */
-
-    CharAtlas_struct CharAtlas[128];  /* indice 0 to 31 are not used and wasted : could be optimized */
-
-    FT_Face Face;
-    bool    FaceUSASCII=true;
-};
-
-class UnicodeAtlas
-{
-private:
-    void _cloneFrom(UnicodeAtlas&pIn) {
 //        TexCode=pIn.TexCode;
         if (Texture!=nullptr)
                 delete Texture;
@@ -243,21 +193,20 @@ private:
 
         for (long wi=0;wi<pIn.Text.count();wi++)
         {
-
+        Text.push_back(new GLUnicodeChar_struct(pIn.Text[wi]));
         }
-        memmove(CharAtlas , pIn.CharAtlas, sizeof(CharAtlas));
-    }
+    }//_cloneFrom
 
 public:
-    UnicodeAtlas()=delete;
+    GLUnicodeWriter()=delete;
 
-    UnicodeAtlas(const char* pFont, unsigned int pFontSize, const char* pName, GLenum pTextureEngine);
-    UnicodeAtlas(UnicodeAtlas&& pIn) {_cloneFrom(pIn);}
-    UnicodeAtlas& operator = (UnicodeAtlas& pIn) {_cloneFrom(pIn); return *this;}
+    GLUnicodeWriter(GLenum pTextureEngine);
+    GLUnicodeWriter(GLUnicodeWriter&& pIn) {_cloneFrom(pIn);}
+    GLUnicodeWriter& operator = (GLUnicodeWriter& pIn) {_cloneFrom(pIn); return *this;}
 
-    ~UnicodeAtlas()
+    ~GLUnicodeWriter()
         {
-        delete Texture;
+
         while (Text.count())
                 delete Text.popR();
         }
@@ -283,7 +232,12 @@ public:
     void AtlasUnicode(FT_UInt pFontSize, GLenum pTextureEngine);
 
 //    GLuint TexCode;		// texture object
-    ZTexture* Texture=nullptr;  // One texture for all characters of a font face (Atlas)
+
+    ZShader*    TextShader=nullptr; /* one shader for all text */
+
+    zbs::ZArray<Fontstruct> Fonts;
+
+
     unsigned int TexSumWidth=0;	// texture width in pixels
     unsigned int TexSumHeight=0;	// texture height in pixels
 
@@ -295,29 +249,24 @@ public:
     FT_Int MaxHeight=0;     // Maximum height to a font character
 
 
-    const char* Name=nullptr; /*internal name :
-                                fonts may be retreived eiher by this name or by its index within FontList */
 
-    zbs::ZArray<UnicodeAtlas_struct*> Text;  /* indice 0 to 31 are not used and wasted : could be optimized */
 
-    FT_Face Face;
+ };//UnicodeAtlas
+#endif // __COMMENT__
 
-};
-
+class GLUnicodeText;
 
 // A renderer class for rendering text displayed by a font loaded using the 
 // FreeType library. A single font is loaded, processed into a list of Character
 // items for later rendering.
-class ZTextRenderer
+class GLUnicodeWriter
 {
 public:
 
-    // Shader used for text rendering
-    ZShader* TextShader;
+
     // Constructor
-    ZTextRenderer(GLenum pTexture);
+    GLUnicodeWriter(GLenum pTexture=GL_TEXTURE0);
     void initAtlas();
-    void _renderUSASCII(const char *text, float x, float y, float sx, float sy);
 
     /** adds a new font to font atlas :
      *  pFontPath : file name which will be searched within default font path
@@ -326,85 +275,150 @@ public:
      * ( in place of index )
      * Returns font index
      */
-    long addFont(const char* pFontPath,const int pFontSize,const char* pName)
+    long addFont(const char* pFontPath,const unsigned int pFontSize,const char* pName)
     {
-        FontAtlas* wFont=new FontAtlas(pFontPath,pFontSize,pName,TextureEngine);
+        UnicodeFont* wFont=new UnicodeFont;
+        if (wFont->load(pFontPath,pFontSize,pName)<0)
+                return -1;
         return FontList.push(wFont);
     }
 
+    GLUnicodeText* newText();
+
+
     long getFontIndex(const char*pName);
 
-    void _renderUSASCII(const char *pText,
-                    glm::vec3 pPosition,
-                    float pSx, float pSy,
-                    glm::vec3 pColor,
-                    long  pFontIndex);
+    zbs::ZArray<UnicodeFont*> FontList;
 
-    void _renderUSASCIIVertical(const char *pText,
-                         glm::vec3 pPosition,
-                         float pSx, float pSy,
-                         glm::vec3 pColor,
-                         long  pFontIndex);
-
-    void _render(const uint32_t *pText,
-                 glm::vec3 pPosition,
-                 float pSx, float pSy,
-                 glm::vec3 pColor,
-                 long  pFontIndex);
-
-    void render(const char *pText,
-                    glm::vec3 pPosition,
-                    glm::vec3 pColor,
-                    long  pFontIndex);
-
-    void renderVertical(const char *pText,
-                glm::vec3 pPosition,
-                glm::vec3 pColor,
-                long  pFontIndex);
-
-    void renderScaled(const char *pText,
-                      glm::vec3 pPosition,
-                      const Color_type pColor,
-                      float pScale,
-                      long  pFontIndex);
-
-
-    void renderByName(const char *pText,
-                      glm::vec3 pPosition,
-                      glm::vec3 pColor,
-                      const char* pName);
-
-    void renderVerticalByName(const char *pText,
-                              glm::vec3 pPosition,
-                              glm::vec3 pColor,
-                              const char* pName);
-
-    void renderScaledByName(const char *pText,
-                            glm::vec3 pPosition,
-                            glm::vec3 pColor,
-                            float pScale,
-                            const char* pName);
-
-
-    zbs::ZArray<FontAtlas*> FontList;
-
+    // Shader used for text rendering
+    ZShader* TextShader;
 private:
-    // Render state
-    GLuint VAO, VBO;
-    ZTexture*   Texture=nullptr;
+
     GLenum      TextureEngine=GL_TEXTURE0;
-    GLuint rawvbo;
-//    FT_Library rawft;
-//    FT_Face rawface;
-//    FT_GlyphSlot GlyphSlot;
-//    int atlas_width;
-
-
-
-//    void atlas_create(FT_Face face, int height);
-
 
 };
 
 
-#endif //ZTEXT_RENDERER_H
+/**
+ * The atlas struct holds a texture that contains the visible US-ASCII characters
+ * of a certain font rendered with a certain character height.
+ * It also contains an array that contains all the information necessary to
+ * generate the appropriate vertex and texture coordinates for each character.
+ *
+ * After the constructor is run, you don't need to use any FreeType functions anymore.
+ */
+class GLUnicodeText
+{
+private:
+    void _cloneFrom(GLUnicodeText&pIn)
+    {
+//        TexCode=pIn.TexCode;
+        if (Texture!=nullptr)
+                delete Texture;
+        Texture = new ZTexture(pIn.Texture);
+        TexSumWidth=pIn.TexSumWidth;
+        TexSumHeight=pIn.TexSumHeight;
+        Font=pIn.Font;
+        Writer=pIn.Writer;
+        for (long wi=0;wi<pIn.UTexChar.count();wi++)
+            UTexChar.push_back(new GLUnicodeChar(*pIn.UTexChar[wi]));
+
+        FontHeight=pIn.FontHeight;;
+        MaxBearingH=pIn.MaxBearingH;;
+        MaxBearingW=pIn.MaxBearingW;;
+        MaxWidth=pIn.MaxWidth;;
+        MaxHeight=pIn.MaxHeight;;
+    }
+
+public:
+    GLUnicodeText()=delete;
+
+ //   GLUnicodeText(const utf32_t* pText,const char* pFont, unsigned int pFontSize, GLenum pTextureEngine);
+    GLUnicodeText(GLUnicodeText&& pIn) {_cloneFrom(pIn);}
+
+    GLUnicodeText(GLUnicodeWriter* pWriter, GLenum pTextureEngine);
+
+
+    GLUnicodeText& operator = (GLUnicodeText& pIn) {_cloneFrom(pIn); return *this;}
+
+    ~GLUnicodeText()
+        {
+//        FT_Done_Face(Face);
+        delete Texture;
+        while (UTexChar.count())
+                delete UTexChar.popR();
+        }
+
+    void clear ()
+    {
+//        TexCode=0;
+        if (Texture!=nullptr)
+                delete Texture;
+        Texture=nullptr;
+
+        TexSumWidth=0;      // total width for texture including all face characters
+        TexSumHeight=0;     // total height for texture including all face characters
+        Font=nullptr;
+        Writer=nullptr;
+        FontHeight=0;
+        MaxBearingH=0;
+        MaxBearingW=0;
+        MaxWidth=0;
+        MaxHeight=0;
+
+        while (UTexChar.count())
+                delete UTexChar.popR();
+
+
+    }
+
+    inline int loadChar(FT_ULong pChar);
+
+    void setText(const utf32_t* pUtf32Text,const char* pFontName);
+
+    void _render(glm::vec3 pPosition,
+                 glm::vec3 pColor,
+                 float pSx, float pSy);
+    void _renderVertical(glm::vec3 pPosition,
+                         glm::vec3 pColor,
+                         float pSx, float pSy);
+    void render(glm::vec3 pPosition,
+                glm::vec3 pColor);
+
+    void renderVertical(glm::vec3 pPosition,
+                        glm::vec3 pColor);
+
+    void AtlasUSACII(FT_UInt pFontSize, GLenum pTextureEngine);
+    void AtlasUnicode(FT_UInt pFontSize, GLenum pTextureEngine);
+
+
+    GLUnicodeWriter* Writer=nullptr;
+
+    unsigned int TexSumWidth=0;	// texture width in pixels
+    unsigned int TexSumHeight=0;	// texture height in pixels
+
+    long FontHeight=0;
+    FT_Int MaxBearingH=0;   // Maximum bearing high (to top of the glyph)
+    FT_Int MaxBearingW=0;   // Maximum bearing width (to left of the glyph)
+
+    FT_Int MaxWidth=0;      // Maximum width for a font character
+    FT_Int MaxHeight=0;     // Maximum height to a font character
+
+
+    zbs::ZArray<GLUnicodeChar*> UTexChar;
+
+    const utf32_t* OriginText;
+//    FT_UInt FontSize;
+//    FT_Face Face;
+
+    // Render state
+    GLuint VAO=0, VBO=0;
+    ZTexture* Texture=nullptr;// One texture for all text
+    size_t TextLen=0;
+
+    UnicodeFont* Font=nullptr;
+
+};//GLUnicodeText
+
+
+#endif //ZGLUNICODE_H

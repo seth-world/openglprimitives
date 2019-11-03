@@ -27,9 +27,11 @@
 
 #include <zsphere.h>
 #include <ztexture.h>
-
+/* text rendering */
 #include <ztextrenderer.h>
 #include <zgltext.h>
+#include <zglunicode.h>
+
 
 #define __CANDY_SHADER__    colorShader
 #define __COLOR_SHADER__    colorShader
@@ -211,29 +213,18 @@ int main()
 
     ZTextRenderer wText(GL_TEXTURE0);
 
-    ZGLText wTextArchi(GL_TEXTURE0);
     ZGLText wTextFT(GL_TEXTURE0);
-//    wText.LoadFont("FreeSans.ttf", 12);
-
-    wText.addFont("FreeSans.ttf",12,"AtlasFreeSans12");
 
     wText.addFont("FreeSans.ttf",48,"AtlasFreeSans48");
-
-    wText.addFont("FreeSans.ttf",24,"AtlasFreeSans24");
-
-    wText.addFont("DroidSansMono.ttf",24,"DroidSansMono24");
-
-    wText.addFont("Architex.ttf",24,"AtlasArchitex24");
-
-    wText.addFont("SCRIPTIN.ttf",48,"AtlasScriptina48");
-
-    wText.addFont("Architex.ttf",48,"AtlasArchitex48");
-
-    wText.addFont("FreeSans.ttf",48,"AtlasFreeSans48");
-
-    wTextArchi.LoadUSASCII("Architex.ttf",48,"Architex48");
 
     wTextFT.LoadUSASCII("FreeSans.ttf",48,"FreeSans48");
+
+    GLUnicodeWriter wUWriter(GL_TEXTURE0);
+    wUWriter.addFont("FreeSans.ttf",48,"FreeSans48");
+    GLUnicodeText* wUText=wUWriter.newText();
+    wUText->setText((utf32_t*)U"Жди меня, и я вернусь.","FreeSans48");
+
+//    GLUnicodeText wUText((uint32_t*)U"Жди меня, и я вернусь.","FreeSans48",48,GL_TEXTURE0);
 
     // build and compile our shader zprogram
     // ------------------------------------
@@ -374,23 +365,6 @@ int main()
         wText.TextShader->setMat4("mView", textRView);
         wText.TextShader->setMat4("mProjection", textRProjection);
 
-/*        wText.renderTextByName("This is a sample text AtlasScriptina48",
-                               -0.8f,0.2f,
-                               ZBlueColor,
-                               "AtlasScriptina48");
-
-
-        wText.renderTextByName("abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMN AtlasArchitex48",
-                               -0.8f,0.8f,
-                               ZBlueColor,
-                               "AtlasFreeSans48");
-
-*/
-        wText.renderByName("abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMN AtlasFreeSans24",
-                               glm::vec3(-0.9f,0.0f,0.0f),
-                               ZRedMedium,
-                               "AtlasFreeSans24");
-
 
         wText.renderVerticalByName("New more longer text with s letter rendered.",
                            glm::vec3(-0.9f,-0.2f,0.0f),
@@ -407,19 +381,7 @@ int main()
                                                     (float)SCR_WIDTH / (float)SCR_HEIGHT,
                                                     0.1f,
                                                     100.0f);
-        wTextArchi.TextShader->use();
-        wTextArchi.TextShader->setMat4("mModel", textModel);
-        wTextArchi.TextShader->setMat4("mView", textView);
-        wTextArchi.TextShader->setMat4("mProjection", textProjection);
 
-//        glm::mat4 textProjection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-
-//        wTextArchi.TextShader->setMat4("mProjection", textProjection);
-
-        wTextArchi.render("New more longer text with s letter rendered.",
-                           glm::vec3(-0.6f,-0.4f,0.0f),
-                           1.0f,
-                           ZRedMedium);
 
         wTextFT.TextShader->use();
         wTextFT.TextShader->setMat4("mModel", textModel);
@@ -429,16 +391,36 @@ int main()
 //        textModel = glm::mat4(1.0f);
 //        wTextFT.TextShader->setMat4("mModel", textModel);
         wTextFT.renderVertical("New text with gpwhdlq letter rendered.",
-                           glm::vec3(0.0f,0.0f,0.0f),
+                           glm::vec3(0.8f,0.0f,0.0f),
                            1.0f,
                            ZBlueColor);
 
 
         wText.renderByName("This is a sample text THIS IS A SAMPLE TEXT 1234567890  FreeSans12",
-                               glm::vec3(-0.2f,-0.8f,0.0f),
+                               glm::vec3(-0.8f,-0.8f,0.0f),
                                ZWhiteColor,
-                               "AtlasFreeSans24");
+                               "AtlasFreeSans48");
 
+        glm::mat4 UModel =  glm::translate(camera.getModel(), glm::vec3(0.0f, 0.0f, 0.0f));
+//        UModel = glm::rotate(UModel,glm::radians(180.0f),glm::vec3(1.0f, 0.0f, 0.0f)); /* to do : avoid rotation */
+
+        glm::mat4 UView = camera.GetViewMatrix();
+        glm::mat4 UProjection = glm::perspective(glm::radians(camera.Zoom),
+                                                    (float)SCR_WIDTH / (float)SCR_HEIGHT,
+                                                    0.1f,
+                                                    100.0f);
+
+/* matrices are set to text writer that holds text object (shader is defined at text writer level) */
+        wUWriter.TextShader->use();
+        wUWriter.TextShader->setMat4("mModel", UModel);
+        wUWriter.TextShader->setMat4("mView", UView);
+        wUWriter.TextShader->setMat4("mProjection", UProjection);
+
+        wUText->render(glm::vec3(-0.8f,0.8f,0.0f),
+                       ZBlueColor);
+
+        wUText->renderVertical (glm::vec3(-0.95f,0.8f,0.0f),
+                                ZBlueColor);
 
         // render lamp object
         lampShader.use();

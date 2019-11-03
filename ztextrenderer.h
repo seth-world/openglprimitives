@@ -74,83 +74,17 @@ struct CharAtlas_struct {
     float texY;	// y offset of glyph in texture coordinates
 } ;
 
-class UnicodeAtlas_struct
+
+#ifndef __TEXTPOINT__
+#define __TEXTPOINT__
+struct textPoint
 {
-private:
-    void _cloneFrom(UnicodeAtlas_struct& pIn)
-    {
-        clear();
-        if (pIn.bitmapBuffer!=nullptr)
-                    bitmapBuffer=(uint8_t*)malloc(pIn.bitmapBufferSize);
-
-        bitmapBufferSize=pIn.bitmapBufferSize;
-
-        bitmap=pIn.bitmap;
-        Advance=pIn.Advance;
-        Coef=pIn.Coef;
-
-        xMin=pIn.xMin;
-        yMin=pIn.yMin;
-        xMax=pIn.xMax;
-        yMax=pIn.yMax;
-
-        texX=pIn.texX;
-        texY=pIn.texY;
-        texSize=pIn.texSize;
-    }
-public:
-    UnicodeAtlas_struct()
-    {
-        memset(this,0,sizeof(CharAtlas_struct));
-    }
-
-    UnicodeAtlas_struct(UnicodeAtlas_struct& pIn)
-    {
-    _cloneFrom(pIn);
-    }
-    UnicodeAtlas_struct& operator = (UnicodeAtlas_struct& pIn) {_cloneFrom(pIn); return *this;}
-
-    ~UnicodeAtlas_struct()
-    {
-        if (bitmapBuffer!=nullptr)
-                free(bitmapBuffer);
-    }
-
-    void clear()
-    {
-        if (bitmapBuffer!=nullptr)
-                free(bitmapBuffer);
-        memset(this,0,sizeof(this));
-    }
-
-//    float advanceX;	// advance.x
-//    float advanceY;	// advance.y
-/* bitmap information :
- * width,height : bitmap size
- * left,top : bearing : Offset from baseline to left/top of glyph
- */
-    bmstruct bitmap;
-
-    glm::ivec2 Advance; // Horizontal (x) or Vertical (y) offset to advance to next glyph
-
-    double     Coef;    // conversion ratio from generic glyph measurement to bitmap metrics
-                        // is equal to (double)wFace->glyph->advance.x/(double)wFace->glyph->linearHoriAdvance
-    long     xMin, yMin, xMax ,yMax ; // BBox
-
-    float texX;	// x offset of glyph in texture coordinates
-    float texY;	// y offset of glyph in texture coordinates
-    float texSize; // bitmap size within texture
-
-    size_t      bitmapBufferSize=0;
-    uint8_t*    bitmapBuffer=nullptr;
-} ;
-
-struct textPoint {
     GLfloat x;
     GLfloat y;
     GLfloat s;
     GLfloat t;
 };
+#endif
 
 /**
  * The atlas struct holds a texture that contains the visible US-ASCII characters
@@ -229,81 +163,6 @@ public:
     bool    FaceUSASCII=true;
 };
 
-class UnicodeAtlas
-{
-private:
-    void _cloneFrom(UnicodeAtlas&pIn)
-    {
-        if (Texture!=nullptr)
-                delete Texture;
-        Texture = new ZTexture(*pIn.Texture);
-        TexSumWidth=pIn.TexSumWidth;
-        TexSumHeight=pIn.TexSumHeight;
-        Name=pIn.Name;
-
-        for (long wi=0;wi<pIn.Text.count();wi++)
-        {
-            UnicodeAtlas_struct* UnicodeChar=new UnicodeAtlas_struct(*pIn.Text[wi]);
-            Text.push(UnicodeChar);
-        }
-    }
-
-public:
-    UnicodeAtlas()=delete;
-
-    UnicodeAtlas(const char* pFont, unsigned int pFontSize, const char* pName, GLenum pTextureEngine);
-    UnicodeAtlas(UnicodeAtlas&& pIn) {_cloneFrom(pIn);}
-    UnicodeAtlas& operator = (UnicodeAtlas& pIn) {_cloneFrom(pIn); return *this;}
-
-    ~UnicodeAtlas()
-        {
-        delete Texture;
-        while (Text.count())
-                delete Text.popR();
-        }
-    void clear ()
-    {
-//        TexCode=0;
-        if (Texture!=nullptr)
-                delete Texture;
-        Texture=nullptr;
-
-        TexSumWidth=0;      // total width for texture including all face characters
-        TexSumHeight=0;     // total height for texture including all face characters
-        while (Text.count())
-                delete Text.popR();
-        Name=nullptr;
-        FontHeight=0;
-        MaxBearingH=0;
-        MaxBearingW=0;
-        MaxWidth=0;
-        MaxHeight=0;
-    }
-
-    void AtlasUnicode(FT_UInt pFontSize, GLenum pTextureEngine);
-
-//    GLuint TexCode;		// texture object
-    ZTexture* Texture=nullptr;  // One texture for all characters of a font face (Atlas)
-    unsigned int TexSumWidth=0;	// texture width in pixels
-    unsigned int TexSumHeight=0;	// texture height in pixels
-
-    long FontHeight=0;
-    FT_Int MaxBearingH=0;   // Maximum bearing high (to top of the glyph)
-    FT_Int MaxBearingW=0;   // Maximum bearing width (to left of the glyph)
-
-    FT_Int MaxWidth=0;      // Maximum width for a font character
-    FT_Int MaxHeight=0;     // Maximum height to a font character
-
-
-    const char* Name=nullptr; /*internal name :
-                                fonts may be retreived eiher by this name or by its index within FontList */
-
-    zbs::ZArray<UnicodeAtlas_struct*> Text;  /* indice 0 to 31 are not used and wasted : could be optimized */
-
-    FT_Face Face;
-
-};
-
 
 // A renderer class for rendering text displayed by a font loaded using the 
 // FreeType library. A single font is loaded, processed into a list of Character
@@ -334,23 +193,17 @@ public:
 
     long getFontIndex(const char*pName);
 
-    void _renderUSASCII(const char *pText,
+    void _render(const char *pText,
                     glm::vec3 pPosition,
                     float pSx, float pSy,
                     glm::vec3 pColor,
                     long  pFontIndex);
 
-    void _renderUSASCIIVertical(const char *pText,
+    void _renderVertical(const char *pText,
                          glm::vec3 pPosition,
                          float pSx, float pSy,
                          glm::vec3 pColor,
                          long  pFontIndex);
-/* Unicode rendering for text */
-    void _render(const uint32_t *pText,
-                 glm::vec3 pPosition,
-                 float pSx, float pSy,
-                 glm::vec3 pColor,
-                 long  pFontIndex);
 
     void render(const char *pText,
                     glm::vec3 pPosition,

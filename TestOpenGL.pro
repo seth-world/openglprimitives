@@ -18,6 +18,7 @@ SOURCES += \
         zcandy.cpp \
         zglobjdescriptor.cpp \
         zgltext.cpp \
+        zglunicode.cpp \
         zmetaobject.cpp \
         zresource.cpp \
         zshader.cpp \
@@ -57,7 +58,6 @@ HEADERS += \
     zglobjdescriptor.h \
     zgltext.h \
     zglunicode.h \
-    zglunicodecpp \
     zmetaobject.h \
     zresource.h \
     zsphere.h \

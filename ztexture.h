@@ -15,16 +15,19 @@ private:
     void _copyFrom(ZTexture& pIn)
     {
         deleteGLContext();
-        pIn.Shared=true;    // origin Texture is shared with the current
+        pIn.Shared++;    // origin Texture is shared with the current
         Shared=false;       // but current is not shared
         Id=pIn.Id;
         TextureEngine=pIn.TextureEngine;
     }
+
 public:
     ZTexture( GLenum pTextureEngine=GL_TEXTURE0);
     ZTexture(const char* pPath , GLenum pTextureEngine=GL_TEXTURE0); /* after openGL context is created */
 
     ZTexture(ZTexture& pIn) {_copyFrom(pIn);}
+
+    ZTexture(ZTexture* pIn) {_copyFrom(*pIn);}
 
     ~ZTexture() /* before OpenGL context is deleted */
     {
@@ -55,8 +58,8 @@ public:
     void deleteGLContext()
     {
 
-        if ((Id > 0)&&(!Shared)) // internal data is not released if marked shared : only the father may
-            glDeleteTextures(1,&Id);
+        if ((Id > 0)&&(Shared==0)) // internal data is not released if marked shared : only the father may
+                    glDeleteTextures(1,&Id);
         Id=0;
     }
 
@@ -82,9 +85,10 @@ public:
         return getTextureEngineNumber(TextureEngine);
     }
 
-GLuint Id=0;
-GLenum TextureEngine;
-bool   Shared=false;
+    GLuint Id=0;
+private:
+    GLenum TextureEngine;
+    int   Shared=0;
 };
 
 #endif // ZTEXTURE_H
