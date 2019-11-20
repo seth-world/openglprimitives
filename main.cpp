@@ -18,7 +18,7 @@
 
 #include <zmaterial.h>
 
-#include <zresource.h>
+#include <zglresource.h>
 
 #include <zobject.h>
 #include <zobjectfunctions.h>
@@ -28,8 +28,6 @@
 #include <zsphere.h>
 #include <ztexture.h>
 /* text rendering */
-#include <ztextrenderer.h>
-#include <zgltext.h>
 #include <zglunicode.h>
 
 
@@ -210,19 +208,17 @@ int main()
     // Define the viewport dimensions
     glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
+    int wRet=GLResources->addFont("FreeSans.ttf","FreeSans",false);
+    wRet=GLResources->addFont("Architex.ttf","Architex",false);
 
-    ZTextRenderer wText(GL_TEXTURE0);
 
-    ZGLText wTextFT(GL_TEXTURE0);
+    GLTextWriter wUWriter(GL_TEXTURE0);
 
-    wText.addFont("FreeSans.ttf",48,"AtlasFreeSans48");
-
-    wTextFT.LoadUSASCII("FreeSans.ttf",48,"FreeSans48");
-
-    GLUnicodeWriter wUWriter(GL_TEXTURE0);
-    wUWriter.addFont("FreeSans.ttf",48,"FreeSans48");
     GLUnicodeText* wUText=wUWriter.newText();
-    wUText->setText((utf32_t*)U"Жди меня, и я вернусь.","FreeSans48");
+    wRet=wUText->setText((utf32_t*)U"Жди меня, и я вернусь.","FreeSans",24);
+
+    if (wRet<0)
+            fprintf (stderr," Font <%s> is not loaded \n","FreeSans");
 
 //    GLUnicodeText wUText((uint32_t*)U"Жди меня, и я вернусь.","FreeSans48",48,GL_TEXTURE0);
 
@@ -347,9 +343,9 @@ int main()
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT);
 
-//        wText.RenderText("This is sample text", 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
 
 
+#ifdef __COMMENT__
         glm::mat4 textRModel = glm::mat4(1.0f);
         textRModel =  glm::translate(camera.getModel(), glm::vec3(0.0f, 0.0f, 0.0f));
  //       textRModel = glm::rotate(textRModel,glm::radians(180.0f),glm::vec3(1.0f, 0.0f, 0.0f)); /* to do : avoid rotation */
@@ -381,8 +377,8 @@ int main()
                                                     (float)SCR_WIDTH / (float)SCR_HEIGHT,
                                                     0.1f,
                                                     100.0f);
-
-
+#endif // __COMMENT__
+#ifdef __COMMENT__
         wTextFT.TextShader->use();
         wTextFT.TextShader->setMat4("mModel", textModel);
         wTextFT.TextShader->setMat4("mView", textView);
@@ -400,7 +396,7 @@ int main()
                                glm::vec3(-0.8f,-0.8f,0.0f),
                                ZWhiteColor,
                                "AtlasFreeSans48");
-
+#endif  // __COMMENT__
         glm::mat4 UModel =  glm::translate(camera.getModel(), glm::vec3(0.0f, 0.0f, 0.0f));
 //        UModel = glm::rotate(UModel,glm::radians(180.0f),glm::vec3(1.0f, 0.0f, 0.0f)); /* to do : avoid rotation */
 

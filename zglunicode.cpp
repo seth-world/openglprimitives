@@ -14,7 +14,7 @@
 #endif
 
 #include <iostream>
-#include <zresource.h>
+#include <zglresource.h>
 
 #include <algorithm> /* for std::max */
 
@@ -24,6 +24,8 @@
 #include <zglunicode.h>
 
 #include <ztexture.h>
+
+#include <zfont.h>
 
 /* Freetype error description management as described per Freetype doc */
 /*  defined within <zresources.h>
@@ -37,9 +39,9 @@ const char* getFTErrorString(const FT_Error error_code)
     return "Unknown FT error";
 }
 */
-#include <zresource.h>
+#include <zglresource.h>
 #include <zshader.h>
-GLUnicodeText::GLUnicodeText(GLUnicodeWriter* pWriter, GLenum pTextureEngine)
+GLUnicodeText::GLUnicodeText(GLTextWriter* pWriter, GLenum pTextureEngine)
 {
     Writer=pWriter;
     Texture = new ZTexture(pTextureEngine);
@@ -145,18 +147,36 @@ int wRet=0;
     return wRet;
 }//GLUnicodeText::loadChar
 
-void GLUnicodeText::setText(const utf32_t* pUtf32Text,const char* pFontName)
+int GLUnicodeText::setText(const utf32_t* pUtf32Text,const int pFontIdx)
+{
+}
+
+/**
+ * @brief GLUnicodeText::setText prepares a unicode text (expressed in unicode codepoints) ready to be rendered by render() or renderVertical().
+ *  This routine formats a texture whose texture engine has been set within UnicodeWriter object according glyphs from font given by pFontName.
+ *  pFonName must point to a font that must have been loaded within object UnicodeWriter.
+ *
+ * @param pUtf32Text
+ * @param pFontName
+ */
+int GLUnicodeText::setText(const utf32_t* pUtf32Text,const char* pFontName, size_t pFontSize)
 {
 FT_Error wFTerr;
 FT_GlyphSlot GlyphSlot=nullptr ;
 unsigned int wCurrentWidth = 0;
 unsigned int wCurrentHeight = 0;
 
+    Font=GLResources->getFontByName(pFontName);
 
+    if (Font==nullptr)
+            return -1;
+/*
     long wFontIdx=Writer->getFontIndex(pFontName);
     Font=Writer->FontList[wFontIdx];
+*/
+//    FT_Set_Pixel_Sizes(Font->Face, 0, Font->FontSize);
+    FT_Set_Pixel_Sizes(Font->Face, 0, (FT_UInt)pFontSize);
 
-    FT_Set_Pixel_Sizes(Font->Face, 0, Font->FontSize);
     const utf32_t* p=pUtf32Text;
     TextLen=0;
 
@@ -307,6 +327,8 @@ unsigned int wCurrentHeight = 0;
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 //    glBindVertexArray(this->VAO);
 //    glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
+
+    return 0;
 } // setText
 
 void GLUnicodeText::_render(glm::vec3 pPosition,
@@ -542,14 +564,14 @@ void GLUnicodeText::renderVertical(glm::vec3 pPosition,
 }
 
 
-GLUnicodeWriter::GLUnicodeWriter(GLenum pTextureEngine)
+GLTextWriter::GLTextWriter(GLenum pTextureEngine)
 {
     TextureEngine=pTextureEngine;
 
     TextShader=new ZShader("zgltext.vs", "zgltext.fs", "UnicodeShader");
 }
 
-
+/*
 long
 GLUnicodeWriter::getFontIndex(const char*pName)
 {
@@ -573,63 +595,16 @@ GLUnicodeWriter::getFontIndex(const char*pName)
             0L);
     return 0L;
 }
-
-GLUnicodeText* GLUnicodeWriter::newText()
+*/
+GLUnicodeText* GLTextWriter::newText()
 {
-    return new GLUnicodeText(this,TextureEngine);
+    GLUnicodeText* wT=new GLUnicodeText(this,TextureEngine);
+    TextList.push(wT);
+    return wT;
 }
 
-long
-UnicodeFont::load(const char* pFontPath,unsigned int pFontSize,const char* pName)
+GLTextWriter::~GLTextWriter()
 {
-    Name=pName;
-    FontSize=pFontSize;
-
-    FT_Error wFTerr;
-
-    // Load font as face
-    fprintf (stdout,"UnicodeFont::%s-I Loading font <%s> size <%u> as <%s>\n",
-             _GET_FUNCTION_NAME_,
-             pFontPath,
-             pFontSize,
-             pName);
-
-    wFTerr=FT_New_Face(GLResources->getFreeTypeLibrary(), GLResources->getFontPath( pFontPath).c_str(), 0, &Face);
-    if (wFTerr!=FT_Err_Ok)
-     {
-         fprintf (stderr,"%s-E Freetype error while loading font into library.\n"
-                  "    font file <%s>\n"
-                  "    Error <%d>  <%s>\n",
-                  _GET_FUNCTION_NAME_,
-                  pFontPath,
-                  wFTerr,
-                  getFTErrorString( wFTerr));
-         return -1;
-     }
-
-    fprintf (stdout,
-             "    Number of faces  <%ld> glyphs <%ld> scalable <%s> vertical data <%s>\n"
-             "    Family    <%s> style <%s>\n"
-             ,
-             Face->num_faces,
-             Face->num_glyphs,
-            (Face->face_flags& FT_FACE_FLAG_SCALABLE)==FT_FACE_FLAG_SCALABLE?"Yes":"No",
-             (Face->face_flags& FT_FACE_FLAG_VERTICAL)==FT_FACE_FLAG_VERTICAL?"Yes":"No",
-             Face->family_name,
-             Face->style_name);
-
-    wFTerr=FT_Select_Charmap(Face, FT_ENCODING_UNICODE);
-    if (wFTerr!=FT_Err_Ok)
-        {
-        fprintf (stderr,
-                 "UnicodeFont::%s-E Freetype error while selecting Unicode charmap from library.\n"
-                 "    font <%s>  Error <%d>  <%s>\n",
-                 _GET_FUNCTION_NAME_,
-                 Name,
-                 wFTerr,
-                 getFTErrorString( wFTerr));
-        return -1;
-       }
-
-}//UnicodeFont::load
-
+    while (TextList.count())
+                delete TextList.popR();
+}

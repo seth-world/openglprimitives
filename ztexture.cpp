@@ -1,6 +1,6 @@
 #include "ztexture.h"
 #include <stb_image.h>
-#include <zresource.h>
+#include <zglresource.h>
 
 ZTexture::ZTexture( GLenum pTextureEngine)
 {

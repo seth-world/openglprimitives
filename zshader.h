@@ -13,7 +13,7 @@
 #include <iostream>
 #include <string.h> // for strerror
 
-#include <zresource.h>
+#include <zglresource.h>
 #include <zmaterial.h>
 
 class ZShader

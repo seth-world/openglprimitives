@@ -14,10 +14,10 @@ EQ            = =
 
 CC            = gcc
 CXX           = g++
-DEFINES       = -DQT_QML_DEBUG
-CFLAGS        = -pipe -g -Wall -W -fPIC $(DEFINES)
-CXXFLAGS      = -pipe -g -std=gnu++1z -Wall -W -fPIC $(DEFINES)
-INCPATH       = -I../../TestOpenGl -I. -I../glad/include -I../../opengl/glad/include -I../../opengl/glm -I../../opengl/LearnOpenGL-master/includes -I../../opengl/LearnOpenGL-master/build/configuration -I../../zbasesystem -I../../opengl/freeglut-3.2.1/include -isystem /usr/include/freetype2 -I/opt/Qt/5.12.4/gcc_64/mkspecs/linux-g++
+DEFINES       = -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_QML_DEBUG
+CFLAGS        = -pipe -g -D_REENTRANT -Wall -W -fPIC $(DEFINES)
+CXXFLAGS      = -pipe -std=c++17 -ansi -pedantic -pthread -g -std=gnu++1z -D_REENTRANT -Wall -W -fPIC $(DEFINES)
+INCPATH       = -I../../TestOpenGl -I. -I../glad/include -I../../opengl/glad/include -I../../opengl/glm -I../../opengl/LearnOpenGL-master/includes -I../../opengl/LearnOpenGL-master/build/configuration -I../../zbasesystem -I../../opengl/freeglut-3.2.1/include -isystem /usr/include/freetype2 -I/opt/Qt/5.12.4/gcc_64/include -I/opt/Qt/5.12.4/gcc_64/include/QtWidgets -I/opt/Qt/5.12.4/gcc_64/include/QtGui -I/opt/Qt/5.12.4/gcc_64/include/QtCore -I. -isystem /usr/include/libdrm -I/opt/Qt/5.12.4/gcc_64/mkspecs/linux-g++
 QMAKE         = /opt/Qt/5.12.4/gcc_64/bin/qmake
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d
@@ -39,8 +39,8 @@ COMPRESS      = gzip -9f
 DISTNAME      = TestOpenGL1.0.0
 DISTDIR = /home/gerard/Development/TestOpenGl/build-TestOpenGL-Desktop_Qt_5_12_4_GCC_64bit-Debug/.tmp/TestOpenGL1.0.0
 LINK          = g++
-LFLAGS        = 
-LIBS          = $(SUBLIBS) /home/gerard/Development/zbasesystem/zbaselib/bin/debug/libzbaselib.a -lglfw -ldl -lpthread -lGL -lGLEW -lfreetype   
+LFLAGS        = -Wl,-rpath,/opt/Qt/5.12.4/gcc_64/lib
+LIBS          = $(SUBLIBS) -Wl,-Bdynamic -L/usr/lib/x86_64-linux-gnu -licuuc -licudata -licui18n -licuio -licutu -licutest -Wl,-Bdynamic -ldl -lglfw -lGLEW -lfreetype -lssl -lcrypto -lcrypt -lxml2 -L/opt/Qt/5.12.4/gcc_64/lib/ -lQt5Core /opt/Qt/5.12.4/gcc_64/lib/libQt5Widgets.so /opt/Qt/5.12.4/gcc_64/lib/libQt5Gui.so /opt/Qt/5.12.4/gcc_64/lib/libQt5Core.so -lGL -lpthread   
 AR            = ar cqs
 RANLIB        = 
 SED           = sed
@@ -55,11 +55,12 @@ OBJECTS_DIR   = ./
 SOURCES       = ../Bmp.cpp \
 		../zboxcomponents.cpp \
 		../zcandy.cpp \
+		../zfont.cpp \
 		../zglobjdescriptor.cpp \
+		../zglresource.cpp \
 		../zgltext.cpp \
 		../zglunicode.cpp \
 		../zmetaobject.cpp \
-		../zresource.cpp \
 		../zshader.cpp \
 		../zsphere.cpp \
 		../main.cpp \
@@ -72,11 +73,12 @@ SOURCES       = ../Bmp.cpp \
 OBJECTS       = Bmp.o \
 		zboxcomponents.o \
 		zcandy.o \
+		zfont.o \
 		zglobjdescriptor.o \
+		zglresource.o \
 		zgltext.o \
 		zglunicode.o \
 		zmetaobject.o \
-		zresource.o \
 		zshader.o \
 		zsphere.o \
 		main.o \
@@ -294,6 +296,12 @@ DIST          = ../shaders/material.fs \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/default_pre.prf \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/resolve_config.prf \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/default_post.prf \
+		/opt/Qt/5.12.4/gcc_64/mkspecs/features/qt.prf \
+		/opt/Qt/5.12.4/gcc_64/mkspecs/features/resources.prf \
+		/opt/Qt/5.12.4/gcc_64/mkspecs/features/moc.prf \
+		/opt/Qt/5.12.4/gcc_64/mkspecs/features/unix/opengl.prf \
+		/opt/Qt/5.12.4/gcc_64/mkspecs/features/uic.prf \
+		/opt/Qt/5.12.4/gcc_64/mkspecs/features/unix/thread.prf \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/qml_debug.prf \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/warn_on.prf \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/qmake_use.prf \
@@ -302,34 +310,36 @@ DIST          = ../shaders/material.fs \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/exceptions.prf \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/yacc.prf \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/lex.prf \
-		../../TestOpenGL.pro ../opengl/LearnOpenGL-master/includes/stb_image.h \
-		../zbasesystem/ztoolset/zarray.h \
-		Bmp.h \
-		zboxcomponents.h \
-		zcandy.h \
-		zconfig.h \
-		zglconstants.h \
-		zglobjdescriptor.h \
-		zgltext.h \
-		zglunicode.h \
-		zmetaobject.h \
-		zresource.h \
-		zsphere.h \
-		zshader.h \
-		camera.h \
-		zmaterial.h \
-		zobject.h \
-		zobjectfunctions.h \
-		ztextrenderer.h \
-		ztexture.h \
-		zvertice.h ../Bmp.cpp \
+		../../TestOpenGL.pro ../../opengl/LearnOpenGL-master/includes/stb_image.h \
+		../../zbasesystem/ztoolset/zarray.h \
+		../Bmp.h \
+		../zboxcomponents.h \
+		../zcandy.h \
+		../zconfig.h \
+		../zfont.h \
+		../zglconstants.h \
+		../zglobjdescriptor.h \
+		../zglresource.h \
+		../zgltext.h \
+		../zglunicode.h \
+		../zmetaobject.h \
+		../zsphere.h \
+		../zshader.h \
+		../camera.h \
+		../zmaterial.h \
+		../zobject.h \
+		../zobjectfunctions.h \
+		../ztextrenderer.h \
+		../ztexture.h \
+		../zvertice.h ../Bmp.cpp \
 		../zboxcomponents.cpp \
 		../zcandy.cpp \
+		../zfont.cpp \
 		../zglobjdescriptor.cpp \
+		../zglresource.cpp \
 		../zgltext.cpp \
 		../zglunicode.cpp \
 		../zmetaobject.cpp \
-		../zresource.cpp \
 		../zshader.cpp \
 		../zsphere.cpp \
 		../main.cpp \
@@ -530,6 +540,12 @@ Makefile: ../TestOpenGL.pro /opt/Qt/5.12.4/gcc_64/mkspecs/linux-g++/qmake.conf /
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/default_pre.prf \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/resolve_config.prf \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/default_post.prf \
+		/opt/Qt/5.12.4/gcc_64/mkspecs/features/qt.prf \
+		/opt/Qt/5.12.4/gcc_64/mkspecs/features/resources.prf \
+		/opt/Qt/5.12.4/gcc_64/mkspecs/features/moc.prf \
+		/opt/Qt/5.12.4/gcc_64/mkspecs/features/unix/opengl.prf \
+		/opt/Qt/5.12.4/gcc_64/mkspecs/features/uic.prf \
+		/opt/Qt/5.12.4/gcc_64/mkspecs/features/unix/thread.prf \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/qml_debug.prf \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/warn_on.prf \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/qmake_use.prf \
@@ -538,7 +554,8 @@ Makefile: ../TestOpenGL.pro /opt/Qt/5.12.4/gcc_64/mkspecs/linux-g++/qmake.conf /
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/exceptions.prf \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/yacc.prf \
 		/opt/Qt/5.12.4/gcc_64/mkspecs/features/lex.prf \
-		../TestOpenGL.pro
+		../TestOpenGL.pro \
+		/usr/lib/x86_64-linux-gnu/libQt5Core.prl
 	$(QMAKE) -o Makefile ../TestOpenGL.pro -spec linux-g++ CONFIG+=debug CONFIG+=qml_debug
 /opt/Qt/5.12.4/gcc_64/mkspecs/features/spec_pre.prf:
 /opt/Qt/5.12.4/gcc_64/mkspecs/common/unix.conf:
@@ -720,6 +737,12 @@ Makefile: ../TestOpenGL.pro /opt/Qt/5.12.4/gcc_64/mkspecs/linux-g++/qmake.conf /
 /opt/Qt/5.12.4/gcc_64/mkspecs/features/default_pre.prf:
 /opt/Qt/5.12.4/gcc_64/mkspecs/features/resolve_config.prf:
 /opt/Qt/5.12.4/gcc_64/mkspecs/features/default_post.prf:
+/opt/Qt/5.12.4/gcc_64/mkspecs/features/qt.prf:
+/opt/Qt/5.12.4/gcc_64/mkspecs/features/resources.prf:
+/opt/Qt/5.12.4/gcc_64/mkspecs/features/moc.prf:
+/opt/Qt/5.12.4/gcc_64/mkspecs/features/unix/opengl.prf:
+/opt/Qt/5.12.4/gcc_64/mkspecs/features/uic.prf:
+/opt/Qt/5.12.4/gcc_64/mkspecs/features/unix/thread.prf:
 /opt/Qt/5.12.4/gcc_64/mkspecs/features/qml_debug.prf:
 /opt/Qt/5.12.4/gcc_64/mkspecs/features/warn_on.prf:
 /opt/Qt/5.12.4/gcc_64/mkspecs/features/qmake_use.prf:
@@ -729,6 +752,7 @@ Makefile: ../TestOpenGL.pro /opt/Qt/5.12.4/gcc_64/mkspecs/linux-g++/qmake.conf /
 /opt/Qt/5.12.4/gcc_64/mkspecs/features/yacc.prf:
 /opt/Qt/5.12.4/gcc_64/mkspecs/features/lex.prf:
 ../TestOpenGL.pro:
+/usr/lib/x86_64-linux-gnu/libQt5Core.prl:
 qmake: FORCE
 	@$(QMAKE) -o Makefile ../TestOpenGL.pro -spec linux-g++ CONFIG+=debug CONFIG+=qml_debug
 
@@ -743,6 +767,9 @@ dist: distdir FORCE
 distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
+	$(COPY_FILE) --parents /opt/Qt/5.12.4/gcc_64/mkspecs/features/data/dummy.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents ../../opengl/LearnOpenGL-master/includes/stb_image.h ../../zbasesystem/ztoolset/zarray.h ../Bmp.h ../zboxcomponents.h ../zcandy.h ../zconfig.h ../zfont.h ../zglconstants.h ../zglobjdescriptor.h ../zglresource.h ../zgltext.h ../zglunicode.h ../zmetaobject.h ../zsphere.h ../zshader.h ../camera.h ../zmaterial.h ../zobject.h ../zobjectfunctions.h ../ztextrenderer.h ../ztexture.h ../zvertice.h $(DISTDIR)/
+	$(COPY_FILE) --parents ../Bmp.cpp ../zboxcomponents.cpp ../zcandy.cpp ../zfont.cpp ../zglobjdescriptor.cpp ../zglresource.cpp ../zgltext.cpp ../zglunicode.cpp ../zmetaobject.cpp ../zshader.cpp ../zsphere.cpp ../main.cpp ../../opengl/LearnOpenGL-master/src/stb_image.cpp ../zobject.cpp ../zobjectfunctions.cpp ../ztextrenderer.cpp ../ztexture.cpp ../zvertice.cpp $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -758,17 +785,37 @@ distclean: clean
 
 ####### Sub-libraries
 
+mocclean: compiler_moc_header_clean compiler_moc_objc_header_clean compiler_moc_source_clean
+
+mocables: compiler_moc_header_make_all compiler_moc_objc_header_make_all compiler_moc_source_make_all
+
 check: first
 
 benchmark: first
 
+compiler_rcc_make_all:
+compiler_rcc_clean:
+compiler_moc_predefs_make_all: moc_predefs.h
+compiler_moc_predefs_clean:
+	-$(DEL_FILE) moc_predefs.h
+moc_predefs.h: /opt/Qt/5.12.4/gcc_64/mkspecs/features/data/dummy.cpp
+	g++ -pipe -std=c++17 -ansi -pedantic -pthread -g -std=gnu++1z -dM -E -o moc_predefs.h /opt/Qt/5.12.4/gcc_64/mkspecs/features/data/dummy.cpp
+
+compiler_moc_header_make_all:
+compiler_moc_header_clean:
+compiler_moc_objc_header_make_all:
+compiler_moc_objc_header_clean:
+compiler_moc_source_make_all:
+compiler_moc_source_clean:
+compiler_uic_make_all:
+compiler_uic_clean:
 compiler_yacc_decl_make_all:
 compiler_yacc_decl_clean:
 compiler_yacc_impl_make_all:
 compiler_yacc_impl_clean:
 compiler_lex_make_all:
 compiler_lex_clean:
-compiler_clean: 
+compiler_clean: compiler_moc_predefs_clean 
 
 ####### Compile
 
@@ -884,7 +931,7 @@ zboxcomponents.o: ../zboxcomponents.cpp ../zboxcomponents.h \
 		../../zbasesystem/ztoolset/ztime.h \
 		../../zbasesystem/ztoolset/zatomicconvert.h \
 		../zshader.h \
-		../zresource.h \
+		../zglresource.h \
 		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
 		../zmaterial.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o zboxcomponents.o ../zboxcomponents.cpp
@@ -893,7 +940,7 @@ zcandy.o: ../zcandy.cpp ../zcandy.h \
 		../glad/include/glad/glad.h \
 		../glad/include/KHR/khrplatform.h \
 		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
-		../zresource.h \
+		../zglresource.h \
 		../../zbasesystem/ztoolset/zarray.h \
 		../zconfig.h \
 		../../zbasesystem/zconfig_general.h \
@@ -1004,6 +1051,157 @@ zcandy.o: ../zcandy.cpp ../zcandy.h \
 		../zvertice.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o zcandy.o ../zcandy.cpp
 
+zfont.o: ../zfont.cpp ../../zbasesystem/ztoolset/zerror.h \
+		../zconfig.h \
+		../../zbasesystem/zconfig_general.h \
+		../../zbasesystem/zremote/zconfig_network.h \
+		../../zbasesystem/ztoolset/zerror_min.h \
+		../../zbasesystem/ztoolset/zlimit.h \
+		../../zbasesystem/ztoolset/zmodulestack.h \
+		../../zbasesystem/ztoolset/zarray.h \
+		../../zbasesystem/zthread/zmutex.h \
+		../../zbasesystem/ztoolset/ztime.h \
+		../../zbasesystem/ztoolset/zatomicconvert.h \
+		../zfont.h \
+		../glad/include/glad/glad.h \
+		../glad/include/KHR/khrplatform.h \
+		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
+		../../zbasesystem/ztoolset/zdatabuffer.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/QByteArray \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qbytearray.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qrefcount.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qatomic.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qglobal.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qconfig-bootstrapped.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qconfig.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qtcore-config.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qsystemdetection.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qprocessordetection.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qcompilerdetection.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qtypeinfo.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qsysinfo.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qlogging.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qflags.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qglobalstatic.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qmutex.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qnumeric.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qversiontagging.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qbasicatomic.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qatomic_bootstrap.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qgenericatomic.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qatomic_cxx11.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qatomic_msvc.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qnamespace.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qarraydata.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/QString \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qstring.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qchar.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qstringliteral.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qstringalgorithms.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qstringview.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qstringbuilder.h \
+		../../zbasesystem/ztoolset/zcharset.h \
+		../../zbasesystem/ztoolset/utfstrctx.h \
+		../../zbasesystem/ztoolset/zmem.h \
+		../../zbasesystem/ztoolset/zfunctions.h \
+		../../zbasesystem/ztoolset/cescapedstring.h \
+		../../zbasesystem/ztoolset/ztoolset_common.h \
+		../zglresource.h \
+		../../opengl/glm/glm/glm.hpp \
+		../../opengl/glm/glm/detail/_fixes.hpp \
+		../../opengl/glm/glm/fwd.hpp \
+		../../opengl/glm/glm/detail/type_int.hpp \
+		../../opengl/glm/glm/detail/setup.hpp \
+		../../opengl/glm/glm/simd/platform.h \
+		../../opengl/glm/glm/detail/type_float.hpp \
+		../../opengl/glm/glm/detail/type_vec.hpp \
+		../../opengl/glm/glm/detail/precision.hpp \
+		../../opengl/glm/glm/detail/type_mat.hpp \
+		../../opengl/glm/glm/vec2.hpp \
+		../../opengl/glm/glm/detail/type_vec2.hpp \
+		../../opengl/glm/glm/detail/_swizzle.hpp \
+		../../opengl/glm/glm/detail/_swizzle_func.hpp \
+		../../opengl/glm/glm/detail/type_vec2.inl \
+		../../opengl/glm/glm/vec3.hpp \
+		../../opengl/glm/glm/detail/type_vec3.hpp \
+		../../opengl/glm/glm/detail/type_vec3.inl \
+		../../opengl/glm/glm/vec4.hpp \
+		../../opengl/glm/glm/detail/type_vec4.hpp \
+		../../opengl/glm/glm/detail/type_vec4.inl \
+		../../opengl/glm/glm/detail/type_vec4_simd.inl \
+		../../opengl/glm/glm/mat2x2.hpp \
+		../../opengl/glm/glm/detail/type_mat2x2.hpp \
+		../../opengl/glm/glm/detail/type_mat2x2.inl \
+		../../opengl/glm/glm/detail/func_matrix.hpp \
+		../../opengl/glm/glm/mat2x3.hpp \
+		../../opengl/glm/glm/detail/type_mat2x3.hpp \
+		../../opengl/glm/glm/detail/type_mat2x3.inl \
+		../../opengl/glm/glm/mat2x4.hpp \
+		../../opengl/glm/glm/detail/type_mat2x4.hpp \
+		../../opengl/glm/glm/detail/type_mat2x4.inl \
+		../../opengl/glm/glm/mat3x2.hpp \
+		../../opengl/glm/glm/detail/type_mat3x2.hpp \
+		../../opengl/glm/glm/detail/type_mat3x2.inl \
+		../../opengl/glm/glm/mat3x3.hpp \
+		../../opengl/glm/glm/detail/type_mat3x3.hpp \
+		../../opengl/glm/glm/detail/type_mat3x3.inl \
+		../../opengl/glm/glm/mat3x4.hpp \
+		../../opengl/glm/glm/detail/type_mat3x4.hpp \
+		../../opengl/glm/glm/detail/type_mat3x4.inl \
+		../../opengl/glm/glm/mat4x2.hpp \
+		../../opengl/glm/glm/detail/type_mat4x2.hpp \
+		../../opengl/glm/glm/detail/type_mat4x2.inl \
+		../../opengl/glm/glm/mat4x3.hpp \
+		../../opengl/glm/glm/detail/type_mat4x3.hpp \
+		../../opengl/glm/glm/detail/type_mat4x3.inl \
+		../../opengl/glm/glm/mat4x4.hpp \
+		../../opengl/glm/glm/detail/type_mat4x4.hpp \
+		../../opengl/glm/glm/detail/type_mat4x4.inl \
+		../../opengl/glm/glm/detail/type_mat4x4_simd.inl \
+		../../opengl/glm/glm/detail/func_matrix.inl \
+		../../opengl/glm/glm/geometric.hpp \
+		../../opengl/glm/glm/detail/func_geometric.hpp \
+		../../opengl/glm/glm/detail/func_geometric.inl \
+		../../opengl/glm/glm/detail/func_exponential.hpp \
+		../../opengl/glm/glm/detail/type_vec1.hpp \
+		../../opengl/glm/glm/detail/type_vec1.inl \
+		../../opengl/glm/glm/detail/func_exponential.inl \
+		../../opengl/glm/glm/detail/func_vector_relational.hpp \
+		../../opengl/glm/glm/detail/func_vector_relational.inl \
+		../../opengl/glm/glm/detail/func_vector_relational_simd.inl \
+		../../opengl/glm/glm/detail/_vectorize.hpp \
+		../../opengl/glm/glm/detail/func_exponential_simd.inl \
+		../../opengl/glm/glm/simd/exponential.h \
+		../../opengl/glm/glm/detail/func_common.hpp \
+		../../opengl/glm/glm/detail/func_common.inl \
+		../../opengl/glm/glm/detail/func_common_simd.inl \
+		../../opengl/glm/glm/simd/common.h \
+		../../opengl/glm/glm/detail/func_geometric_simd.inl \
+		../../opengl/glm/glm/simd/geometric.h \
+		../../opengl/glm/glm/detail/func_matrix_simd.inl \
+		../../opengl/glm/glm/simd/matrix.h \
+		../../opengl/glm/glm/trigonometric.hpp \
+		../../opengl/glm/glm/detail/func_trigonometric.hpp \
+		../../opengl/glm/glm/detail/func_trigonometric.inl \
+		../../opengl/glm/glm/detail/func_trigonometric_simd.inl \
+		../../opengl/glm/glm/exponential.hpp \
+		../../opengl/glm/glm/common.hpp \
+		../../opengl/glm/glm/packing.hpp \
+		../../opengl/glm/glm/detail/func_packing.hpp \
+		../../opengl/glm/glm/detail/func_packing.inl \
+		../../opengl/glm/glm/detail/type_half.hpp \
+		../../opengl/glm/glm/detail/type_half.inl \
+		../../opengl/glm/glm/detail/func_packing_simd.inl \
+		../../opengl/glm/glm/matrix.hpp \
+		../../opengl/glm/glm/vector_relational.hpp \
+		../../opengl/glm/glm/integer.hpp \
+		../../opengl/glm/glm/detail/func_integer.hpp \
+		../../opengl/glm/glm/detail/func_integer.inl \
+		../../opengl/glm/glm/detail/func_integer_simd.inl \
+		../../opengl/glm/glm/simd/integer.h \
+		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o zfont.o ../zfont.cpp
+
 zglobjdescriptor.o: ../zglobjdescriptor.cpp ../zglobjdescriptor.h \
 		../glad/include/glad/glad.h \
 		../glad/include/KHR/khrplatform.h \
@@ -1102,7 +1300,7 @@ zglobjdescriptor.o: ../zglobjdescriptor.cpp ../zglobjdescriptor.h \
 		../../opengl/glm/glm/simd/integer.h \
 		../zglconstants.h \
 		../zshader.h \
-		../zresource.h \
+		../zglresource.h \
 		../../zbasesystem/ztoolset/zarray.h \
 		../zconfig.h \
 		../../zbasesystem/zconfig_general.h \
@@ -1116,7 +1314,164 @@ zglobjdescriptor.o: ../zglobjdescriptor.cpp ../zglobjdescriptor.h \
 		../zmaterial.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o zglobjdescriptor.o ../zglobjdescriptor.cpp
 
-zgltext.o: ../zgltext.cpp ../zresource.h \
+zglresource.o: ../zglresource.cpp ../zglresource.h \
+		../glad/include/glad/glad.h \
+		../glad/include/KHR/khrplatform.h \
+		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
+		../../zbasesystem/ztoolset/zarray.h \
+		../zconfig.h \
+		../../zbasesystem/zconfig_general.h \
+		../../zbasesystem/zremote/zconfig_network.h \
+		../../zbasesystem/ztoolset/zerror_min.h \
+		../../zbasesystem/ztoolset/zlimit.h \
+		../../zbasesystem/zthread/zmutex.h \
+		../../zbasesystem/ztoolset/ztime.h \
+		../../zbasesystem/ztoolset/zatomicconvert.h \
+		../../opengl/glm/glm/glm.hpp \
+		../../opengl/glm/glm/detail/_fixes.hpp \
+		../../opengl/glm/glm/fwd.hpp \
+		../../opengl/glm/glm/detail/type_int.hpp \
+		../../opengl/glm/glm/detail/setup.hpp \
+		../../opengl/glm/glm/simd/platform.h \
+		../../opengl/glm/glm/detail/type_float.hpp \
+		../../opengl/glm/glm/detail/type_vec.hpp \
+		../../opengl/glm/glm/detail/precision.hpp \
+		../../opengl/glm/glm/detail/type_mat.hpp \
+		../../opengl/glm/glm/vec2.hpp \
+		../../opengl/glm/glm/detail/type_vec2.hpp \
+		../../opengl/glm/glm/detail/_swizzle.hpp \
+		../../opengl/glm/glm/detail/_swizzle_func.hpp \
+		../../opengl/glm/glm/detail/type_vec2.inl \
+		../../opengl/glm/glm/vec3.hpp \
+		../../opengl/glm/glm/detail/type_vec3.hpp \
+		../../opengl/glm/glm/detail/type_vec3.inl \
+		../../opengl/glm/glm/vec4.hpp \
+		../../opengl/glm/glm/detail/type_vec4.hpp \
+		../../opengl/glm/glm/detail/type_vec4.inl \
+		../../opengl/glm/glm/detail/type_vec4_simd.inl \
+		../../opengl/glm/glm/mat2x2.hpp \
+		../../opengl/glm/glm/detail/type_mat2x2.hpp \
+		../../opengl/glm/glm/detail/type_mat2x2.inl \
+		../../opengl/glm/glm/detail/func_matrix.hpp \
+		../../opengl/glm/glm/mat2x3.hpp \
+		../../opengl/glm/glm/detail/type_mat2x3.hpp \
+		../../opengl/glm/glm/detail/type_mat2x3.inl \
+		../../opengl/glm/glm/mat2x4.hpp \
+		../../opengl/glm/glm/detail/type_mat2x4.hpp \
+		../../opengl/glm/glm/detail/type_mat2x4.inl \
+		../../opengl/glm/glm/mat3x2.hpp \
+		../../opengl/glm/glm/detail/type_mat3x2.hpp \
+		../../opengl/glm/glm/detail/type_mat3x2.inl \
+		../../opengl/glm/glm/mat3x3.hpp \
+		../../opengl/glm/glm/detail/type_mat3x3.hpp \
+		../../opengl/glm/glm/detail/type_mat3x3.inl \
+		../../opengl/glm/glm/mat3x4.hpp \
+		../../opengl/glm/glm/detail/type_mat3x4.hpp \
+		../../opengl/glm/glm/detail/type_mat3x4.inl \
+		../../opengl/glm/glm/mat4x2.hpp \
+		../../opengl/glm/glm/detail/type_mat4x2.hpp \
+		../../opengl/glm/glm/detail/type_mat4x2.inl \
+		../../opengl/glm/glm/mat4x3.hpp \
+		../../opengl/glm/glm/detail/type_mat4x3.hpp \
+		../../opengl/glm/glm/detail/type_mat4x3.inl \
+		../../opengl/glm/glm/mat4x4.hpp \
+		../../opengl/glm/glm/detail/type_mat4x4.hpp \
+		../../opengl/glm/glm/detail/type_mat4x4.inl \
+		../../opengl/glm/glm/detail/type_mat4x4_simd.inl \
+		../../opengl/glm/glm/detail/func_matrix.inl \
+		../../opengl/glm/glm/geometric.hpp \
+		../../opengl/glm/glm/detail/func_geometric.hpp \
+		../../opengl/glm/glm/detail/func_geometric.inl \
+		../../opengl/glm/glm/detail/func_exponential.hpp \
+		../../opengl/glm/glm/detail/type_vec1.hpp \
+		../../opengl/glm/glm/detail/type_vec1.inl \
+		../../opengl/glm/glm/detail/func_exponential.inl \
+		../../opengl/glm/glm/detail/func_vector_relational.hpp \
+		../../opengl/glm/glm/detail/func_vector_relational.inl \
+		../../opengl/glm/glm/detail/func_vector_relational_simd.inl \
+		../../opengl/glm/glm/detail/_vectorize.hpp \
+		../../opengl/glm/glm/detail/func_exponential_simd.inl \
+		../../opengl/glm/glm/simd/exponential.h \
+		../../opengl/glm/glm/detail/func_common.hpp \
+		../../opengl/glm/glm/detail/func_common.inl \
+		../../opengl/glm/glm/detail/func_common_simd.inl \
+		../../opengl/glm/glm/simd/common.h \
+		../../opengl/glm/glm/detail/func_geometric_simd.inl \
+		../../opengl/glm/glm/simd/geometric.h \
+		../../opengl/glm/glm/detail/func_matrix_simd.inl \
+		../../opengl/glm/glm/simd/matrix.h \
+		../../opengl/glm/glm/trigonometric.hpp \
+		../../opengl/glm/glm/detail/func_trigonometric.hpp \
+		../../opengl/glm/glm/detail/func_trigonometric.inl \
+		../../opengl/glm/glm/detail/func_trigonometric_simd.inl \
+		../../opengl/glm/glm/exponential.hpp \
+		../../opengl/glm/glm/common.hpp \
+		../../opengl/glm/glm/packing.hpp \
+		../../opengl/glm/glm/detail/func_packing.hpp \
+		../../opengl/glm/glm/detail/func_packing.inl \
+		../../opengl/glm/glm/detail/type_half.hpp \
+		../../opengl/glm/glm/detail/type_half.inl \
+		../../opengl/glm/glm/detail/func_packing_simd.inl \
+		../../opengl/glm/glm/matrix.hpp \
+		../../opengl/glm/glm/vector_relational.hpp \
+		../../opengl/glm/glm/integer.hpp \
+		../../opengl/glm/glm/detail/func_integer.hpp \
+		../../opengl/glm/glm/detail/func_integer.inl \
+		../../opengl/glm/glm/detail/func_integer_simd.inl \
+		../../opengl/glm/glm/simd/integer.h \
+		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
+		../ztexture.h \
+		../../../TestOpenGl/zobject.h \
+		../zshader.h \
+		../zmaterial.h \
+		../zvertice.h \
+		../zglconstants.h \
+		../zfont.h \
+		../../zbasesystem/ztoolset/zdatabuffer.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/QByteArray \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qbytearray.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qrefcount.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qatomic.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qglobal.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qconfig-bootstrapped.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qconfig.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qtcore-config.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qsystemdetection.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qprocessordetection.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qcompilerdetection.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qtypeinfo.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qsysinfo.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qlogging.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qflags.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qglobalstatic.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qmutex.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qnumeric.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qversiontagging.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qbasicatomic.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qatomic_bootstrap.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qgenericatomic.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qatomic_cxx11.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qatomic_msvc.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qnamespace.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qarraydata.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/QString \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qstring.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qchar.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qstringliteral.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qstringalgorithms.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qstringview.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qstringbuilder.h \
+		../../zbasesystem/ztoolset/zerror.h \
+		../../zbasesystem/ztoolset/zmodulestack.h \
+		../../zbasesystem/ztoolset/zcharset.h \
+		../../zbasesystem/ztoolset/utfstrctx.h \
+		../../zbasesystem/ztoolset/zmem.h \
+		../../zbasesystem/ztoolset/zfunctions.h \
+		../../zbasesystem/ztoolset/cescapedstring.h \
+		../../zbasesystem/ztoolset/ztoolset_common.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o zglresource.o ../zglresource.cpp
+
+zgltext.o: ../zgltext.cpp ../zglresource.h \
 		../glad/include/glad/glad.h \
 		../glad/include/KHR/khrplatform.h \
 		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
@@ -1236,7 +1591,7 @@ zgltext.o: ../zgltext.cpp ../zresource.h \
 zglunicode.o: ../zglunicode.cpp ../glad/include/glad/glad.h \
 		../glad/include/KHR/khrplatform.h \
 		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
-		../zresource.h \
+		../zglresource.h \
 		../../zbasesystem/ztoolset/zarray.h \
 		../zconfig.h \
 		../../zbasesystem/zconfig_general.h \
@@ -1347,7 +1702,50 @@ zglunicode.o: ../zglunicode.cpp ../glad/include/glad/glad.h \
 		../zglconstants.h \
 		../ztexture.h \
 		../zshader.h \
-		../zmaterial.h
+		../zmaterial.h \
+		../zfont.h \
+		../../zbasesystem/ztoolset/zdatabuffer.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/QByteArray \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qbytearray.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qrefcount.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qatomic.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qglobal.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qconfig-bootstrapped.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qconfig.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qtcore-config.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qsystemdetection.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qprocessordetection.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qcompilerdetection.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qtypeinfo.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qsysinfo.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qlogging.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qflags.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qglobalstatic.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qmutex.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qnumeric.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qversiontagging.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qbasicatomic.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qatomic_bootstrap.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qgenericatomic.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qatomic_cxx11.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qatomic_msvc.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qnamespace.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qarraydata.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/QString \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qstring.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qchar.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qstringliteral.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qstringalgorithms.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qstringview.h \
+		/opt/Qt/5.12.4/gcc_64/include/QtCore/qstringbuilder.h \
+		../../zbasesystem/ztoolset/zerror.h \
+		../../zbasesystem/ztoolset/zmodulestack.h \
+		../../zbasesystem/ztoolset/zcharset.h \
+		../../zbasesystem/ztoolset/utfstrctx.h \
+		../../zbasesystem/ztoolset/zmem.h \
+		../../zbasesystem/ztoolset/zfunctions.h \
+		../../zbasesystem/ztoolset/cescapedstring.h \
+		../../zbasesystem/ztoolset/ztoolset_common.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o zglunicode.o ../zglunicode.cpp
 
 zmetaobject.o: ../zmetaobject.cpp ../zmetaobject.h \
@@ -1458,125 +1856,11 @@ zmetaobject.o: ../zmetaobject.cpp ../zmetaobject.h \
 		../../zbasesystem/ztoolset/zatomicconvert.h \
 		../../../TestOpenGl/zobject.h \
 		../zshader.h \
-		../zresource.h \
+		../zglresource.h \
 		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
 		../zmaterial.h \
 		../zvertice.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o zmetaobject.o ../zmetaobject.cpp
-
-zresource.o: ../zresource.cpp ../zresource.h \
-		../glad/include/glad/glad.h \
-		../glad/include/KHR/khrplatform.h \
-		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
-		../../zbasesystem/ztoolset/zarray.h \
-		../zconfig.h \
-		../../zbasesystem/zconfig_general.h \
-		../../zbasesystem/zremote/zconfig_network.h \
-		../../zbasesystem/ztoolset/zerror_min.h \
-		../../zbasesystem/ztoolset/zlimit.h \
-		../../zbasesystem/zthread/zmutex.h \
-		../../zbasesystem/ztoolset/ztime.h \
-		../../zbasesystem/ztoolset/zatomicconvert.h \
-		../../opengl/glm/glm/glm.hpp \
-		../../opengl/glm/glm/detail/_fixes.hpp \
-		../../opengl/glm/glm/fwd.hpp \
-		../../opengl/glm/glm/detail/type_int.hpp \
-		../../opengl/glm/glm/detail/setup.hpp \
-		../../opengl/glm/glm/simd/platform.h \
-		../../opengl/glm/glm/detail/type_float.hpp \
-		../../opengl/glm/glm/detail/type_vec.hpp \
-		../../opengl/glm/glm/detail/precision.hpp \
-		../../opengl/glm/glm/detail/type_mat.hpp \
-		../../opengl/glm/glm/vec2.hpp \
-		../../opengl/glm/glm/detail/type_vec2.hpp \
-		../../opengl/glm/glm/detail/_swizzle.hpp \
-		../../opengl/glm/glm/detail/_swizzle_func.hpp \
-		../../opengl/glm/glm/detail/type_vec2.inl \
-		../../opengl/glm/glm/vec3.hpp \
-		../../opengl/glm/glm/detail/type_vec3.hpp \
-		../../opengl/glm/glm/detail/type_vec3.inl \
-		../../opengl/glm/glm/vec4.hpp \
-		../../opengl/glm/glm/detail/type_vec4.hpp \
-		../../opengl/glm/glm/detail/type_vec4.inl \
-		../../opengl/glm/glm/detail/type_vec4_simd.inl \
-		../../opengl/glm/glm/mat2x2.hpp \
-		../../opengl/glm/glm/detail/type_mat2x2.hpp \
-		../../opengl/glm/glm/detail/type_mat2x2.inl \
-		../../opengl/glm/glm/detail/func_matrix.hpp \
-		../../opengl/glm/glm/mat2x3.hpp \
-		../../opengl/glm/glm/detail/type_mat2x3.hpp \
-		../../opengl/glm/glm/detail/type_mat2x3.inl \
-		../../opengl/glm/glm/mat2x4.hpp \
-		../../opengl/glm/glm/detail/type_mat2x4.hpp \
-		../../opengl/glm/glm/detail/type_mat2x4.inl \
-		../../opengl/glm/glm/mat3x2.hpp \
-		../../opengl/glm/glm/detail/type_mat3x2.hpp \
-		../../opengl/glm/glm/detail/type_mat3x2.inl \
-		../../opengl/glm/glm/mat3x3.hpp \
-		../../opengl/glm/glm/detail/type_mat3x3.hpp \
-		../../opengl/glm/glm/detail/type_mat3x3.inl \
-		../../opengl/glm/glm/mat3x4.hpp \
-		../../opengl/glm/glm/detail/type_mat3x4.hpp \
-		../../opengl/glm/glm/detail/type_mat3x4.inl \
-		../../opengl/glm/glm/mat4x2.hpp \
-		../../opengl/glm/glm/detail/type_mat4x2.hpp \
-		../../opengl/glm/glm/detail/type_mat4x2.inl \
-		../../opengl/glm/glm/mat4x3.hpp \
-		../../opengl/glm/glm/detail/type_mat4x3.hpp \
-		../../opengl/glm/glm/detail/type_mat4x3.inl \
-		../../opengl/glm/glm/mat4x4.hpp \
-		../../opengl/glm/glm/detail/type_mat4x4.hpp \
-		../../opengl/glm/glm/detail/type_mat4x4.inl \
-		../../opengl/glm/glm/detail/type_mat4x4_simd.inl \
-		../../opengl/glm/glm/detail/func_matrix.inl \
-		../../opengl/glm/glm/geometric.hpp \
-		../../opengl/glm/glm/detail/func_geometric.hpp \
-		../../opengl/glm/glm/detail/func_geometric.inl \
-		../../opengl/glm/glm/detail/func_exponential.hpp \
-		../../opengl/glm/glm/detail/type_vec1.hpp \
-		../../opengl/glm/glm/detail/type_vec1.inl \
-		../../opengl/glm/glm/detail/func_exponential.inl \
-		../../opengl/glm/glm/detail/func_vector_relational.hpp \
-		../../opengl/glm/glm/detail/func_vector_relational.inl \
-		../../opengl/glm/glm/detail/func_vector_relational_simd.inl \
-		../../opengl/glm/glm/detail/_vectorize.hpp \
-		../../opengl/glm/glm/detail/func_exponential_simd.inl \
-		../../opengl/glm/glm/simd/exponential.h \
-		../../opengl/glm/glm/detail/func_common.hpp \
-		../../opengl/glm/glm/detail/func_common.inl \
-		../../opengl/glm/glm/detail/func_common_simd.inl \
-		../../opengl/glm/glm/simd/common.h \
-		../../opengl/glm/glm/detail/func_geometric_simd.inl \
-		../../opengl/glm/glm/simd/geometric.h \
-		../../opengl/glm/glm/detail/func_matrix_simd.inl \
-		../../opengl/glm/glm/simd/matrix.h \
-		../../opengl/glm/glm/trigonometric.hpp \
-		../../opengl/glm/glm/detail/func_trigonometric.hpp \
-		../../opengl/glm/glm/detail/func_trigonometric.inl \
-		../../opengl/glm/glm/detail/func_trigonometric_simd.inl \
-		../../opengl/glm/glm/exponential.hpp \
-		../../opengl/glm/glm/common.hpp \
-		../../opengl/glm/glm/packing.hpp \
-		../../opengl/glm/glm/detail/func_packing.hpp \
-		../../opengl/glm/glm/detail/func_packing.inl \
-		../../opengl/glm/glm/detail/type_half.hpp \
-		../../opengl/glm/glm/detail/type_half.inl \
-		../../opengl/glm/glm/detail/func_packing_simd.inl \
-		../../opengl/glm/glm/matrix.hpp \
-		../../opengl/glm/glm/vector_relational.hpp \
-		../../opengl/glm/glm/integer.hpp \
-		../../opengl/glm/glm/detail/func_integer.hpp \
-		../../opengl/glm/glm/detail/func_integer.inl \
-		../../opengl/glm/glm/detail/func_integer_simd.inl \
-		../../opengl/glm/glm/simd/integer.h \
-		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
-		../ztexture.h \
-		../../../TestOpenGl/zobject.h \
-		../zshader.h \
-		../zmaterial.h \
-		../zvertice.h \
-		../zglconstants.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o zresource.o ../zresource.cpp
 
 zshader.o: ../zshader.cpp ../zshader.h \
 		../glad/include/glad/glad.h \
@@ -1674,7 +1958,7 @@ zshader.o: ../zshader.cpp ../zshader.h \
 		../../opengl/glm/glm/detail/func_integer.inl \
 		../../opengl/glm/glm/detail/func_integer_simd.inl \
 		../../opengl/glm/glm/simd/integer.h \
-		../zresource.h \
+		../zglresource.h \
 		../../zbasesystem/ztoolset/zarray.h \
 		../zconfig.h \
 		../../zbasesystem/zconfig_general.h \
@@ -1799,7 +2083,7 @@ zsphere.o: ../zsphere.cpp ../glad/include/glad/glad.h \
 		../zglconstants.h \
 		../../../TestOpenGl/zobject.h \
 		../zshader.h \
-		../zresource.h \
+		../zglresource.h \
 		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
 		../zmaterial.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o zsphere.o ../zsphere.cpp
@@ -1916,7 +2200,7 @@ main.o: ../main.cpp ../glad/include/glad/glad.h \
 		../zvertice.h \
 		../zglconstants.h \
 		../zshader.h \
-		../zresource.h \
+		../zglresource.h \
 		../../zbasesystem/ztoolset/zarray.h \
 		../zconfig.h \
 		../../zbasesystem/zconfig_general.h \
@@ -2049,7 +2333,7 @@ zobject.o: ../zobject.cpp ../glad/include/glad/glad.h \
 		../../opengl/glm/glm/detail/func_integer_simd.inl \
 		../../opengl/glm/glm/simd/integer.h \
 		../zshader.h \
-		../zresource.h \
+		../zglresource.h \
 		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
 		../zmaterial.h \
 		../zvertice.h \
@@ -2168,7 +2452,7 @@ zobjectfunctions.o: ../zobjectfunctions.cpp ../zobjectfunctions.h \
 		../glad/include/KHR/khrplatform.h \
 		../zshader.h \
 		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
-		../zresource.h \
+		../zglresource.h \
 		../../opengl/LearnOpenGL-master/includes/GLFW/glfw3.h \
 		../zmaterial.h \
 		../zvertice.h \
@@ -2182,7 +2466,7 @@ zobjectfunctions.o: ../zobjectfunctions.cpp ../zobjectfunctions.h \
 ztextrenderer.o: ../ztextrenderer.cpp ../glad/include/glad/glad.h \
 		../glad/include/KHR/khrplatform.h \
 		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
-		../zresource.h \
+		../zglresource.h \
 		../../zbasesystem/ztoolset/zarray.h \
 		../zconfig.h \
 		../../zbasesystem/zconfig_general.h \
@@ -2300,7 +2584,7 @@ ztexture.o: ../ztexture.cpp ../ztexture.h \
 		../glad/include/glad/glad.h \
 		../glad/include/KHR/khrplatform.h \
 		../../opengl/LearnOpenGL-master/includes/GL/glew.h \
-		../zresource.h \
+		../zglresource.h \
 		../../zbasesystem/ztoolset/zarray.h \
 		../zconfig.h \
 		../../zbasesystem/zconfig_general.h \

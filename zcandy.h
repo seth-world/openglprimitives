@@ -8,7 +8,7 @@
 #endif
 
 #define __USE_ZARRAY_COPY_CONTRUCTOR__
-#include <zresource.h>
+#include <zglresource.h>
 #include <zmetaobject.h>
 
 class ZCandy : public ZMetaObject

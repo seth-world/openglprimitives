@@ -1,6 +1,6 @@
 #include <zobjectfunctions.h>
 #include <stb_image.h>
-#include <zresource.h>
+#include <zglresource.h>
 #include <zboxcomponents.h>
 #include <zcandy.h>
 

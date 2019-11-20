@@ -46,7 +46,7 @@
  *              - threads management :
  *                  - ored with __ZTHREAD_AUTOMATIC__  makes zbs manage mutexes lock/unlock automatically
  */
-#define __ZTHREAD_AUTOMATIC__           0x0100
+//#define __ZTHREAD_AUTOMATIC__           0x0100
 
 //#define __FORCE_STD__
 
@@ -61,7 +61,7 @@
 #ifdef __USE_LINUX__
 #ifndef __FORCE_STD__
 #define __USE_POSIX_ZTHREAD__               0x0004
-#define __USE_ZTHREAD__ (__USE_POSIX_ZTHREAD__ | __ZTHREAD_AUTOMATIC__)
+//#define __USE_ZTHREAD__ (__USE_POSIX_ZTHREAD__ | __ZTHREAD_AUTOMATIC__)
 #define __USE_STD_CHRONO__
 #endif //__FORCE_STD__
 #endif // __USE_LINUX__

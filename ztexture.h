@@ -7,7 +7,7 @@
 #include <GL/glew.h>
 #endif
 
-#include <zresource.h>
+#include <zglresource.h>
 
 class ZTexture
 {
