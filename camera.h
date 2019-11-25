@@ -52,7 +52,7 @@ const float ZOOM        =  45.0f;
 
 
 // An abstract camera class that processes input and calculates the corresponding Euler Angles, Vectors and Matrices for use in OpenGL
-class Camera
+class ZCamera
 {
 public:
     // Camera Attributes
@@ -130,7 +130,7 @@ public:
     bool Rotation=false;
 
     // Constructor with vectors
-    Camera(glm::vec3 pCameraPosition ,
+    ZCamera(glm::vec3 pCameraPosition ,
            glm::vec3 pLightPosition ,
            glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f),
            float yaw = YAW,
@@ -149,7 +149,7 @@ public:
         scheduleRedraw();
     }
     // Constructor with scalar values
-    Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
+    ZCamera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
     {
         CameraPosition = glm::vec3(posX, posY, posZ);
         DefaultCameraPosition = CameraPosition;

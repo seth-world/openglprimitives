@@ -15,10 +15,13 @@
 #define __TEXTURESAMPLER__ "TextureSampler"
 
 #define __TEXTCOLOR__   "TextColor"
-
 /* z position (depth) for text : set to shader under this name as uniform */
 #define __TEXTPOSZ__ "TextPosZ"
 
+
+#define __MODEL__   "mModel"
+#define __VIEW__   "mView"
+#define __PROJECTION__   "mProjection"
 
 const unsigned int cst_defaultPositionLocation = 0;
 const unsigned int cst_defaultNormalLocation = 1;

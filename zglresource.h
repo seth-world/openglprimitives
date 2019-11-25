@@ -18,7 +18,10 @@
 
 const char* getFTErrorString(const FT_Error error_code);
 
+class ZCamera;
+
 class UnicodeFont;
+
 
 class ZTexture;
 class ZObject;
@@ -130,21 +133,39 @@ public:
 
     void registerGLWindow(GLFWwindow* pWindow) {GLWindow=pWindow;}
 
+    void registerZCamera (ZCamera* pCamera) ;
+
     glm::vec2 getGLWindowSize() {
             int wWidth;
             int wHeight;
             glfwGetWindowSize(GLWindow,&wWidth,&wHeight);
             return glm::vec2((float) wWidth,(float)wHeight);
     }
+    /**
+     * @brief getWindowRatio obtains the ratio from window dimensions necessary to setup Projection matrix
+     * @return a float with the ratio
+     */
+    float getWindowRatio ()
+    {
+        int wWidth;
+        int wHeight;
+        glfwGetWindowSize(GLWindow,&wWidth,&wHeight);
+        return ((float)wWidth / (float)wHeight);
+    }
+
+    void setCuttingCharList(const utf32_t*pCuttingCharList) {CuttingCharList=pCuttingCharList;}
 
     zbs::ZArray <ZTexture*> Textures;
     zbs::ZArray <ZShader*> Shaders;
     zbs::ZArray <ZObject*> Objects;
 
     GLFWwindow* GLWindow=nullptr;
+    ZCamera*    Camera=nullptr;
 
+    const utf32_t* CuttingCharList=(utf32_t*)U" -/+";
+    const utf32_t* NewLineCharList=(utf32_t*)U"\n";
 private:
-//    char WorkArea [255];
+
     FT_Library FreetypeLib=nullptr;
 
     zbs::ZArray<ZFont*> FontList;

@@ -18,23 +18,35 @@ program must use GLResources to load fonts and make them available to applicatio
         |           . manages list of available fonts (substitute font if not found)
         |
         |
-  +-----------+
-  | ZFont     |     . generic loaded font definition (stored within GLResources)
-  +-----------+     . generates UnicodeFont
-         \
-          \
-           \
-            \
-             \
-            +----------------+ . manages a group of text
-  USER      | GLFontWriter   | . generates UnicodeFont for GL usage
-            +----------------+ . manages shader, matrices for all dependant fonts
-               /
-              /
-             /
+       +--
+       | Table of loaded       +-----------+
+       | Fonts                 | ZFont     |     . generic loaded font definition (stored within GLResources)
+       +-                      +-----------+     . generates UnicodeFont
+       |
+       |
+      operational font Face, font size
+       |
+       |
+       |                       +----------------+ . manages a group of text (UnicodeText)
+       |              USER ->  | GLTextWriter   | . generates UnicodeText
+       |                       +----------------+ . manages shader, matrices for all dependant fonts
+       |                +------------
+   +-------------+      | Table of Texts (UnicodeText) objects
+   | UnicodeFont |      +
+   +-------------+      /
+       \               /
+        \             /
+         \           /
+          \         /
        +-------------+
-  USER | UnicodeText |   . application text with usable font sample : here are mentionned font dimensions
+USER-> | UnicodeText |   . application text with usable font sample : here are mentionned font dimensions
        +-------------+
+                |
+            +------
+            | table of UnicodeChar -> freetype glyphs
+            +-
+
+
 
 
  Usage Example :
@@ -75,6 +87,8 @@ program must use GLResources to load fonts and make them available to applicatio
 #include <stdint.h>  // for uintxx_t
 
 
+#include <ztoolset/utfutils.h>
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
@@ -111,6 +125,32 @@ struct textPoint
     GLfloat t;
 };
 #endif
+
+
+enum RBoxPos : uint16_t
+{
+    RBP_Nothing         = 0,
+    RBP_HorizCenter     = 0x01, /* horizontally centered */
+    RBP_VertCenter      = 0x02, /* vertically centered */
+    RBP_LeftJust        = 0x04, /* text is horizontally left justified (default) */
+    RBP_RightJust       = 0x08, /* text is horizontally right justified */
+    RBP_TopJust         = 0x10, /* text is vertically display starting at top of box (default) */
+    RBP_BotJust         = 0x20, /* text is vertically displayed to box bottom */
+
+    RBP_LineWrap        = 0x40, /* Text is wrapped horizontally if it does not fit into box boundary (default)*/
+    RBP_WordWrap        = 0x80, /* Text is wrapped horizontally if it does not fit into box boundary (default)*/
+    RBP_TruncChar       = 0x0100, /* Displays a truncate sign at the end of the truncated line */
+//    RBP_FitVertical     = 0x80,          /* Text should fit into vertical box boundary  */
+
+    RBP_AdjustFSize     = 0x0200,/* Text should fit as it is adjusting font size if necessary :
+                                    This option must be set only if RBP_Wrap is not set
+                                    to make text with fit into box maximum width */
+
+//    RBP_AdjustBestTry   = 0x0200,       /* Text size is being adjusted if it does not fit vertically after being cut (default) */
+
+    RBP_Default         = RBP_LeftJust | RBP_TopJust | RBP_LineWrap
+};
+
 
 class GLUnicodeChar
 {
@@ -165,6 +205,11 @@ public:
         memset(this,0,sizeof(GLUnicodeChar));
     }
 
+/*    inline bool isCuttingChar(const utf32_t* pCuttingCharList)
+    {
+        return (utfStrchr<utf32_t>(pCuttingCharList,Codepoint)!=nullptr);
+    }
+*/
 //    float advanceX;	// advance.x
 //    float advanceY;	// advance.y
 /* bitmap information :
@@ -185,6 +230,11 @@ public:
 
     size_t      bitmapBufferSize=0;
     uint8_t*    bitmapBuffer=nullptr;
+
+    bool        isCuttingChar=false;
+    bool        isNewLineChar=false;
+
+    utf32_t     Codepoint;
 } ;//GLUnicodeChar
 
 
@@ -218,7 +268,9 @@ public:
     GLUnicodeText* newText();
 
     // Shader used for text rendering
-    ZShader* TextShader;
+    ZShader* TextShader=nullptr;
+    /* shader used for text boxes rendering */
+    ZShader* BoxShader=nullptr;
 
     void setModel(glm::mat4 pModel) {Model=pModel;}
     glm::mat4  getModel() {return Model;}
@@ -234,6 +286,17 @@ public:
 
     }
 
+    ZShader* getBoxShader()
+    {
+        if (BoxShader==nullptr)
+                    _newBoxShader();
+        return BoxShader;
+    }
+
+    void _newBoxShader()
+    {
+        BoxShader=new  ZShader("ztextbox.vs", "ztextbox.fs", "BoxShader");
+    }
     glm::mat4 Model;
     glm::mat4 View;
     glm::mat4 Projection;
@@ -314,9 +377,29 @@ public:
 
         while (UTexChar.count())
                 delete UTexChar.popR();
-
-
     }
+
+    void setBox (float pBoxWidth,
+                 float pBoxHeight,
+                 glm::vec3 pColor=glm::vec3(0.0f),
+                 uint16_t pBoxFlag=RBP_Default,
+                 bool pVisible=false,
+                 float pLineSize=-1.0,
+                 float pRightMargin=1.0); /* 1.0 is a minimum margin */
+
+
+    void setPosition(float pX,float pY,float pZ) {Position=glm::vec3(pX,pY,pZ);}
+    void setPosition(glm::vec3 pPosition) {Position=pPosition;}
+
+    void setBoxColor(glm::vec3 pColor) {BoxColor=pColor;}
+    void setBoxLineSize (float pLineSize) {BoxLineSize=pLineSize;}
+
+    void _boxSetupGL ();
+
+    void _setupMatrices ();
+
+    void _drawBox ();
+
 
     inline int loadChar(FT_ULong pChar);
 
@@ -324,20 +407,42 @@ public:
 
     int setText(const utf32_t* pUtf32Text,const int pFontIdx);
 
-    void _render(glm::vec3 pPosition,
-                 glm::vec3 pColor,
-                 float pSx, float pSy);
-    void _renderVertical(glm::vec3 pPosition,
-                         glm::vec3 pColor,
-                         float pSx, float pSy);
     void render(glm::vec3 pPosition,
                 glm::vec3 pColor);
 
     void renderVertical(glm::vec3 pPosition,
                         glm::vec3 pColor);
 
+    void renderToBox(glm::vec3 pTextColor);
+
+    void _render(glm::vec3 pPosition,
+                 glm::vec3 pColor,
+                 float pSx, float pSy);
+
+    void _renderToBox(glm::vec3 pBoxPosition,
+                      float     pBoxWidth,
+                      float     pBoxHeight,
+                      glm::vec3 pColor,
+                      float pSx, float pSy,
+                      uint16_t pFlag=RBP_Default); /* flag : how to position text within the box */
+
+    void _renderVertical(glm::vec3 pPosition,
+                         glm::vec3 pColor,
+                         float pSx, float pSy);
+
+    void _renderVerticalToBox(glm::vec3 pBoxPosition,
+                      int       pBoxWidth,
+                      int       pBoxHeight,
+                      glm::vec3 pColor,
+                      float pSx, float pSy);
 
 
+    void _setupOneChar(float &wStartPosX,                 /* starting position x updated to next character position */
+                       float &wStartPosY,                 /* starting position y updated to next character position */
+                       float wSx,
+                       float wSy,
+                       GLUnicodeChar* pChar,              /* character data content */
+                       zbs::ZArray<textPoint>& wCoords);  /* array point coords table to draw characters */
 
     GLTextWriter* Writer=nullptr;
 
@@ -358,12 +463,54 @@ public:
 
     // Render state
     GLuint VAO=0, VBO=0;
-    ZTexture* Texture=nullptr;// One texture for all text
-    size_t TextLen=0;
+    ZTexture* Texture=nullptr;  /* One texture object for all text          */
+
+/* Text Box */
+    // Render state
+    GLuint BoxVAO=0, BoxVBO=0;
+
+    ZTexture* BoxTexture=nullptr;  /* unused for the time being        */
+
+/* End Text Box */
+
+    size_t TextLen=0;           /* number of characters composing text      */
+
+    size_t TextSumWidth =0;     /* sum of glyphs raw width for the whole text   */
 
     UnicodeFont* Font=nullptr;
 
- //   glm::vec3 Position=glm::vec3(0.0,0.0,0.0);
+    glm::vec3 Position=glm::vec3(0.0,0.0,0.0);
+
+    glm::mat4   Model; /* model matrix for text and text box if any */
+    glm::mat4   Projection; /* model matrix for text and text box if any */
+    glm::mat4   View; /* model matrix for text and text box if any */
+
+private:
+/* text box */
+    RBoxPos BoxFlag=RBP_Default;
+    float BoxWidth=-1.0;
+    float BoxHeight=-1.0;
+    float BoxRightMargin = 0.0;
+
+    int IBoxWidth=-1;
+    int IBoxHeight=-1;
+
+    bool  BoxVisible=false;
+    float BoxLineSize=-1.0;
+    glm::vec3 BoxColor=ZBlueColor;
+/* end text box */
+
+    inline void _setUpGLState(glm::vec3 pPosition,
+                       glm::vec3 pColor);
+
+    inline void _postGL();
+
+    GLboolean   BlendEnabled=false;
+    int         TextCoordsAttLocation;
+
+    //zbs::ZArray<glm::vec3>* TextBoxCoords=nullptr;
+    float TextBoxcoords[];
+
 
 };//GLUnicodeText
 

@@ -7,6 +7,7 @@
 #include <zfont.h>
 #include <string.h> // for strcmp
 
+#include <camera.h>
 
 ZGLResource _GLResources;
 ZGLResource* GLResources=&_GLResources;
@@ -127,5 +128,8 @@ void ZGLResource::closeFreeType()
 }
 
 
-
+void ZGLResource::registerZCamera (ZCamera* pCamera)
+{
+    Camera=pCamera;
+}
 

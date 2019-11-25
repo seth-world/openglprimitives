@@ -49,7 +49,7 @@ const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 1200;
 
 // camera
-Camera camera(Vertice_type(0.0f, 0.0f, 3.0f),glm::vec3(1.0f, 0.2f, 1.0f));
+ZCamera camera(Vertice_type(0.0f, 0.0f, 3.0f),glm::vec3(1.0f, 0.2f, 1.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -166,6 +166,8 @@ int main()
 
     GLResources->registerGLWindow(window);
 
+    GLResources->registerZCamera(&camera);
+
     // During init, enable debug output
     glEnable              ( GL_DEBUG_OUTPUT );
 
@@ -220,6 +222,43 @@ int main()
     if (wRet<0)
             fprintf (stderr," Font <%s> is not loaded \n","FreeSans");
 
+     GLUnicodeText* wBText=wUWriter.newText();
+
+     wRet=wBText->setText((utf32_t*)U"Жди меня, и я вернусь.Только очень жди, Жди, когда наводят грусть Желтые дожди, Жди, когда снега метут, Жди, когда жара,\
+Жди, когда других не ждут,Позабыв вчера.Жди, когда из дальних мест Писем не придет, Жди, когда уж надоест Всем, кто вместе ждет","FreeSans",24);
+
+
+     if (wRet<0)
+             fprintf (stderr," Font <%s> is not loaded \n","FreeSans");
+
+     wBText->setBox(700.0,350.0,ZYellowBright,RBP_HorizCenter|RBP_WordWrap, true,1.0,1.0);
+
+     wBText->setPosition(-0.9f,0.5f,0.0f);
+
+     GLUnicodeText* wNLText=wUWriter.newText();
+
+
+
+     wRet=wNLText->setText((utf32_t*)U"Жди меня, и я вернусь.\n\
+Только очень жди,\n\n\n\
+Жди, когда наводят грусть\n\
+Желтые дожди,\n\
+Жди, когда снега метут,\n\
+Жди, когда жара,\n\
+Жди, когда других не ждут,\n\
+Позабыв вчера.\n\
+Жди, когда из дальних мест\n\
+Писем не придет,\n\
+Жди, когда уж надоест\n\
+Всем, кто вместе ждет.\n","FreeSans",24);
+
+     if (wRet<0)
+             fprintf (stderr," Font <%s> is not loaded \n","FreeSans");
+
+             wNLText->setBox(700.0,350.0,ZYellowBright,RBP_HorizCenter|RBP_WordWrap|RBP_TruncChar, true,1.0,1.0);
+
+             wNLText->setPosition(0.5f,0.5f,0.0f);
+
 //    GLUnicodeText wUText((uint32_t*)U"Жди меня, и я вернусь.","FreeSans48",48,GL_TEXTURE0);
 
     // build and compile our shader zprogram
@@ -230,7 +269,6 @@ int main()
     wLampComponents.generateShape(*wLamp);
 
 //    wLamp->print(20);
-
 
     ZShader lampShader("zlamp.vs", "zlamp.fs", "LampShader");
     /* process lamp object */
@@ -418,6 +456,23 @@ int main()
         wUText->renderVertical (glm::vec3(-0.95f,0.8f,0.0f),
                                 ZBlueColor);
 
+
+//        wBText->_setupMatrices();
+
+/*        wBText->Model = glm::translate(camera.getModel(), wBText->Position);
+
+        wBText->View= camera.GetViewMatrix();
+
+        wBText->Projection = glm::perspective(glm::radians(camera.Zoom),
+                                                            (float)SCR_WIDTH / (float)SCR_HEIGHT,
+                                                            0.1f,
+                                                            100.0f);
+                                                            */
+
+        wBText->renderToBox(ZBlueColor);
+
+        wNLText->renderToBox(ZGreyColor);
+
         // render lamp object
         lampShader.use();
 
@@ -478,8 +533,6 @@ Per object matrix:
 
 //        wCandy.setupShaderMaterial();
 
-
-
 // calculate the model matrix for each object and pass it to shader before drawing
 //        glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
 //        model = glm::translate(model, objectLocation);
@@ -529,14 +582,6 @@ Per object matrix:
             lampShader.setVec3("DefaultColor",ZYellowSpecular);
             wCandy.drawGLNormalVisu(&lampShader);
             }
-/*
-        glfwSwapBuffers(window);
-
-        camera.cancelRedraw();
-
-        glfwPollEvents();
-        continue;
-*/
 
 
         __PIPE_SHADER__.use();
