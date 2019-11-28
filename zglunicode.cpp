@@ -227,8 +227,8 @@ unsigned int wCurrentHeight = 0;
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     /* Paste all glyph bitmaps into the texture, remembering the offset */
-    int ox = 0;
-    int oy = 0;
+    int offsetX = 0;
+    int offsetY = 0;
 
     wCurrentHeight = 0;
     int wErrNb=0;
@@ -243,16 +243,16 @@ unsigned int wCurrentHeight = 0;
                         continue;
                         }
         GlyphSlot = Font->Face->glyph;
-        if (ox + (int)GlyphSlot->bitmap.width + 1 >= __TEX_MAXWIDTH__)
+        if (offsetX + (int)GlyphSlot->bitmap.width + 1 >= __TEX_MAXWIDTH__)
            {
-            oy += wCurrentHeight;
+            offsetY += wCurrentHeight;
             wCurrentHeight = 0;
-            ox = 0;
+            offsetX = 0;
            }
 
         glTexSubImage2D(GL_TEXTURE_2D,
                         0,
-                        ox, oy,
+                        offsetX, offsetY,
                         GlyphSlot->bitmap.width, GlyphSlot->bitmap.rows,
 //                         GL_ALPHA,
                         GL_RED,
@@ -279,26 +279,36 @@ unsigned int wCurrentHeight = 0;
 
         wUtfChar->Advance.y =wUtfChar->Advance.y >> 6 ;
 
-        wUtfChar->bitmap ={(float)GlyphSlot->bitmap.width,
+        /* computing standard line horizontal and vertical advance for text */
+
+        if (StdLineAdvanceX==0)
+            StdLineAdvanceX = (float)wUtfChar->Advance.x;
+        else
+            StdLineAdvanceX = std::min(StdLineAdvanceX,(float)wUtfChar->Advance.x);
+        if (StdLineAdvanceY==0)
+            StdLineAdvanceY = (float)wUtfChar->Advance.y;
+        else
+            StdLineAdvanceY = std::min(StdLineAdvanceY,(float)wUtfChar->Advance.y);        wUtfChar->bitmap ={(float)GlyphSlot->bitmap.width,
                           (float)GlyphSlot->bitmap.rows,
                           (float)GlyphSlot->bitmap_left,
                           (float)GlyphSlot->bitmap_top};
 
-        wUtfChar->texX = ox / (float)TexSumWidth;
-        wUtfChar->texY = oy / (float)TexSumHeight;
+        wUtfChar->texX = offsetX / (float)TexSumWidth;
+        wUtfChar->texY = offsetY / (float)TexSumHeight;
 
         wCurrentHeight = std::max(wCurrentHeight, GlyphSlot->bitmap.rows);
-        ox += GlyphSlot->bitmap.width + 1;
+        offsetX += GlyphSlot->bitmap.width + 1;
 
         this->MaxWidth = std::max(MaxWidth,(FT_Int)GlyphSlot->bitmap.width);
         this->MaxHeight = std::max(MaxHeight,(FT_Int)GlyphSlot->bitmap.rows);
 
         UTexChar.push(wUtfChar);
-        TextLen++;
+
     }// for
 
+    TextLen=UTexChar.count();
 /*------------------------------------------------------------------
-  get special character and add it as last character to texture
+  get special character as Truncation character and add it as last character to texture
  */
 //    utf32_t wTruncChar = 0x000000b6 ; /* pilcrow character */
 
@@ -309,16 +319,16 @@ unsigned int wCurrentHeight = 0;
         else
     {
         GlyphSlot = Font->Face->glyph;
-        if (ox + (int)GlyphSlot->bitmap.width + 1 >= __TEX_MAXWIDTH__)
+        if (offsetX + (int)GlyphSlot->bitmap.width + 1 >= __TEX_MAXWIDTH__)
            {
-            oy += wCurrentHeight;
+            offsetY += wCurrentHeight;
             wCurrentHeight = 0;
-            ox = 0;
+            offsetX = 0;
            }
 
         glTexSubImage2D(GL_TEXTURE_2D,
                         0,
-                        ox, oy,
+                        offsetX, offsetY,
                         GlyphSlot->bitmap.width, GlyphSlot->bitmap.rows,
 //                         GL_ALPHA,
                         GL_RED,
@@ -344,11 +354,11 @@ unsigned int wCurrentHeight = 0;
                           (float)GlyphSlot->bitmap_left,
                           (float)GlyphSlot->bitmap_top};
 
-        wUtfChar->texX = ox / (float)TexSumWidth;
-        wUtfChar->texY = oy / (float)TexSumHeight;
+        wUtfChar->texX = offsetX / (float)TexSumWidth;
+        wUtfChar->texY = offsetY / (float)TexSumHeight;
 
         wCurrentHeight = std::max(wCurrentHeight, GlyphSlot->bitmap.rows);
-        ox += GlyphSlot->bitmap.width + 1;
+        offsetX += GlyphSlot->bitmap.width + 1;
 
         this->MaxWidth = std::max(MaxWidth,(FT_Int)GlyphSlot->bitmap.width);
         this->MaxHeight = std::max(MaxHeight,(FT_Int)GlyphSlot->bitmap.rows);
@@ -383,6 +393,8 @@ unsigned int wCurrentHeight = 0;
     return 0;
 } // setText
 
+
+
 inline void GLUnicodeText::_setUpGLState(glm::vec3 pPosition,
                                   glm::vec3 pColor)
 {
@@ -394,7 +406,7 @@ inline void GLUnicodeText::_setUpGLState(glm::vec3 pPosition,
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
     glVertexAttribPointer(TextCoordsAttLocation,
-                          4,        /* four items */
+                          4,        /* four items  <x,y> for text <s,t> for texture */
                           GL_FLOAT, /* type is float */
                           GL_FALSE, /* not to be normalized : use floating point directly */
                           0,        /* no stride */
@@ -505,8 +517,8 @@ void GLUnicodeText::_render(glm::vec3 pPosition,
  * @return
  */
 void
-GLUnicodeText::_setupOneChar(float &wStartPosX,                 /* starting position x updated to next character position */
-                             float &wStartPosY,                 /* starting position y updated to next character position */
+GLUnicodeText::_setupOneChar(float &wStartPosX,                /* starting position x updated to next character position */
+                             float wStartPosY,                 /* starting position y updated to next character position */
                              float wSx,
                              float wSy,
                              GLUnicodeChar* pChar,              /* character data content */
@@ -514,11 +526,134 @@ GLUnicodeText::_setupOneChar(float &wStartPosX,                 /* starting posi
 
 {
 
-    /* Calculate the vertex and texture coordinates */
+    /* Calculate the vertex coordinates */
+    float wX = wStartPosX + (pChar->bitmap.left * wSx);
+    float wY= wStartPosY + (pChar->bitmap.top * wSy);
+
+    float w = pChar->bitmap.width * wSx;
+    float h = pChar->bitmap.height * wSy;
+
+    float wMaxX =  wX + w ;
+    float wMaxY = wY - h;
+
+
+    /* Calculate the texture coordinates */
+
+    float wTexX = pChar->texX;
+    float wTexY = pChar->texY;
+
+    float wMaxTexX=pChar->texX +  pChar->bitmap.width / (float)TexSumWidth;
+    float wMaxTexY=pChar->texY +  pChar->bitmap.height / (float)TexSumHeight;
+
+
+    /* Advance the cursor to the start of the next character */
+    wStartPosX += pChar->Advance.x * wSx;
+
+    /* Skip glyphs that have no pixels */
+    if (!w || !h)
+            return;
+#ifdef __COMMENT__
+    wCoords.push((textPoint) {
+             x2 + w, y2 + h, // point <x , y>
+             pChar->texX +  pChar->bitmap.width / TexSumWidth, // texture s coord       /* here compute identation for left / right / center adjust */
+             pChar->texY +  pChar->bitmap.height / TexSumHeight});// texture t coord
+    wCoords.push((textPoint) {
+             x2, y2 + h, // point <x , y>
+             pChar->texX, // texture s coord
+             pChar->texY +  pChar->bitmap.height / TexSumHeight});// texture t coord
+    wCoords.push((textPoint) {
+            x2 + w, y2,// point <x , y>
+             pChar->texX +  pChar->bitmap.width / TexSumWidth,// texture s coord
+             pChar->texY});// texture t coord
+
+    wCoords.push((textPoint) {
+            x2, y2 + h, // point <x , y>
+            pChar->texX, // texture s coord
+            pChar->texY +  pChar->bitmap.height / TexSumHeight});// texture t coord
+    wCoords.push((textPoint) {
+             x2 + w, y2,
+             pChar->texX +  pChar->bitmap.width / TexSumWidth,// texture s coord
+             pChar->texY});// texture t coord
+    wCoords.push((textPoint) {
+            x2, y2,
+             pChar->texX,  // texture s coord
+             pChar->texY}); // texture t coord
+#endif
+
+
+
+    wCoords.push((textPoint) {
+                            wMaxX, wMaxY , // point <x , y>
+                            wMaxTexX, // texture s coord
+                            wMaxTexY});// texture t coord
+   wCoords.push((textPoint) {
+                            wX , wMaxY ,
+                            wTexX,
+                            wMaxTexY});
+    wCoords.push((textPoint) {
+                            wMaxX , wY ,
+                            wMaxTexX,
+                            wTexY});
+
+    wCoords.push((textPoint) {
+                            wX, wMaxY , // point <x , y>
+                            wTexX,// texture s coord
+                            wMaxTexY});// texture t coord
+    wCoords.push((textPoint) {
+                            wMaxX , wY,
+                            wMaxTexX, // texture s coord
+                            wTexY});// texture t coord
+    wCoords.push((textPoint) {
+                            wX, wY,
+                            wTexX, // texture s coord
+                            wTexY});// texture t coord
+/*
+
+    wCoords.push((textPoint) {
+                            wX, wY , // point <x , y>
+                            wTexX,  // texture s coord
+                            wTexY}); // texture t coord
+    wCoords.push((textPoint) {
+                            wMaxX , wY , // point <x , y>
+                            wMaxTexX,// texture s coord
+                            wTexY});// texture t coord
+    wCoords.push((textPoint) {
+                            wX , wMaxY ,// point <x , y>
+                            wTexX, // texture s coord
+                            wMaxTexY});// texture t coord
+    wCoords.push((textPoint) {
+                            wMaxX, wY , // point <x , y>
+                            wMaxTexX,// texture s coord
+                            pChar->texY});// texture t coord
+    wCoords.push((textPoint) {
+                            wX , wMaxY,
+                            wTexX, // texture s coord
+                            wMaxTexY});// texture t coord
+    wCoords.push((textPoint) {
+                            wMaxX, wMaxY,
+                            wMaxTexX, // texture s coord
+                            wMaxTexY});// texture t coord
+
+*/
+
+//    return wC;
+}//_setupOneChar
+
+void
+GLUnicodeText::_setupOneChar_1(float &wStartPosX,                /* starting position x updated to next character position */
+                             float wStartPosY,                 /* starting position y updated to next character position */
+                             float wSx,
+                             float wSy,
+                             GLUnicodeChar* pChar,              /* character data content */
+                             zbs::ZArray<textPoint>& wCoords)   /* array point coords table to draw characters */
+
+{
+
+    /* Calculate the vertex coordinates */
     float x2 = wStartPosX + (pChar->bitmap.left * wSx);
     float y2 = wStartPosY - (pChar->bitmap.top * wSy);
 
-
+    /* Calculate the texture coordinates */
     float w = pChar->bitmap.width * wSx;
     float h = pChar->bitmap.height * wSy;
 
@@ -529,39 +664,44 @@ GLUnicodeText::_setupOneChar(float &wStartPosX,                 /* starting posi
     if (!w || !h)
             return;
 
-//    wCoords[wC++] = (textPoint) {
+
     wCoords.push((textPoint) {
             x2, -y2,
+//            x2, y2,
              pChar->texX,  // texture s coord
              pChar->texY}); // texture t coord
-//    wCoords[wC++] = (textPoint) {
+
     wCoords.push((textPoint) {
             x2 + w, -y2,
+//             x2 + w, y2,
              pChar->texX +  pChar->bitmap.width / TexSumWidth,// texture s coord
              pChar->texY});// texture t coord
-//    wCoords[wC++] = (textPoint) {
+
      wCoords.push((textPoint) {
             x2, -y2 - h, // point <x , y>
+//             x2, y2 + h, // point <x , y>
              pChar->texX, // texture s coord
              pChar->texY +  pChar->bitmap.height / TexSumHeight});// texture t coord
-//    wCoords[wC++] = (textPoint) {
+
     wCoords.push((textPoint) {
             x2 + w, -y2,// point <x , y>
+//            x2 + w, y2,// point <x , y>
              pChar->texX +  pChar->bitmap.width / TexSumWidth,// texture s coord
              pChar->texY});// texture t coord
-//    wCoords[wC++] = (textPoint) {
+
     wCoords.push((textPoint) {
             x2, -y2 - h, // point <x , y>
+//             x2, y2 + h, // point <x , y>
              pChar->texX, // texture s coord
              pChar->texY +  pChar->bitmap.height / TexSumHeight});// texture t coord
-//    wCoords[wC++] = (textPoint) {
+
     wCoords.push((textPoint) {
             x2 + w, -y2 - h, // point <x , y>
-             pChar->texX +  pChar->bitmap.width / TexSumWidth, // texture s coord
+//             x2 + w, y2 + h, // point <x , y>
+             pChar->texX +  pChar->bitmap.width / TexSumWidth, // texture s coord       /* here compute identation for left / right / center adjust */
              pChar->texY +  pChar->bitmap.height / TexSumHeight});// texture t coord
 //    return wC;
 }//_setupOneChar
-
 
 
 /**  _renderToBox() rendering rules
@@ -637,175 +777,257 @@ GLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
 {
     _setUpGLState(pBoxPosition,pColor);
 
+    float wSx=pSx;
+    float wSy=pSy;
+
     float wBoxWidth=(float)(pBoxWidth>0?pBoxWidth:(float)INT_MAX);
+//    wBoxWidth *= wSx;
     float wBoxHeight =(float)pBoxHeight>0?pBoxHeight:(float)INT_MAX;
+ //   wBoxHeight *= wSy;
 
-//    int wIBoxWidth = IBoxWidth>0?IBoxWidth:INT_MAX;
-//    int wIBoxHeight = IBoxHeight>0?IBoxHeight:INT_MAX;
+    float wSpaceRight= (this->BoxRightMargin  + this->BoxLineSize )* wSx;
+    float wSpaceLeft = (this->BoxLeftMargin  + this->BoxLineSize )* wSx;
+    float wSpaceTop = (this->BoxTopMargin  + this->BoxLineSize )* wSx;
+    float wSpaceBottom = (this->BoxBottomMargin  + this->BoxLineSize )* wSx;
 
-    zbs::ZArray<textPoint> wCoordinates;
+    float wBoxRightBoundary = pBoxPosition.x + wBoxWidth - wSpaceRight ;
+    float wBoxBottomBoundary = pBoxPosition.y -(wBoxHeight - wSpaceBottom - wSpaceTop);
+    float wBoxHAvailable=wBoxWidth;
+
+    if (pBoxWidth >  0.0f ) /* control if horizontal values are acceptable */
+        {
+//        wBoxRightBoundary -= (this->BoxRightMargin * wSx) + (this->BoxLineSize * wSx);
+        wBoxHAvailable= wBoxWidth - wSpaceLeft -wSpaceRight;
+
+        if (wBoxHAvailable < 0.0f)
+                {
+                fprintf (stderr,"GLUnicodeText::_renderToBox-ERROR not enough space available for text box to be printed \n"
+                         " Text box width     %f\n"
+                         "    left  margin    %f\n"
+                         "    right margin    f\n"
+                         " Text box line size %f\n"
+                         " Available to print <%f> : invalid value ",
+                         wBoxHeight,
+                         this->BoxLeftMargin * wSy,
+                         this->BoxRightMargin * wSy,
+                         this->BoxLineSize * wSx,
+                         wBoxHAvailable);
+                return;
+                }
+        }
+    float wBoxVAvailable=wBoxHeight;
+    if (pBoxHeight >  0.0f ) /* control if vertical values are acceptable */
+        {
+//        wBoxRightBoundary -= (this->BoxRightMargin * wSx) + (this->BoxLineSize * wSx);
+        wBoxVAvailable= wBoxHeight - wSpaceTop -wSpaceBottom;
+
+        if (wBoxHAvailable < 0.0f)
+                {
+                fprintf (stderr,"GLUnicodeText::_renderToBox-ERROR not enough space available for text box to be printed \n"
+                         " Text box width     %f\n"
+                         "    top margin      %f\n"
+                         "    bottom margin   %f\n"
+                         " Text box line size %f\n"
+                         " Available to print <%f> : invalid value ",
+                         wBoxHeight,
+                         this->BoxTopMargin * wSy,
+                         this->BoxBottomMargin * wSy,
+                         this->BoxLineSize * wSx,
+                         wBoxVAvailable);
+                return;
+                }
+        }
+
+    zbs::ZArray<textPoint> wCoordinates; /* will store <x,y> <s,t> values for each character */
 
     /*
      *  compute how text will fit into box
      */
 
-    float wMaxLineHeight=0;
-    float wCurrentLength=0;
-
     float wDisplayRelPosX=0;
     float wDisplayRelPosY=0;
 
-    int   wNbLines=0;
-    long  wPreviousCuttingChar=-1;
-
-    float wSx=pSx;
-    float wSy=pSy;
-
-    struct RefLine {
-        RefLine() = default;
-        RefLine(long pIdx,long pEndIdx,float pStartX,float pStartY,float pMaxHeight, bool pTrunc)
-        {
-            StartIdx=pIdx;      /* idx for first UTexChar of the line */
-            EndIdx=pIdx;        /* idx for last UTexChar of the line */
-            StartPosX=pStartX;  /* relative position since box left */
-            StartPosY=pStartY;  /* relative position since box top */
-            MaxHeight=pMaxHeight; /* maximum character height for the line */
-            Truncated= pTrunc;
-        }
-
-        RefLine (RefLine& pLine) {memmove(this,&pLine, sizeof(RefLine));}
-        RefLine& operator =  (RefLine& pLine) {memmove(this,&pLine, sizeof(RefLine));}
-
-        long  StartIdx;     /* index of TextUChar the line is starting with */
-        long  EndIdx;       /* index of TextUChar the line is Ending with */
-        float StartPosX;    /* position : 0 most othe cases */
-        float StartPosY;    /* height position for the line */
-        float MaxHeight;    /* maximum character Height for the line to be printed */
-        float MaxAdvanceY;   /* maximum Advance position height for the line to be printed */
-        bool  Truncated;    /* is line being truncated or not */
-    } ;
-
     zbs::ZArray<RefLine> Lines;
 
-    RefLine WrapPosition(0,0,0.0,0.0,0.0,false);
-    RefLine CurrentLine(0,0,0.0,0.0,0.0,false);
-    Lines.push(CurrentLine);
+    RefLine WrapPosition;
+    RefLine CurrentLine;
+
     bool wEndPrint=false;
     bool wTruncated=false;
     int wIdx=0;
 
-    int wICumWidth=0;
-    int     wICumHeight=0;
+    CurrentLine.StartPosY= wDisplayRelPosY = pBoxPosition.y - wSpaceTop ;
 
-    float wStartPosX = wDisplayRelPosX = pBoxPosition.x + (this->BoxRightMargin * wSx);
-    float wStartPosY= wDisplayRelPosY = pBoxPosition.y;
+    wBoxVAvailable = wBoxHeight - wSpaceTop - wSpaceBottom;
 
     while ((wIdx < TextLen)&&!wTruncated && !wEndPrint)
     {
+    CurrentLine.StartPosX = wDisplayRelPosX = pBoxPosition.x + wSpaceLeft;
+    wBoxHAvailable= wBoxWidth - wSpaceLeft -wSpaceRight;
 
     wIdx=CurrentLine.StartIdx;
     WrapPosition = CurrentLine;
 
     wTruncated = false;
-    for (;(wIdx < TextLen) && !wEndPrint ;wIdx++)
+    for (;(wIdx < TextLen) && !wEndPrint && !wTruncated ;wIdx++)
         {
+        CurrentLine.MaxHeight = std::max(CurrentLine.MaxHeight,UTexChar[wIdx]->bitmap.height * wSy);
+         CurrentLine.EndIdx = wIdx;
+
+        /* store last cutting character reference*/
+        if (UTexChar[wIdx]->isCuttingChar && (wIdx > 0) )
+                {
+                WrapPosition = CurrentLine;
+                }
+
+        if (UTexChar[wIdx]->isNewLineChar) /* finish current line and open new line */
+            {
+            CurrentLine.EndIdx=wIdx;
+            break;
+            }
+        if ((wDisplayRelPosX + (UTexChar[wIdx]->Advance.x * wSx)) >= wBoxRightBoundary)
+            {
+            if (pFlag & RBP_LineWrap) /* if no wrap : cut line to current character */
+                {
+                /* wrap text to next line */
+                    CurrentLine.EndIdx=wIdx;
+                    break;
+                }
+            if (pFlag & RBP_WordWrap) /* if no wrap : cut line to current character */
+                {
+                /* wrap text to next line */
+                    CurrentLine=WrapPosition;
+                    wIdx=WrapPosition.EndIdx;
+                    break;
+                }
+            /* no wrap : end the line is end of display, text is truncated */
+            if (pFlag & RBP_TruncChar)
+                    CurrentLine.EndIdx=wIdx-1;
+            wTruncated=true;
+            wEndPrint=true;
+            break;
+            }//if ((wDisplayRelPosX...
+
+        CurrentLine.TextSize += UTexChar[wIdx]->Advance.x ;
+        wBoxHAvailable -= UTexChar[wIdx]->Advance.x * wSy ;
+
+        wDisplayRelPosX += UTexChar[wIdx]->Advance.x * wSx;
+        CurrentLine.MaxAdvanceY=std::max(CurrentLine.MaxAdvanceY,(float)UTexChar[wIdx]->Advance.y);
+
         if (wIdx==(TextLen-1))
                 {
-                CurrentLine.EndIdx=wIdx;
+                CurrentLine.EndIdx=wIdx+1;
                 wEndPrint=true;
                 }
-            CurrentLine.MaxHeight = std::max(CurrentLine.MaxHeight,UTexChar[wIdx]->bitmap.height * wSy);
-            CurrentLine.StartPosX = wDisplayRelPosX;
-            CurrentLine.StartPosX = wDisplayRelPosY;
-//            CurrentLine.MaxHeight=std::max(wMaxLineHeight,UTexChar[wIdx]->bitmap.height * wSy);
-            CurrentLine.MaxHeight=std::max(wMaxLineHeight,UTexChar[wIdx]->bitmap.height );
-            CurrentLine.EndIdx = wIdx;
 
-            /* store last cutting character reference*/
-            if (UTexChar[wIdx]->isCuttingChar && (wIdx > 0) )
-                    {
-                    WrapPosition = CurrentLine;
-                    }
-
-            if (UTexChar[wIdx]->isNewLineChar) /* finish current line and open new line */
-                {
-                CurrentLine.EndIdx=wIdx;
-                break;
-                }
-            if ((wDisplayRelPosX + (UTexChar[wIdx]->bitmap.width * wSx)) > wBoxWidth)
-                {
-                if (pFlag & RBP_LineWrap) /* if no wrap : cut line to current character */
-                    {
-                    /* wrap text to next line */
- //                       CurrentLine=WrapPosition;
-                        CurrentLine.EndIdx=wIdx;
-                        break;
-                    }
-                if (pFlag & RBP_WordWrap) /* if no wrap : cut line to current character */
-                    {
-                    /* wrap text to next line */
-                        CurrentLine=WrapPosition;
-                        wIdx=WrapPosition.EndIdx;
-//                        CurrentLine.EndIdx=wIdx;
-                        break;
-                    }
-                /* no wrap : end the line is end of display, text is truncated */
-                if (pFlag & RBP_TruncChar)
-                        CurrentLine.EndIdx=wIdx-1;
-                wTruncated=true;
-                wEndPrint=true;
-                break;
-                }
-
-            int wIWidth = (int)UTexChar[wIdx]->bitmap.width;
-            wIWidth = (int)UTexChar[wIdx]->Advance.x ;
-            wICumWidth+=wIWidth;
-            wDisplayRelPosX +=UTexChar[wIdx]->Advance.x * wSx;
-            CurrentLine.MaxAdvanceY=std::max(CurrentLine.MaxAdvanceY,(float)UTexChar[wIdx]->Advance.y);
         }// for (wIdx=CurrentLine.StartIdx;(wIdx < TextLen) ;wIdx++)
 
         /* print line of text to screen from StartIdx to EndIdx */
 
-        wStartPosX = wDisplayRelPosX =  pBoxPosition.x +  (this->BoxRightMargin * wSx);   /* reset x coord to box origin left */
-//        wStartPosY = wStartPosY - (CurrentLine.MaxHeight* wSy) ; /* take line height into account */
-//                                /* watch out interval between character lines */
-        wStartPosY = wStartPosY + (CurrentLine.MaxAdvanceY  * wSy); /* take line height into account */
-                                /* watch out interval between character lines */
-        wDisplayRelPosY = wStartPosY;
 
-       /* here compute identation for left / right / center adjust */
+    /* First : compute starting vertical position for current line */
+
+            if (CurrentLine.MaxAdvanceY==0.0) /* for example, only return on current line */
+                    CurrentLine.MaxAdvanceY = StdLineAdvanceY;
+
+            wDisplayRelPosY = CurrentLine.StartPosY = CurrentLine.StartPosY - (CurrentLine.MaxAdvanceY  * wSy); /* take line height into account */
+                                    /* watch out interval between character lines */
+            wBoxVAvailable -= (CurrentLine.MaxAdvanceY  * wSy);/* compute the remaining vertical size */
+            if (CurrentLine.EndIdx < (TextLen - 1)) /* if not at the end of text */
+            {
+            if (wDisplayRelPosY - (StdLineAdvanceX  * wSy * 2.0f ) < wBoxBottomBoundary )
+                    wTruncated = true;
+//            if ((wBoxVAvailable - (StdLineAdvanceX  * wSy  )) < 0.0f ) /* And if not enough room for another standard line */
+//                    wTruncated = true; /* consider current line as truncated at last character */
+
+            }// if (CurrentLine.EndIdx...
+
+    /* Second : compute starting horizontal position for current line */
+
+ /* here compute identation for left / right / center adjust */
+
+        if (pFlag & RBP_HorizCenter)
+            {
+            /* compute space left by text phrase to display : divide by 2 and add it to */
+
+            if (pBoxWidth > 0) /* if there is a box width boundary */
+                {
+                float wRemain= wBoxWidth - wSpaceLeft -wSpaceRight - (CurrentLine.TextSize * wSx) ;
+                if (wTruncated && (pFlag&RBP_TruncChar)) /* if text truncated and truncation character is required */
+                    {
+                    wRemain -=  UTexChar[TextLen]->Advance.x* wSx ;/* reserve room for truncation character */
+                    if (wRemain < 0.0f) /* line is already full */
+                        {
+                         CurrentLine.EndIdx --; /* do not print last character to be replace by truncation character */
+                         wRemain += UTexChar[CurrentLine.EndIdx]->Advance.x * wSx; /* and add its width to remaining */
+                        }
+                    }
+                CurrentLine.StartPosX = wDisplayRelPosX = pBoxPosition.x +  wSpaceLeft + ( wRemain / 2.0f );
+                }
+            else /* No boundaries : process it as left justified */
+                {
+                    if (wTruncated && (pFlag & RBP_TruncChar))
+                                            CurrentLine.EndIdx=wIdx-1;
+                    CurrentLine.StartPosX = wDisplayRelPosX =  pBoxPosition.x +  wSpaceLeft ;   /* reset x coord to box origin left */
+                }//else
+            }
+        else
+            {
+            if (pFlag & RBP_RightJust) /* Text must be right justified */
+                {
+                if (pBoxWidth > 0) /* if there is a box width boundary */
+                    {
+                    float wRemain= wBoxWidth - wSpaceLeft -wSpaceRight - (CurrentLine.TextSize * wSx) ;
+                    if (wTruncated && (pFlag&RBP_TruncChar)) /* if text truncated and truncation character is required */
+                        {
+                        wRemain -=  UTexChar[TextLen]->Advance.x * wSx ;/* reserve room for truncation character */
+                        if (wRemain < 0.0f) /* line is already full */
+                            {
+                             CurrentLine.EndIdx --; /* do not print last character to be replace by truncation character */
+                             wRemain += UTexChar[CurrentLine.EndIdx]->Advance.x * wSx; /* and add its width to remaining */
+                            }
+                        }
+                    CurrentLine.StartPosX = wDisplayRelPosX = pBoxPosition.x+  wSpaceLeft + ( wRemain );
+                    }
+                else /* No boundaries : process it as left justified */
+                    {
+                        if (wTruncated && (pFlag & RBP_TruncChar))
+                                                CurrentLine.EndIdx=wIdx-1;
+                        CurrentLine.StartPosX = wDisplayRelPosX =  pBoxPosition.x +  wSpaceLeft ;   /* reset x coord to box origin left */
+                    }//else
+                }//if (pFlag & RBP_RightJust)
+            else /* Left justifed */
+            {
+                if (wTruncated && (pFlag & RBP_TruncChar))
+                                        CurrentLine.EndIdx=wIdx-1;
+                CurrentLine.StartPosX = wDisplayRelPosX =  pBoxPosition.x +  wSpaceLeft ;   /* reset x coord to box origin left */
+            }//else
+            }// else
 
 
-        /* Loop through all characters for the line */
+ /* Loop through all characters for the line */
 
         for (size_t wi=CurrentLine.StartIdx; wi < CurrentLine.EndIdx; wi++)
             {
-            _setupOneChar(wStartPosX,wStartPosY, wSx,wSy,UTexChar[wi],wCoordinates);
+            _setupOneChar(CurrentLine.StartPosX,CurrentLine.StartPosY, wSx,wSy,UTexChar[wi],wCoordinates);
             }//for (p = (const uint8_t *)pText; *p; p++)
 
         if (wTruncated) /* line has been truncated */
                 {
                 if (pFlag & RBP_TruncChar) /* display truncation character if requested */
-                    _setupOneChar(wStartPosX,wStartPosY, wSx,wSy,UTexChar[TextLen],wCoordinates);
+                    _setupOneChar(CurrentLine.StartPosX,CurrentLine.StartPosY, wSx,wSy,UTexChar[TextLen],wCoordinates);
                 break;
                 }
-        if ((wStartPosY + (CurrentLine.MaxAdvanceY  * wSy))>= wBoxHeight) /* if next line is out box height boundary : terminate*/
-                {
-                    if (pFlag & RBP_TruncChar) /* signal truncation ? */
-                            _setupOneChar(wStartPosX,wStartPosY, wSx,wSy,UTexChar[TextLen],wCoordinates);
-                    break;
-                }
+
         CurrentLine.StartIdx=CurrentLine.EndIdx;
         CurrentLine.EndIdx=0;
+        CurrentLine.TextSize=0.0;
+        CurrentLine.MaxAdvanceY=0.0; /* if only newLine then will stay to zero */
+
         if (UTexChar[wIdx]->isNewLineChar)
-                    CurrentLine.StartIdx++; /* skip new line character when encountered and line is processed*/
-
-
+                    CurrentLine.StartIdx++; /* skip new line character when encountered at the end and line is processed*/
 
     } // while  loop until no more characters or truncated
-
-
-
 
     /* Draw all the character on the screen in one go */
     glBufferData(GL_ARRAY_BUFFER, (int)wCoordinates.usedSize(), wCoordinates.getDataPtr(), GL_DYNAMIC_DRAW);
@@ -960,7 +1182,7 @@ void GLUnicodeText::setBox (float pBoxWidth,
                             uint16_t pBoxFlag,
                             bool pVisible,
                             float pLineSize,
-                            float pRightMargin)
+                            float pRightMargin, float pLeftMargin, float pTopMargin, float pBottomMargin)
 {
 
     glm::vec2 wSCDim=GLResources->getGLWindowSize();
@@ -968,13 +1190,16 @@ void GLUnicodeText::setBox (float pBoxWidth,
     IBoxWidth = (int)pBoxWidth;
     IBoxHeight = (int)pBoxHeight;
 
-    BoxWidth=pBoxWidth*2.0/wSCDim.x;
+    BoxWidth= pBoxWidth*2.0/wSCDim.x;
     BoxHeight=pBoxHeight*2.0/wSCDim.y;
     BoxVisible = pVisible;
-    BoxLineSize=pLineSize;
-    BoxFlag = (RBoxPos)pBoxFlag;
-    BoxColor=pColor;
+    BoxLineSize= pLineSize;
+    BoxFlag = pBoxFlag;
+    BoxColor= pColor;
     BoxRightMargin=pRightMargin;
+    BoxLeftMargin =pLeftMargin;
+    BoxTopMargin = pTopMargin;
+    BoxBottomMargin=pBottomMargin;
     _boxSetupGL();
 }
 
@@ -1085,7 +1310,7 @@ void GLUnicodeText::renderToBox(glm::vec3 pTextColor)
     Writer->TextShader->setMat4(__PROJECTION__,Projection);
     Writer->TextShader->setMat4(__VIEW__,View);
 
-
+    _drawBox();
 
     _renderToBox(glm::vec3(0,0,0),
                  BoxWidth,
@@ -1095,7 +1320,7 @@ void GLUnicodeText::renderToBox(glm::vec3 pTextColor)
                  BoxFlag
                  );
 
-    _drawBox();
+
 
 } //renderToBox
 

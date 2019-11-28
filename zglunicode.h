@@ -309,6 +309,33 @@ private:
 }; // GLTextWriter
 
 
+struct RefLine {
+    RefLine() {clear();}
+    RefLine(long pIdx,long pEndIdx,float pStartX,float pStartY,float pMaxHeight, bool pTrunc)
+    {
+        StartIdx=pIdx;      /* idx for first UTexChar of the line */
+        EndIdx=pIdx;        /* idx for last UTexChar of the line */
+        StartPosX=pStartX;  /* relative position since box left */
+        StartPosY=pStartY;  /* relative position since box top */
+        MaxHeight=pMaxHeight; /* maximum character height for the line */
+        Truncated= pTrunc;
+    }
+
+    RefLine (RefLine& pLine) {memmove(this,&pLine, sizeof(RefLine));}
+    RefLine& operator =  (RefLine& pLine) {memmove(this,&pLine, sizeof(RefLine));}
+
+    void clear() {memset(this,0,sizeof(RefLine));}
+
+    long  StartIdx;     /* index of TextUChar the line is starting with */
+    long  EndIdx;       /* index of TextUChar the line is Ending with */
+    float TextSize;     /* sum of characters horizontal advance for the text */
+    float StartPosX;    /* position : 0 most othe cases */
+    float StartPosY;    /* height position for the line */
+    float MaxHeight;    /* maximum character Height for the line to be printed */
+    float MaxAdvanceY;   /* maximum Advance position height for the line to be printed */
+    bool  Truncated;    /* is line being truncated or not */
+} ;
+
 /**
  * The atlas struct holds a texture that contains the visible UNICODE characters
  * of a certain font rendered with a certain character height.
@@ -356,6 +383,16 @@ public:
         delete Texture;
         while (UTexChar.count())
                 delete UTexChar.popR();
+
+        if (VBO)
+                glDeleteBuffers(1 ,&VBO);
+        if (VAO)
+                glDeleteVertexArrays(1 ,&VAO);
+
+        if (BoxVBO)
+                glDeleteBuffers(1 ,&BoxVBO);
+        if (BoxVAO)
+                glDeleteVertexArrays(1 ,&BoxVAO);
         }
 
     void clear ()
@@ -385,7 +422,10 @@ public:
                  uint16_t pBoxFlag=RBP_Default,
                  bool pVisible=false,
                  float pLineSize=-1.0,
-                 float pRightMargin=1.0); /* 1.0 is a minimum margin */
+                 float pRightMargin=1.0,
+                 float pLeftMargin=1.0f,
+                 float pTopMargin= 1.0f,
+                 float pBottomMargin=1.0f); /* 1.0 is a minimum margin */
 
 
     void setPosition(float pX,float pY,float pZ) {Position=glm::vec3(pX,pY,pZ);}
@@ -438,7 +478,14 @@ public:
 
 
     void _setupOneChar(float &wStartPosX,                 /* starting position x updated to next character position */
-                       float &wStartPosY,                 /* starting position y updated to next character position */
+                       float wStartPosY,                 /* starting position y : not updated */
+                       float wSx,
+                       float wSy,
+                       GLUnicodeChar* pChar,              /* character data content */
+                       zbs::ZArray<textPoint>& wCoords);  /* array point coords table to draw characters */
+
+    void _setupOneChar_1(float &wStartPosX,                 /* starting position x updated to next character position */
+                       float wStartPosY,                 /* starting position y : not updated */
                        float wSx,
                        float wSy,
                        GLUnicodeChar* pChar,              /* character data content */
@@ -487,10 +534,13 @@ public:
 
 private:
 /* text box */
-    RBoxPos BoxFlag=RBP_Default;
+    uint16_t BoxFlag=RBP_Default;
     float BoxWidth=-1.0;
     float BoxHeight=-1.0;
-    float BoxRightMargin = 0.0;
+    float BoxRightMargin    = 0.0;
+    float BoxLeftMargin     = 0.0;
+    float BoxTopMargin      =0.0;
+    float BoxBottomMargin   = 0.0;
 
     int IBoxWidth=-1;
     int IBoxHeight=-1;
@@ -508,9 +558,11 @@ private:
     GLboolean   BlendEnabled=false;
     int         TextCoordsAttLocation;
 
+    float StdLineAdvanceY=0;    /* standard vertical advance */
+    float StdLineAdvanceX=0;    /* standard minimal horizontal advance */
+
     //zbs::ZArray<glm::vec3>* TextBoxCoords=nullptr;
     float TextBoxcoords[];
-
 
 };//GLUnicodeText
 

@@ -225,13 +225,13 @@ int main()
      GLUnicodeText* wBText=wUWriter.newText();
 
      wRet=wBText->setText((utf32_t*)U"Жди меня, и я вернусь.Только очень жди, Жди, когда наводят грусть Желтые дожди, Жди, когда снега метут, Жди, когда жара,\
-Жди, когда других не ждут,Позабыв вчера.Жди, когда из дальних мест Писем не придет, Жди, когда уж надоест Всем, кто вместе ждет","FreeSans",24);
+Жди, когда других не ждут,Позабыв вчера.Жди, когда из дальних мест Писем не придет, Жди, когда уж надоест Всем, кто вместе ждет.","FreeSans",24);
 
 
      if (wRet<0)
              fprintf (stderr," Font <%s> is not loaded \n","FreeSans");
 
-     wBText->setBox(700.0,350.0,ZYellowBright,RBP_HorizCenter|RBP_WordWrap, true,1.0,1.0);
+     wBText->setBox(700.0,350.0,ZYellowBright,RBP_LeftJust|RBP_WordWrap, true,1.0,0.0);
 
      wBText->setPosition(-0.9f,0.5f,0.0f);
 
@@ -240,7 +240,7 @@ int main()
 
 
      wRet=wNLText->setText((utf32_t*)U"Жди меня, и я вернусь.\n\
-Только очень жди,\n\n\n\
+Только очень жди,\n\n\n\n\n\
 Жди, когда наводят грусть\n\
 Желтые дожди,\n\
 Жди, когда снега метут,\n\
@@ -255,9 +255,9 @@ int main()
      if (wRet<0)
              fprintf (stderr," Font <%s> is not loaded \n","FreeSans");
 
-             wNLText->setBox(700.0,350.0,ZYellowBright,RBP_HorizCenter|RBP_WordWrap|RBP_TruncChar, true,1.0,1.0);
+     wNLText->setBox(700.0,350.0,ZYellowBright,RBP_LeftJust|RBP_WordWrap|RBP_TruncChar, true,1.0,2.0);
 
-             wNLText->setPosition(0.5f,0.5f,0.0f);
+     wNLText->setPosition(0.5f,0.5f,0.0f);
 
 //    GLUnicodeText wUText((uint32_t*)U"Жди меня, и я вернусь.","FreeSans48",48,GL_TEXTURE0);
 
@@ -379,7 +379,10 @@ int main()
         }
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT);
+        /* using stencil buffer to pick up click on object */
+        glClearStencil(0); // this is the default value
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+//        glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT);
 
 
 
@@ -434,7 +437,7 @@ int main()
                                glm::vec3(-0.8f,-0.8f,0.0f),
                                ZWhiteColor,
                                "AtlasFreeSans48");
-#endif  // __COMMENT__
+
         glm::mat4 UModel =  glm::translate(camera.getModel(), glm::vec3(0.0f, 0.0f, 0.0f));
 //        UModel = glm::rotate(UModel,glm::radians(180.0f),glm::vec3(1.0f, 0.0f, 0.0f)); /* to do : avoid rotation */
 
@@ -455,19 +458,8 @@ int main()
 
         wUText->renderVertical (glm::vec3(-0.95f,0.8f,0.0f),
                                 ZBlueColor);
+#endif  // __COMMENT__
 
-
-//        wBText->_setupMatrices();
-
-/*        wBText->Model = glm::translate(camera.getModel(), wBText->Position);
-
-        wBText->View= camera.GetViewMatrix();
-
-        wBText->Projection = glm::perspective(glm::radians(camera.Zoom),
-                                                            (float)SCR_WIDTH / (float)SCR_HEIGHT,
-                                                            0.1f,
-                                                            100.0f);
-                                                            */
 
         wBText->renderToBox(ZBlueColor);
 
