@@ -115,7 +115,10 @@ HEADERS += \
     zglconstants.h \
     zglobjdescriptor.h \
     zglresource.h \
+    zgltextwriter.h \
     zglunicode.h \
+    zglunicodechar.h \
+    zglunicodetext.h \
     zmetaobject.h \
     zsphere.h \
     zshader.h \
@@ -133,7 +136,9 @@ SOURCES += \
         zfont.cpp \
         zglobjdescriptor.cpp \
         zglresource.cpp \
-        zglunicode.cpp \
+        zgltextwriter.cpp \
+        zglunicodechar.cpp \
+        zglunicodetext.cpp \
         zmetaobject.cpp \
         zshader.cpp \
         zsphere.cpp \

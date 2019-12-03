@@ -44,6 +44,14 @@ const char* decodeFTEncoding(FT_Encoding pEncoding)
 #include <sys/types.h>
 #include <sys/stat.h>
 
+ZFont::~ZFont()
+{
+    if (FaceContent!=nullptr)
+            _free(FaceContent);
+    while (LibFont.count())
+            delete LibFont.popR();
+}
+
 
 bool
 ZFont::_testExist()
@@ -108,14 +116,11 @@ ZFont::add(const char* pFontPath,const char* pName,const bool pResident)
  *  this face could be resident in memory or not according Resident parameter
  *
 */
-UnicodeFont*
+ZGLUnicodeFont*
 ZFont::newFont()
 {
 FT_Error wFTerr;
-UnicodeFont* wUFont=new UnicodeFont();
-
-
-
+ZGLUnicodeFont* wUFont=new ZGLUnicodeFont();
 
     if (Resident)
     {
@@ -162,6 +167,8 @@ UnicodeFont* wUFont=new UnicodeFont();
 
     const unsigned char* wCC=(const unsigned char*)"dsfdsléfsldflksdflsdlf";
     size_t ws1=utfStrlen<unsigned char>(wCC);
+
+    LibFont.push(wUFont);
 
     return wUFont;
 }//newFont

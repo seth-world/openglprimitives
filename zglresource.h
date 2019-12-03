@@ -20,7 +20,7 @@ const char* getFTErrorString(const FT_Error error_code);
 
 class ZCamera;
 
-class UnicodeFont;
+class ZGLUnicodeFont;
 
 
 class ZTexture;
@@ -127,8 +127,8 @@ public:
 
     long addFont(const char *pFontPath,const char*pName, const bool pResident=true);
 
-    UnicodeFont* getFontByName(const char* pName);
-    UnicodeFont* getFont(const long pFontIdx,size_t pFontsize);
+    ZGLUnicodeFont* getFontByName(const char* pName);
+    ZGLUnicodeFont* getFont(const long pFontIdx,size_t pFontsize);
 
 
     void registerGLWindow(GLFWwindow* pWindow) {GLWindow=pWindow;}
@@ -164,6 +164,7 @@ public:
 
     const utf32_t* CuttingCharList=(utf32_t*)U" -/+";
     const utf32_t* NewLineCharList=(utf32_t*)U"\n";
+    const utf32_t* SpaceList=(utf32_t*)U" ";
 private:
 
     FT_Library FreetypeLib=nullptr;

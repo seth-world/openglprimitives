@@ -94,7 +94,7 @@ long  ZGLResource::addFont(const char *pFontPath,const char*pName, const bool pR
 
     return FontList.push(wFont);;
 }
-UnicodeFont* ZGLResource::getFontByName(const char* pName)
+ZGLUnicodeFont* ZGLResource::getFontByName(const char* pName)
 {
     for (long wi=0;wi<FontList.count();wi++)
             if (strcmp(FontList[wi]->Name,pName)==0)
@@ -102,7 +102,7 @@ UnicodeFont* ZGLResource::getFontByName(const char* pName)
 
     return nullptr;
 }
-UnicodeFont* ZGLResource::getFont(const long pFontIdx,size_t pFontsize)
+ZGLUnicodeFont* ZGLResource::getFont(const long pFontIdx,size_t pFontsize)
 {
     return FontList[pFontIdx]->newFont();
 }

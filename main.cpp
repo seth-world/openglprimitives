@@ -214,7 +214,7 @@ int main()
     wRet=GLResources->addFont("Architex.ttf","Architex",false);
 
 
-    GLTextWriter wUWriter(GL_TEXTURE0);
+    ZGLTextWriter wUWriter(GL_TEXTURE0);
 
     GLUnicodeText* wUText=wUWriter.newText();
     wRet=wUText->setText((utf32_t*)U"Жди меня, и я вернусь.","FreeSans",24);
@@ -238,7 +238,6 @@ int main()
      GLUnicodeText* wNLText=wUWriter.newText();
 
 
-
      wRet=wNLText->setText((utf32_t*)U"Жди меня, и я вернусь.\n\
 Только очень жди,\n\n\n\n\n\
 Жди, когда наводят грусть\n\
@@ -258,6 +257,33 @@ int main()
      wNLText->setBox(700.0,350.0,ZYellowBright,RBP_LeftJust|RBP_WordWrap|RBP_TruncChar, true,1.0,2.0);
 
      wNLText->setPosition(0.5f,0.5f,0.0f);
+
+
+
+     GLUnicodeText* w90Text=wUWriter.newText();
+
+
+     wRet=w90Text->setText((utf32_t*)U"Жди меня, и я вернусь.\n\
+Только очень жди,\n\n\n\n\n\
+Жди, когда наводят грусть\n\
+Желтые дожди,\n\
+Жди, когда снега метут,\n\
+Жди, когда жара,\n\
+Жди, когда других не ждут,\n\
+Позабыв вчера.\n\
+Жди, когда из дальних мест\n\
+Писем не придет,\n\
+Жди, когда уж надоест\n\
+Всем, кто вместе ждет.\n","FreeSans",24);
+
+     if (wRet<0)
+             fprintf (stderr," Font <%s> is not loaded \n","FreeSans");
+
+     w90Text->setBox(250.0,500.0,ZYellowBright,RBP_TopJust|RBP_WordWrap|RBP_TruncChar, true,1.0,
+                     5.0,5.0,5.0,5.0);
+
+     w90Text->setPosition(-0.8f,0.8f,0.0f);
+
 
 //    GLUnicodeText wUText((uint32_t*)U"Жди меня, и я вернусь.","FreeSans48",48,GL_TEXTURE0);
 
@@ -379,91 +405,25 @@ int main()
         }
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+#ifdef __USE_STENCIL__
         /* using stencil buffer to pick up click on object */
         glClearStencil(0); // this is the default value
+
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
-//        glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT);
+
+#else
+        glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT);
+#endif
 
 
 
-#ifdef __COMMENT__
-        glm::mat4 textRModel = glm::mat4(1.0f);
-        textRModel =  glm::translate(camera.getModel(), glm::vec3(0.0f, 0.0f, 0.0f));
- //       textRModel = glm::rotate(textRModel,glm::radians(180.0f),glm::vec3(1.0f, 0.0f, 0.0f)); /* to do : avoid rotation */
 
-        glm::mat4 textRView = camera.GetViewMatrix();
-        glm::mat4 textRProjection = glm::perspective(glm::radians(camera.Zoom),
-                                                    (float)SCR_WIDTH / (float)SCR_HEIGHT,
-                                                    0.1f,
-                                                    100.0f);
+//        wBText->renderToBox(ZBlueColor);
 
-        wText.TextShader->use();
-        wText.TextShader->setMat4("mModel", textRModel);
-        wText.TextShader->setMat4("mView", textRView);
-        wText.TextShader->setMat4("mProjection", textRProjection);
+//        wNLText->renderToBox(ZGreyColor);
 
-
-        wText.renderVerticalByName("New more longer text with s letter rendered.",
-                           glm::vec3(-0.9f,-0.2f,0.0f),
-                           ZRedMedium,
-                           "AtlasFreeSans48");
-
-
-        glm::mat4 textModel = glm::mat4(1.0f);
-        textModel =  glm::translate(camera.getModel(), glm::vec3(0.0f, 0.0f, 0.0f));
-        textModel = glm::rotate(textModel,glm::radians(180.0f),glm::vec3(1.0f, 0.0f, 0.0f)); /* to do : avoid rotation */
-
-        glm::mat4 textView = camera.GetViewMatrix();
-        glm::mat4 textProjection = glm::perspective(glm::radians(camera.Zoom),
-                                                    (float)SCR_WIDTH / (float)SCR_HEIGHT,
-                                                    0.1f,
-                                                    100.0f);
-#endif // __COMMENT__
-#ifdef __COMMENT__
-        wTextFT.TextShader->use();
-        wTextFT.TextShader->setMat4("mModel", textModel);
-        wTextFT.TextShader->setMat4("mView", textView);
-        wTextFT.TextShader->setMat4("mProjection", textProjection);
-//        textModel =  glm::translate(glm::mat4(1.0f), glm::vec3(-0.8f, -0.2f, 0.2f));
-//        textModel = glm::mat4(1.0f);
-//        wTextFT.TextShader->setMat4("mModel", textModel);
-        wTextFT.renderVertical("New text with gpwhdlq letter rendered.",
-                           glm::vec3(0.8f,0.0f,0.0f),
-                           1.0f,
-                           ZBlueColor);
-
-
-        wText.renderByName("This is a sample text THIS IS A SAMPLE TEXT 1234567890  FreeSans12",
-                               glm::vec3(-0.8f,-0.8f,0.0f),
-                               ZWhiteColor,
-                               "AtlasFreeSans48");
-
-        glm::mat4 UModel =  glm::translate(camera.getModel(), glm::vec3(0.0f, 0.0f, 0.0f));
-//        UModel = glm::rotate(UModel,glm::radians(180.0f),glm::vec3(1.0f, 0.0f, 0.0f)); /* to do : avoid rotation */
-
-        glm::mat4 UView = camera.GetViewMatrix();
-        glm::mat4 UProjection = glm::perspective(glm::radians(camera.Zoom),
-                                                    (float)SCR_WIDTH / (float)SCR_HEIGHT,
-                                                    0.1f,
-                                                    100.0f);
-
-/* matrices are set to text writer that holds text object (shader is defined at text writer level) */
-        wUWriter.TextShader->use();
-        wUWriter.TextShader->setMat4("mModel", UModel);
-        wUWriter.TextShader->setMat4("mView", UView);
-        wUWriter.TextShader->setMat4("mProjection", UProjection);
-
-        wUText->render(glm::vec3(-0.8f,0.8f,0.0f),
-                       ZBlueColor);
-
-        wUText->renderVertical (glm::vec3(-0.95f,0.8f,0.0f),
-                                ZBlueColor);
-#endif  // __COMMENT__
-
-
-        wBText->renderToBox(ZBlueColor);
-
-        wNLText->renderToBox(ZGreyColor);
+        w90Text->renderToBoxVertical(ZBlueColor);
 
         // render lamp object
         lampShader.use();
@@ -489,6 +449,22 @@ int main()
         lampShader.setVec3("DefaultColor", ZGreySilver);
 
         wLamp->drawGLShape(&lampShader);
+
+#define __TEXT_ONLY__
+
+#ifdef __TEXT_ONLY__
+
+        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+        // -------------------------------------------------------------------------------
+        glfwSwapBuffers(window);
+
+        camera.cancelRedraw();
+
+        glfwPollEvents();
+        continue;
+#endif //__TEXT_ONLY__
+
+
 
         // render objects
         // ------

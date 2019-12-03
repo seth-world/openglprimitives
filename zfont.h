@@ -18,7 +18,7 @@
 
 #include <ztoolset/zdatabuffer.h>
 
-class UnicodeFont;
+class ZGLUnicodeFont;
 
 /**
  * @brief The ZFont class holds the freetype2 font.
@@ -31,15 +31,11 @@ class ZFont
 {
 public:
     ZFont()=default;
-    ~ZFont()
-    {
-        if (FaceContent!=nullptr)
-                _free(FaceContent);
-    }
+    ~ZFont();
 
  public:
     int add(const char* pFontPath,const char* pName,const bool pResident);
-    UnicodeFont* newFont();
+    ZGLUnicodeFont* newFont();
 
 private:
     bool _testExist();
@@ -53,12 +49,14 @@ public:
 
     uint8_t*    FaceContent=nullptr;
     size_t      FaceSize=0;
+
+    zbs::ZArray <ZGLUnicodeFont*> LibFont;
 };
 
-class UnicodeFont
+class ZGLUnicodeFont
 {
 private:
-    void _copyFrom(UnicodeFont&pIn)
+    void _copyFrom(ZGLUnicodeFont&pIn)
     {
         Name=pIn.Name;
         Face=pIn.Face;
@@ -66,19 +64,19 @@ private:
         MemResident=pIn.MemResident;
     }
 public:
-    UnicodeFont()=default;
+    ZGLUnicodeFont()=default;
 
-    UnicodeFont(UnicodeFont&pIn) {_copyFrom(pIn);}
+    ZGLUnicodeFont(ZGLUnicodeFont&pIn) {_copyFrom(pIn);}
 
-    UnicodeFont& operator = (UnicodeFont& pIn) {_copyFrom(pIn); return *this;}
+    ZGLUnicodeFont& operator = (ZGLUnicodeFont& pIn) {_copyFrom(pIn); return *this;}
 
-    UnicodeFont(const char* pFontPath,unsigned int pFontSize,const char* pName)
+    ZGLUnicodeFont(const char* pFontPath,unsigned int pFontSize,const char* pName)
     {
         if (load(pFontPath,pFontSize,pName)<0)
             abort();
     }
 
-    ~UnicodeFont() {FT_Done_Face(Face);}
+    ~ZGLUnicodeFont() {FT_Done_Face(Face);}
 
     long   load(const char* pFontPath,unsigned int pFontSize,const char* pName);
 
