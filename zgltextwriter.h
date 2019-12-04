@@ -18,7 +18,7 @@
 
 class ZShader;
 
-class GLUnicodeText;
+class ZGLUnicodeText;
 
 /** For all dependent GLTextWriter generated, this object holds
  *   shader (generated)
@@ -39,7 +39,7 @@ public:
 
     ~ZGLTextWriter();
 
-    GLUnicodeText* newText();
+    ZGLUnicodeText* newText();
 
     // Shader used for text rendering
     ZShader* TextShader=nullptr;
@@ -76,7 +76,7 @@ public:
 private:
     GLenum      TextureEngine=GL_TEXTURE0;
 
-    zbs::ZArray<GLUnicodeText*> TextList;
+    zbs::ZArray<ZGLUnicodeText*> TextList;
 
 }; // GLTextWriter
 

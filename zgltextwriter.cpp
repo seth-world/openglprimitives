@@ -21,9 +21,9 @@ ZGLTextWriter::~ZGLTextWriter()
 
 
 
-GLUnicodeText* ZGLTextWriter::newText()
+ZGLUnicodeText* ZGLTextWriter::newText()
 {
-    GLUnicodeText* wT=new GLUnicodeText(this,TextureEngine);
+    ZGLUnicodeText* wT=new ZGLUnicodeText(this,TextureEngine);
     TextList.push(wT);
     return wT;
 }

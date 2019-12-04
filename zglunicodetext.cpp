@@ -29,13 +29,13 @@ const char* getFTErrorString(const FT_Error error_code)
 
 #include <ztoolset/utfutils.h> // for utfStrstr
 
-GLUnicodeText::GLUnicodeText(ZGLTextWriter* pWriter, GLenum pTextureEngine)
+ZGLUnicodeText::ZGLUnicodeText(ZGLTextWriter* pWriter, GLenum pTextureEngine)
 {
     Writer=pWriter;
     Texture = new ZTexture(pTextureEngine);
 }
 
-GLUnicodeText::~GLUnicodeText()
+ZGLUnicodeText::~ZGLUnicodeText()
     {
 //        FT_Done_Face(Face);
     delete Texture;
@@ -65,7 +65,7 @@ GLUnicodeText::~GLUnicodeText()
  *          -1 if character index has been found but no glyph is associated
  *          - 0x0F if no Font has been defined (Font is nullptr)
  */
-inline int GLUnicodeText::loadChar(FT_ULong pChar)
+inline int ZGLUnicodeText::loadChar(FT_ULong pChar)
 {
 FT_Error wFTerr=FT_Err_Ok;
 int wRet=0;
@@ -100,7 +100,7 @@ int wRet=0;
 }//GLUnicodeText::loadChar
 
 
-void GLUnicodeText::_cloneFrom(GLUnicodeText&pIn)
+void ZGLUnicodeText::_cloneFrom(ZGLUnicodeText&pIn)
 {
 //        TexCode=pIn.TexCode;
     if (Texture!=nullptr)
@@ -119,7 +119,7 @@ void GLUnicodeText::_cloneFrom(GLUnicodeText&pIn)
     MaxWidth=pIn.MaxWidth;
     MaxHeight=pIn.MaxHeight;
 }
-void GLUnicodeText::clear ()
+void ZGLUnicodeText::clear ()
 {
 //        TexCode=0;
     if (Texture!=nullptr)
@@ -141,7 +141,7 @@ void GLUnicodeText::clear ()
 }
 
 
-int GLUnicodeText::setText(const utf32_t* pUtf32Text,const int pFontIdx)
+int ZGLUnicodeText::setText(const utf32_t* pUtf32Text,const int pFontIdx)
 {
 }
 
@@ -153,7 +153,7 @@ int GLUnicodeText::setText(const utf32_t* pUtf32Text,const int pFontIdx)
  * @param pUtf32Text
  * @param pFontName
  */
-int GLUnicodeText::setText(const utf32_t* pUtf32Text,const char* pFontName, size_t pFontSize)
+int ZGLUnicodeText::setText(const utf32_t* pUtf32Text,const char* pFontName, size_t pFontSize)
 {
 FT_Error wFTerr;
 FT_GlyphSlot GlyphSlot=nullptr ;
@@ -446,7 +446,7 @@ unsigned int wCurrentHeight = 0;
 
 
 
-inline void GLUnicodeText::_setUpGLState(glm::vec3 pColor)
+inline void ZGLUnicodeText::_setUpGLState(glm::vec3 pColor)
 {
     Writer->TextShader->use();
     TextCoordsAttLocation=Writer->TextShader->getNamedAttributeLocation("TextCoords",true); /* abort on error option set*/
@@ -473,7 +473,7 @@ inline void GLUnicodeText::_setUpGLState(glm::vec3 pColor)
     Writer->TextShader->setFloat(__TEXTPOSZ__,Position.z);
     Writer->TextShader->setVec3(__TEXTCOLOR__,pColor);
 }
-inline void GLUnicodeText::_postGL()
+inline void ZGLUnicodeText::_postGL()
 {
     glDisableVertexAttribArray(TextCoordsAttLocation);
 
@@ -484,7 +484,7 @@ inline void GLUnicodeText::_postGL()
 
 }
 
-void GLUnicodeText::_render(glm::vec3 pPosition,
+void ZGLUnicodeText::_render(glm::vec3 pPosition,
                             glm::vec3 pColor,
                             float pSx,
                             float pSy)
@@ -567,7 +567,7 @@ void GLUnicodeText::_render(glm::vec3 pPosition,
  * @return
  */
 void
-GLUnicodeText::_setupOneChar(float &wStartPosX,                /* starting position x updated to next character position */
+ZGLUnicodeText::_setupOneChar(float &wStartPosX,                /* starting position x updated to next character position */
                              float wStartPosY,                 /* starting position y updated to next character position */
                              float wSx,
                              float wSy,
@@ -689,7 +689,7 @@ GLUnicodeText::_setupOneChar(float &wStartPosX,                /* starting posit
 //    return wC;
 }//_setupOneChar
 void
-GLUnicodeText::_setupOneCharVertical(float wStartPosX,        /* starting position x updated to next character position */
+ZGLUnicodeText::_setupOneCharVertical(float wStartPosX,        /* starting position x updated to next character position */
                              float &wStartPosY,               /* starting position y updated to next character position */
                              float wSx,
                              float wSy,
@@ -755,7 +755,7 @@ GLUnicodeText::_setupOneCharVertical(float wStartPosX,        /* starting positi
 }//_setupOneChar
 
 void
-GLUnicodeText::_setupOneCharV90(float &wStartPosX,                /* starting position x updated to next character position */
+ZGLUnicodeText::_setupOneCharV90(float &wStartPosX,                /* starting position x updated to next character position */
                              float wStartPosY,                 /* starting position y updated to next character position */
                              float wSx,
                              float wSy,
@@ -927,7 +927,7 @@ GLUnicodeText::_setupOneCharV90(float &wStartPosX,                /* starting po
  *
  */
 void
-GLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
+ZGLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
                             float     pBoxWidth,
                             float     pBoxHeight,
                             glm::vec3 pColor,
@@ -1207,31 +1207,14 @@ GLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
  * @param pFlag
  */
 void
-GLUnicodeText::_renderToBoxVertical(glm::vec3 pBoxPosition,
-                            float     pBoxWidth,
-                            float     pBoxHeight,
-                            glm::vec3 pColor,
-                            float pSx, float pSy,
-                            uint16_t pFlag
-                            )
+ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,uint16_t pFlag)
 {
-    _setUpGLState(pColor);
-
-    pBoxPosition=glm::vec3(0.0f);
+    _setUpGLState(pTextColor);
 
     float wSx=pSx;
     float wSy=pSy;
 
-    float wBoxWidth=(float)(pBoxWidth>0?pBoxWidth:(float)INT_MAX);
-//    wBoxWidth *= wSx;
-    float wBoxHeight =(float)pBoxHeight>0?pBoxHeight:(float)INT_MAX;
- //   wBoxHeight *= wSy;
 
-/*    float wSpaceRight= (this->BoxRightMargin  + this->BoxLineSize )* wSx;
-    float wSpaceLeft = (this->BoxLeftMargin  + this->BoxLineSize )* wSx;
-    float wSpaceTop = (this->BoxTopMargin  + this->BoxLineSize )* wSx;
-    float wSpaceBottom = (this->BoxBottomMargin  + this->BoxLineSize )* wSx;
-    */
     float wSpaceRight= (this->BoxRightMargin  + this->BoxLineSize );
     float wSpaceLeft = (this->BoxLeftMargin  + this->BoxLineSize );
     float wSpaceTop = (this->BoxTopMargin  + this->BoxLineSize );
@@ -1242,11 +1225,8 @@ GLUnicodeText::_renderToBoxVertical(glm::vec3 pBoxPosition,
 
     float wBoxHAvailable= (float)IBoxWidth - wSpaceLeft -wSpaceRight;
 
-    if (pBoxWidth >  0.0f ) /* control if horizontal values are acceptable */
+    if (IBoxWidth >  0 ) /* control if horizontal values are acceptable */
         {
-//        wBoxRightBoundary -= (this->BoxRightMargin * wSx) + (this->BoxLineSize * wSx);
-        wBoxHAvailable= (float)IBoxWidth - wSpaceLeft -wSpaceRight;
-
         if (wBoxHAvailable < 0.0f)
                 {
                 fprintf (stderr,"GLUnicodeText::_renderToBox-ERROR not enough space available for text box to be printed \n"
@@ -1263,12 +1243,9 @@ GLUnicodeText::_renderToBoxVertical(glm::vec3 pBoxPosition,
                 return;
                 }
         }
-    float wBoxVAvailable=(float)IBoxHeight;
+    float wBoxVAvailable= (float)IBoxHeight - wSpaceTop -wSpaceBottom;
     if (IBoxHeight >  0 ) /* control if vertical values are acceptable */
         {
-//        wBoxRightBoundary -= (this->BoxRightMargin * wSx) + (this->BoxLineSize * wSx);
-        wBoxVAvailable= (float)IBoxHeight - wSpaceTop -wSpaceBottom;
-
         if (wBoxVAvailable < 0.0f)
                 {
                 fprintf (stderr,"GLUnicodeText::_renderToBox-ERROR not enough space available for text box to be printed \n"
@@ -1438,7 +1415,7 @@ GLUnicodeText::_renderToBoxVertical(glm::vec3 pBoxPosition,
     {
     if (IBoxHeight > 0) /* if there is a box height boundary */
     {
-        float wRemain= wDispoHeight - CurrentLine.TextHeightSize  ;
+        float wRemain= wDispoHeight - CurrentLine.TextHeightSize  - UTexChar[CurrentLine.StartIdx]->Advance.y ;
 
         if (pFlag & RBP_VertCenter) /* request text is vertically centered */
             {
@@ -1453,7 +1430,8 @@ GLUnicodeText::_renderToBoxVertical(glm::vec3 pBoxPosition,
                     }
                 }
              /* compute space left by text phrase to display, divide by 2 and add it to Top margin */
-            CurrentLine.StartPosY = - ( (wSpaceTop + ( wRemain / 2.0f )) * wSy );
+//            CurrentLine.StartPosY = - ( (wSpaceTop + ( wRemain / 2.0f )) * wSy );
+            CurrentLine.StartPosY = - ( ( ( wRemain / 2.0f )) * wSy );
             break;
             }
 
@@ -1469,7 +1447,8 @@ GLUnicodeText::_renderToBoxVertical(glm::vec3 pBoxPosition,
                         }
                     }
                  /* compute space left by text phrase to display and add it to Top margin */
-                CurrentLine.StartPosY  = -( (wSpaceTop +  wRemain  ) * wSy );
+//                CurrentLine.StartPosY  = -( (wSpaceTop +  wRemain  ) * wSy );
+                CurrentLine.StartPosY  = -( (  wRemain ) * wSy ) ;
                 break;
                 }//if (pFlag & RBP_RightJust)
     }// if (IBoxHeight > 0)
@@ -1543,7 +1522,7 @@ GLUnicodeText::_renderToBoxVertical(glm::vec3 pBoxPosition,
 } // _renderToBoxVertical
 
 
-void GLUnicodeText::_renderVertical(glm::vec3 pPosition,
+void ZGLUnicodeText::_renderVertical(glm::vec3 pPosition,
                                     glm::vec3 pColor,
                                     float pSx,
                                     float pSy)
@@ -1654,7 +1633,7 @@ void GLUnicodeText::_renderVertical(glm::vec3 pPosition,
  * @param pPosition
  * @param pColor
  */
-void GLUnicodeText::render(glm::vec3 pPosition,
+void ZGLUnicodeText::render(glm::vec3 pPosition,
                            const Color_type pColor)
 {
     glm::vec2 wWSize = GLResources->getGLWindowSize();
@@ -1666,7 +1645,7 @@ void GLUnicodeText::render(glm::vec3 pPosition,
             pColor,
             sx, sy);
 }
-void GLUnicodeText::renderVertical(glm::vec3 pPosition,
+void ZGLUnicodeText::renderVertical(glm::vec3 pPosition,
                                    const Color_type pColor)
 {
     glm::vec2 wWSize = GLResources->getGLWindowSize();
@@ -1680,34 +1659,33 @@ void GLUnicodeText::renderVertical(glm::vec3 pPosition,
 }
 
 
-void GLUnicodeText::setBox (float pBoxWidth,
-                            float pBoxHeight,
+void ZGLUnicodeText::setBox (int pBoxWidth,
+                            int  pBoxHeight,
                             glm::vec3 pColor,
                             uint16_t pBoxFlag,
                             bool pVisible,
                             float pLineSize,
-                            float pRightMargin, float pLeftMargin, float pTopMargin, float pBottomMargin)
+                            int pLeftMargin,int pRightMargin, int pTopMargin, int pBottomMargin)
 {
+    setBoxDimensions(pBoxWidth,pBoxHeight);
+    setBoxVisible( pVisible);
+    setBoxLineSize( pLineSize);
+    setBoxFlag( pBoxFlag);
+    setBoxColor( pColor);
+    setBoxMargins(pLeftMargin,pRightMargin,pTopMargin,pBottomMargin);
+}
 
+void ZGLUnicodeText::setBoxDimensions (int pBoxWidth, int pBoxHeight)
+{
     glm::vec2 wSCDim=GLResources->getGLWindowSize();
-
-    IBoxWidth = (int)pBoxWidth;
-    IBoxHeight = (int)pBoxHeight;
-
-    BoxWidth= pBoxWidth*2.0/wSCDim.x;
-    BoxHeight=pBoxHeight*2.0/wSCDim.y;
-    BoxVisible = pVisible;
-    BoxLineSize= pLineSize;
-    BoxFlag = pBoxFlag;
-    BoxColor= pColor;
-    BoxRightMargin=pRightMargin;
-    BoxLeftMargin =pLeftMargin;
-    BoxTopMargin = pTopMargin;
-    BoxBottomMargin=pBottomMargin;
+    IBoxWidth = pBoxWidth;
+    IBoxHeight = pBoxHeight;
+    BoxWidth= (float)pBoxWidth*2.0f/wSCDim.x;
+    BoxHeight=(float)pBoxHeight*2.0f/wSCDim.y;
     _boxSetupGL();
 }
 
-void GLUnicodeText::_boxSetupGL ()
+void ZGLUnicodeText::_boxSetupGL ()
 {
     /* setup box coordinates */
      float wTextBoxcoords[15] = {
@@ -1746,7 +1724,7 @@ void GLUnicodeText::_boxSetupGL ()
     Writer->BoxShader->release();
 }//_boxSetupGL
 
-void GLUnicodeText::_setupMatrices ()
+void ZGLUnicodeText::_setupMatrices ()
 {
     Model =  glm::translate(GLResources->Camera->getModel(), Position);
     View  =  GLResources->Camera->GetViewMatrix();
@@ -1757,7 +1735,7 @@ void GLUnicodeText::_setupMatrices ()
                                                 100.0f);
 }
 
-void GLUnicodeText::_drawBox ()
+void ZGLUnicodeText::_drawBox ()
 {
 float wLineWidth;
     glGetFloatv(GL_LINE_WIDTH,&wLineWidth); /* get current line width */
@@ -1793,7 +1771,7 @@ float wLineWidth;
 }//_drawBox
 
 
-void GLUnicodeText::renderToBox(glm::vec3 pTextColor)
+void ZGLUnicodeText::renderToBox(glm::vec3 pTextColor)
 {
 
     glm::vec2 wWSize = GLResources->getGLWindowSize();
@@ -1829,7 +1807,7 @@ void GLUnicodeText::renderToBox(glm::vec3 pTextColor)
 } //renderToBox
 
 
-void GLUnicodeText::renderToBoxVertical(glm::vec3 pTextColor)
+void ZGLUnicodeText::renderToBoxVertical(glm::vec3 pTextColor)
 {
 
     glm::vec2 wWSize = GLResources->getGLWindowSize();
@@ -1852,10 +1830,7 @@ void GLUnicodeText::renderToBoxVertical(glm::vec3 pTextColor)
 
     _drawBox();
 
-    _renderToBoxVertical(glm::vec3(0,0,0),
-                 BoxWidth,
-                 BoxHeight,
-                 pTextColor,
+    _renderToBoxVertical(pTextColor,
                  SX,SY,
                  BoxFlag
                  );

@@ -1,4 +1,4 @@
-#ifndef ZGLUNICODETEXT_H
+﻿#ifndef ZGLUNICODETEXT_H
 #define ZGLUNICODETEXT_H
 /**
 
@@ -164,35 +164,35 @@ struct RefLine {
  *
  * After the constructor is run, you don't need to use any FreeType functions anymore.
  */
-class GLUnicodeText
+class ZGLUnicodeText
 {
 private:
-    void _cloneFrom(GLUnicodeText&pIn);
+    void _cloneFrom(ZGLUnicodeText&pIn);
 
 
 public:
-    GLUnicodeText()=delete;
+    ZGLUnicodeText()=delete;
  //   GLUnicodeText(const utf32_t* pText,const char* pFont, unsigned int pFontSize, GLenum pTextureEngine);
-    GLUnicodeText(GLUnicodeText&& pIn) {_cloneFrom(pIn);}
+    ZGLUnicodeText(ZGLUnicodeText&& pIn) {_cloneFrom(pIn);}
 
-    GLUnicodeText(ZGLTextWriter* pWriter, GLenum pTextureEngine);
-    GLUnicodeText& operator = (GLUnicodeText& pIn) {_cloneFrom(pIn); return *this;}
+    ZGLUnicodeText(ZGLTextWriter* pWriter, GLenum pTextureEngine);
+    ZGLUnicodeText& operator = (ZGLUnicodeText& pIn) {_cloneFrom(pIn); return *this;}
 
-    ~GLUnicodeText();
+    ~ZGLUnicodeText();
 
 
     void clear ();
 
-    void setBox (float pBoxWidth,
-                 float pBoxHeight,
+    void setBox (int pBoxWidth,
+                 int pBoxHeight,
                  glm::vec3 pColor=glm::vec3(0.0f),
                  uint16_t pBoxFlag=RBP_Default,
-                 bool pVisible=false,
-                 float pLineSize=-1.0,
-                 float pRightMargin=1.0,
-                 float pLeftMargin=1.0f,
-                 float pTopMargin= 1.0f,
-                 float pBottomMargin=1.0f); /* 1.0 is a minimum margin */
+                 bool pVisible=true,
+                 float pLineSize=1.0,
+                 int pRightMargin=1.0,
+                 int pLeftMargin=1.0f,
+                 int pTopMargin= 1.0f,
+                 int pBottomMargin=1.0f); /* 1.0 is a minimum margin */
 
 
     void setPosition(float pX,float pY,float pZ) {Position=glm::vec3(pX,pY,pZ);}
@@ -200,6 +200,24 @@ public:
 
     void setBoxColor(glm::vec3 pColor) {BoxColor=pColor;}
     void setBoxLineSize (float pLineSize) {BoxLineSize=pLineSize;}
+    void setBoxDimensions (int pBoxWidth, int pBoxHeight);
+
+    void setBoxMargins  (int pLeftMargin, int pRightMargin,int pTopMargin,int pBottomMargin)
+        {
+        BoxRightMargin=pRightMargin;
+        BoxLeftMargin=pLeftMargin;
+        BoxTopMargin=pTopMargin;
+        BoxBottomMargin=pBottomMargin;
+        }
+    void setBoxMarginAll(int pMargin)
+        {
+        BoxRightMargin=pMargin;
+        BoxLeftMargin=pMargin;
+        BoxTopMargin=pMargin;
+        BoxBottomMargin=pMargin;
+        }
+    void setBoxVisible (bool pVisible) {BoxVisible=pVisible;}
+    void setBoxFlag (uint16_t pFlag) {BoxFlag=pFlag;}
 
     void _boxSetupGL ();
 
@@ -236,12 +254,8 @@ public:
                       float pSx, float pSy,
                       uint16_t pFlag=RBP_Default); /* flag : how to position text within the box */
 
-    void _renderToBoxVertical(glm::vec3 pBoxPosition,
-                              float     pBoxWidth,
-                              float     pBoxHeight,
-                              glm::vec3 pColor,
-                              float pSx, float pSy,
-                              uint16_t pFlag=RBP_Default); /* flag : how to position text within the box */
+    void _renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,uint16_t pFlag=RBP_Default);
+
 
 
     void _renderVertical(glm::vec3 pPosition,

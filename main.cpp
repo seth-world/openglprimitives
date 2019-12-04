@@ -216,13 +216,13 @@ int main()
 
     ZGLTextWriter wUWriter(GL_TEXTURE0);
 
-    GLUnicodeText* wUText=wUWriter.newText();
+    ZGLUnicodeText* wUText=wUWriter.newText();
     wRet=wUText->setText((utf32_t*)U"Жди меня, и я вернусь.","FreeSans",24);
 
     if (wRet<0)
             fprintf (stderr," Font <%s> is not loaded \n","FreeSans");
 
-     GLUnicodeText* wBText=wUWriter.newText();
+     ZGLUnicodeText* wBText=wUWriter.newText();
 
      wRet=wBText->setText((utf32_t*)U"Жди меня, и я вернусь.Только очень жди, Жди, когда наводят грусть Желтые дожди, Жди, когда снега метут, Жди, когда жара,\
 Жди, когда других не ждут,Позабыв вчера.Жди, когда из дальних мест Писем не придет, Жди, когда уж надоест Всем, кто вместе ждет.","FreeSans",24);
@@ -235,7 +235,7 @@ int main()
 
      wBText->setPosition(-0.9f,0.5f,0.0f);
 
-     GLUnicodeText* wNLText=wUWriter.newText();
+     ZGLUnicodeText* wNLText=wUWriter.newText();
 
 
      wRet=wNLText->setText((utf32_t*)U"Жди меня, и я вернусь.\n\
@@ -260,7 +260,7 @@ int main()
 
 
 
-     GLUnicodeText* w90Text=wUWriter.newText();
+     ZGLUnicodeText* w90Text=wUWriter.newText();
 
 
      wRet=w90Text->setText((utf32_t*)U"Жди меня, и я вернусь.\n\
@@ -279,8 +279,14 @@ int main()
      if (wRet<0)
              fprintf (stderr," Font <%s> is not loaded \n","FreeSans");
 
-     w90Text->setBox(250.0,500.0,ZYellowBright,RBP_TopJust|RBP_WordWrap|RBP_TruncChar, true,1.0,
-                     5.0,5.0,5.0,5.0);
+//     w90Text->setBox(250.0,500.0,ZYellowBright,RBP_TopJust|RBP_WordWrap|RBP_TruncChar, true,1.0,
+//                     5.0,5.0,5.0,5.0);
+
+     w90Text->setBoxDimensions(250,500);
+     w90Text->setBoxLineSize(1.0);
+     w90Text->setBoxVisible(true);
+     w90Text->setBoxMarginAll(5);
+     w90Text->setBoxFlag(RBP_VertCenter|RBP_WordWrap|RBP_TruncChar);
 
      w90Text->setPosition(-0.8f,0.8f,0.0f);
 
