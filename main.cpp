@@ -285,8 +285,8 @@ int main()
      w90Text->setBoxDimensions(250,500);
      w90Text->setBoxLineSize(1.0);
      w90Text->setBoxVisible(true);
-     w90Text->setBoxMarginAll(5);
-     w90Text->setBoxFlag(RBP_VertCenter|RBP_WordWrap|RBP_TruncChar);
+     w90Text->setBoxMarginAll(15);
+     w90Text->setBoxFlag(RBP_Center|RBP_WordWrap|RBP_TruncChar);
 
      w90Text->setPosition(-0.8f,0.8f,0.0f);
 

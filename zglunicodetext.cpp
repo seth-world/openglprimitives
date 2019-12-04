@@ -140,10 +140,88 @@ void ZGLUnicodeText::clear ()
             delete UTexChar.popR();
 }
 
-
-int ZGLUnicodeText::setText(const utf32_t* pUtf32Text,const int pFontIdx)
+int ZGLUnicodeText::_storeOneChar(utf32_t pChar,
+                                   int &offsetX,int &offsetY,
+                                   unsigned int &wCurrentWidth,unsigned int &wCurrentHeight)
 {
+    if (loadChar((FT_ULong)pChar) < 0)
+                    {
+                    return -1;
+                    }
+    FT_GlyphSlot GlyphSlot = Font->Face->glyph;
+    if (offsetX + (int)GlyphSlot->bitmap.width + 1 >= __TEX_MAXWIDTH__)
+       {
+        offsetY += wCurrentHeight;
+        wCurrentHeight = 0;
+        offsetX = 0;
+       }
+
+    glTexSubImage2D(GL_TEXTURE_2D,
+                    0,
+                    offsetX, offsetY,
+                    GlyphSlot->bitmap.width, GlyphSlot->bitmap.rows,
+//                         GL_ALPHA,
+                    GL_RED,
+                    GL_UNSIGNED_BYTE,
+                    GlyphSlot->bitmap.buffer);
+
+    ZGLUnicodeChar *wUtfChar=new ZGLUnicodeChar;
+
+    wUtfChar->isNewLineChar=((utfStrchr<utf32_t>(GLResources->NewLineCharList,pChar))!=nullptr);
+    wUtfChar->isCuttingChar=((utfStrchr<utf32_t>(GLResources->CuttingCharList,pChar))!=nullptr);
+    wUtfChar->isSpace = ((utfStrchr<utf32_t>(GLResources->SpaceList,pChar))!=nullptr);
+
+
+    wUtfChar->Advance.x = (int)(GlyphSlot->advance.x >> 6);
+
+    wUtfChar->Coef = (double)GlyphSlot->advance.x/(double)GlyphSlot->linearHoriAdvance;
+    /* in order to use GlyphSlot->advance.y  FT_LOAD_VERTICAL_LAYOUT must be set using FT_Load_Char
+     * but this option is marked as "not safe" in freetype doc and should be avoided */
+    if (GlyphSlot->advance.y ==0)
+       {
+        wUtfChar->Advance.y = (int)(GlyphSlot->linearVertAdvance * wUtfChar->Coef);
+        wUtfChar->Advance.y = wUtfChar->Advance.y >> 6;
+       }
+    else
+    wUtfChar->Advance.y = (int)(GlyphSlot->advance.y >> 6);
+
+    /* computing standard line horizontal and vertical advance for text */
+
+    if (StdMinAdvanceX==0)
+        StdMinAdvanceX = (float)wUtfChar->Advance.x;
+    else
+        StdMinAdvanceX = std::min(StdMinAdvanceX,(float)wUtfChar->Advance.x);
+    StdMaxAdvanceX = std::max(StdMaxAdvanceX,(float)wUtfChar->Advance.x);
+
+    if (StdMinAdvanceY==0)
+        StdMinAdvanceY = (float)wUtfChar->Advance.y;
+    else
+        StdMinAdvanceY = std::min(StdMinAdvanceY,(float)wUtfChar->Advance.y);
+    StdMaxAdvanceY = std::max(StdMaxAdvanceY,(float)wUtfChar->Advance.y);
+
+
+    wUtfChar->bitmap ={(float)GlyphSlot->bitmap.width,
+                      (float)GlyphSlot->bitmap.rows,
+                      (float)GlyphSlot->bitmap_left,
+                      (float)GlyphSlot->bitmap_top};
+
+    wUtfChar->texX = offsetX / (float)TexSumWidth;
+    wUtfChar->texY = offsetY / (float)TexSumHeight;
+
+    wCurrentHeight = std::max(wCurrentHeight, GlyphSlot->bitmap.rows);
+    offsetX += GlyphSlot->bitmap.width + 1;
+
+    this->MaxWidth = std::max(MaxWidth,(FT_Int)GlyphSlot->bitmap.width);
+    this->MaxHeight = std::max(MaxHeight,(FT_Int)GlyphSlot->bitmap.rows);
+
+    UTexChar.push(wUtfChar);
+
+
+    return 1;
+
 }
+
+
 
 /**
  * @brief GLUnicodeText::setText prepares a unicode text (expressed in unicode codepoints) ready to be rendered by render() or renderVertical().
@@ -178,9 +256,7 @@ unsigned int wCurrentHeight = 0;
     TexSumWidth=0;
     TexSumHeight=0;
 
-    /* find number of lines
-     */
-
+/* first pass to compute texture dimensions */
 
     for (;*p;p++) /* iterate thru utf32 text */
     {
@@ -223,9 +299,11 @@ unsigned int wCurrentHeight = 0;
 
 
     /* add special character(s) at the end of texture : this is not part of text */
-    utf32_t wTruncChar = 0x000000b6 ; /* pilcrow character */
+//    utf32_t wTruncChar = 0x000000b6 ; /* pilcrow character */
 
-    if (loadChar((FT_ULong)wTruncChar) >= 0)
+//    utf32_t wTruncChar = 0x00002bc1 ; /* truncation character */
+
+    if (loadChar((FT_ULong)GLResources->getTruncateCharacter()) >= 0)
         {
         GlyphSlot = Font->Face->glyph;
         if (wCurrentWidth + GlyphSlot->bitmap.width + 1 >= __TEX_MAXWIDTH__)  /* jump to new 'line' */
@@ -271,151 +349,29 @@ unsigned int wCurrentHeight = 0;
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+
+/* effective store of each character for the text */
+
     /* Paste all glyph bitmaps into the texture, remembering the offset */
     int offsetX = 0;
     int offsetY = 0;
 
     wCurrentHeight = 0;
+    wCurrentWidth = 0;
     int wErrNb=0;
 
     for (const utf32_t *p=pUtf32Text; *p; p++)
-    {
-
-        if (loadChar((FT_ULong)*p) < 0)
-                        {
-                        wErrNb++;
-                        continue;
-                        }
-        GlyphSlot = Font->Face->glyph;
-        if (offsetX + (int)GlyphSlot->bitmap.width + 1 >= __TEX_MAXWIDTH__)
-           {
-            offsetY += wCurrentHeight;
-            wCurrentHeight = 0;
-            offsetX = 0;
-           }
-
-        glTexSubImage2D(GL_TEXTURE_2D,
-                        0,
-                        offsetX, offsetY,
-                        GlyphSlot->bitmap.width, GlyphSlot->bitmap.rows,
-//                         GL_ALPHA,
-                        GL_RED,
-                        GL_UNSIGNED_BYTE,
-                        GlyphSlot->bitmap.buffer);
-
-        ZGLUnicodeChar *wUtfChar=new ZGLUnicodeChar;
-
-        wUtfChar->isNewLineChar=((utfStrchr<utf32_t>(GLResources->NewLineCharList,*p))!=nullptr);
-        wUtfChar->isCuttingChar=((utfStrchr<utf32_t>(GLResources->CuttingCharList,*p))!=nullptr);
-        wUtfChar->isSpace = ((utfStrchr<utf32_t>(GLResources->SpaceList,*p))!=nullptr);
-
-
-        wUtfChar->Advance.x = (int)(GlyphSlot->advance.x >> 6);
-        wUtfChar->Advance.y = (int)(GlyphSlot->advance.y >> 6);
-
-
-        wUtfChar->Coef = (double)GlyphSlot->advance.x/(double)GlyphSlot->linearHoriAdvance;
-        /* in order to use GlyphSlot->advance.y  FT_LOAD_VERTICAL_LAYOUT must be set using FT_Load_Char
-         * but this option is marked as "not safe" in freetype doc and should be avoided */
-        if (GlyphSlot->advance.y ==0)
-           {
-            wUtfChar->Advance.y = (int)(GlyphSlot->linearVertAdvance * wUtfChar->Coef);
-           }
-
-        wUtfChar->Advance.y =wUtfChar->Advance.y >> 6 ;
-
-        /* computing standard line horizontal and vertical advance for text */
-
-        if (StdMinAdvanceX==0)
-            StdMinAdvanceX = (float)wUtfChar->Advance.x;
-        else
-            StdMinAdvanceX = std::min(StdMinAdvanceX,(float)wUtfChar->Advance.x);
-        StdMaxAdvanceX = std::max(StdMaxAdvanceX,(float)wUtfChar->Advance.x);
-
-        if (StdMinAdvanceY==0)
-            StdMinAdvanceY = (float)wUtfChar->Advance.y;
-        else
-            StdMinAdvanceY = std::min(StdMinAdvanceY,(float)wUtfChar->Advance.y);
-        StdMaxAdvanceY = std::max(StdMaxAdvanceY,(float)wUtfChar->Advance.y);
-
-
-        wUtfChar->bitmap ={(float)GlyphSlot->bitmap.width,
-                          (float)GlyphSlot->bitmap.rows,
-                          (float)GlyphSlot->bitmap_left,
-                          (float)GlyphSlot->bitmap_top};
-
-        wUtfChar->texX = offsetX / (float)TexSumWidth;
-        wUtfChar->texY = offsetY / (float)TexSumHeight;
-
-        wCurrentHeight = std::max(wCurrentHeight, GlyphSlot->bitmap.rows);
-        offsetX += GlyphSlot->bitmap.width + 1;
-
-        this->MaxWidth = std::max(MaxWidth,(FT_Int)GlyphSlot->bitmap.width);
-        this->MaxHeight = std::max(MaxHeight,(FT_Int)GlyphSlot->bitmap.rows);
-
-        UTexChar.push(wUtfChar);
-
-    }// for
-
-    TextLen=UTexChar.count();
-/*------------------------------------------------------------------
-  get special character as Truncation character and add it as last character to texture
- */
-//    utf32_t wTruncChar = 0x000000b6 ; /* pilcrow character */
-
-    if (loadChar((FT_ULong)wTruncChar) < 0)
-                    {
+        {
+        if (_storeOneChar(*p,offsetX,offsetY,wCurrentWidth,wCurrentHeight))
                     wErrNb++;
-                    }
-        else
-    {
-        GlyphSlot = Font->Face->glyph;
-        if (offsetX + (int)GlyphSlot->bitmap.width + 1 >= __TEX_MAXWIDTH__)
-           {
-            offsetY += wCurrentHeight;
-            wCurrentHeight = 0;
-            offsetX = 0;
-           }
+        }
+    TextLen=UTexChar.count();
+    /*------------------------------------------------------------------
+      get special character as Truncation character and add it as last character to texture
+     */
+    if (_storeOneChar(GLResources->getTruncateCharacter(),offsetX,offsetY,wCurrentWidth,wCurrentHeight))
+                    wErrNb++;
 
-        glTexSubImage2D(GL_TEXTURE_2D,
-                        0,
-                        offsetX, offsetY,
-                        GlyphSlot->bitmap.width, GlyphSlot->bitmap.rows,
-//                         GL_ALPHA,
-                        GL_RED,
-                        GL_UNSIGNED_BYTE,
-                        GlyphSlot->bitmap.buffer);
-
-        ZGLUnicodeChar *wUtfChar=new ZGLUnicodeChar;
-
-        wUtfChar->Advance.x = (int)(GlyphSlot->advance.x >> 6);
-        wUtfChar->Advance.y = (int)(GlyphSlot->advance.y >> 6);
-
-
-        wUtfChar->Coef = (double)GlyphSlot->advance.x/(double)GlyphSlot->linearHoriAdvance;
-        /* in order to use GlyphSlot->advance.y  FT_LOAD_VERTICAL_LAYOUT must be set using FT_Load_Char
-         * but this option is marked as "not safe" in freetype doc and should be avoided */
-        if (GlyphSlot->advance.y ==0)
-           {
-            wUtfChar->Advance.y = (int)(GlyphSlot->linearVertAdvance * wUtfChar->Coef);
-           }
-
-        wUtfChar->bitmap ={(float)GlyphSlot->bitmap.width,
-                          (float)GlyphSlot->bitmap.rows,
-                          (float)GlyphSlot->bitmap_left,
-                          (float)GlyphSlot->bitmap_top};
-
-        wUtfChar->texX = offsetX / (float)TexSumWidth;
-        wUtfChar->texY = offsetY / (float)TexSumHeight;
-
-        wCurrentHeight = std::max(wCurrentHeight, GlyphSlot->bitmap.rows);
-        offsetX += GlyphSlot->bitmap.width + 1;
-
-        this->MaxWidth = std::max(MaxWidth,(FT_Int)GlyphSlot->bitmap.width);
-        this->MaxHeight = std::max(MaxHeight,(FT_Int)GlyphSlot->bitmap.rows);
-
-        UTexChar.push(wUtfChar);
-    }
 
     /* Truncation char is the last character of the list (UTexChar.count()-1)
      * while last character index of the text is given by TextLen -1
@@ -438,8 +394,6 @@ unsigned int wCurrentHeight = 0;
 
     if (wPixelAlignment!=1)
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-//    glBindVertexArray(this->VAO);
-//    glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
 
     return 0;
 } // setText
@@ -697,20 +651,17 @@ ZGLUnicodeText::_setupOneCharVertical(float wStartPosX,        /* starting posit
                              zbs::ZArray<textPoint>& wCoords) /* array point coords table to draw characters */
 
 {
-
     /* Calculate the vertex coordinates */
     float wX = wStartPosX + (pChar->bitmap.left * wSx);
     float wY = wStartPosY + ((pChar->bitmap.top - pChar->Advance.y) * wSy) ; /* advance to top of character from bottom line */
 
 //    float wY = wStartPosY +  - pChar->Advance.y * wSy ; /* advance to top of character from bottom line */
 
-
     float w = pChar->bitmap.width * wSx;
     float h = pChar->bitmap.height * wSy;
 
     float wMaxX =  wX + w ;
     float wMaxY = wY - h;
-
 
     /* Calculate the texture coordinates */
 
@@ -719,7 +670,6 @@ ZGLUnicodeText::_setupOneCharVertical(float wStartPosX,        /* starting posit
 
     float wMaxTexX=pChar->texX +  pChar->bitmap.width / (float)TexSumWidth;
     float wMaxTexY=pChar->texY +  pChar->bitmap.height / (float)TexSumHeight;
-
 
 
     /* Skip glyphs that have no pixels */
@@ -746,10 +696,8 @@ ZGLUnicodeText::_setupOneCharVertical(float wStartPosX,        /* starting posit
                             wX, wY,
                             wTexX, wTexY});
 
-
     /* Advance the cursor to the start of the next character before returning */
     wStartPosY -= pChar->Advance.y * wSy;
-
 
 //    return wC;
 }//_setupOneChar
@@ -1104,7 +1052,7 @@ ZGLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
 
  /* here compute identation for <left / right / center> adjust */
 
-        if (pFlag & RBP_HorizCenter)
+        if (pFlag & RBP_Center)
             {
             /* compute space left by text phrase to display : divide by 2 and add it to */
 
@@ -1265,11 +1213,7 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
 
     zbs::ZArray<textPoint> wCoordinates; /* will store <x,y> <s,t> values for each character */
 
-    /*
-     *  compute how text will fit into box
-     */
-
-    float wDisplayRelPosY=0;
+    /*       compute how text will fit into box      */
 
     const float wDispoWidth = (float)IBoxWidth - (BoxLineSize * 2.0) - BoxLeftMargin - BoxRightMargin ;
     const float wDispoHeight= (float)IBoxHeight - (BoxLineSize * 2.0) - BoxTopMargin - BoxBottomMargin ;
@@ -1287,12 +1231,11 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
     bool wTruncated=false;
     int wIdx=0;
 
+    float wDisplayRelPosY=0;
+
     CurrentLine.StartPosX = wSpaceLeft * wSx ;
 
-    /* for all columns :initialize horizontal space available (true values) */
-    wBoxHAvailable = (float)IBoxWidth - wSpaceLeft - wSpaceRight;
-
-    while ((wIdx < TextLen) && !wTruncated && !wEndPrint)
+      while ((wIdx < TextLen) && !wTruncated && !wEndPrint)
     {
     /* point to box available space : need space for character (Advance.y) -> this is managed by _singleCharVertical*/
     CurrentLine.StartPosY = wDisplayRelPosY =  - (wSpaceTop * wSy);
@@ -1318,14 +1261,10 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
                 {
                 WrapPosition = CurrentLine;
                 }
-        if (UTexChar[wIdx]->isSpace) /* process specific case of vertical space : half standard height */
+        if (UTexChar[wIdx]->isSpace) /* process specific case of vertical space : standard minimum height */
             {
-            UTexChar[wIdx]->Advance.y= StdMaxAdvanceY / 2.0f ;
+            UTexChar[wIdx]->Advance.y= StdMinAdvanceY ;
             }
-//        if (UTexChar[wIdx]->Advance.y==0.0f) /* process case of 'no vertical size character' */
-//                {
-//                UTexChar[wIdx]->Advance.y= StdLineAdvanceY / 2.0f ;
-//                }
 
         if (UTexChar[wIdx]->isNewLineChar) /* finish current line and open new line */
             {
@@ -1339,19 +1278,14 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
         CurrentLine.TextWidthSize += UTexChar[wIdx]->Advance.x;
         CurrentLine.TextHeightSize += UTexChar[wIdx]->Advance.y;
 
-        if (CurrentLine.TextHeightSize > wDispoHeight)
-            wTextOverflow=true;
-
         wBoxVAvailable -= UTexChar[wIdx]->Advance.y  ;
         wDisplayRelPosY -= UTexChar[wIdx]->Advance.y * wSy ;
 
         if ((wBoxVAvailable- (UTexChar[wIdx]->Advance.y )) <= wBoxBottomBoundary)
             wTextOverflow=true;
 
-
         if ((wDisplayRelPosY - (UTexChar[wIdx]->Advance.y * wSy)) <= wBoxBottomBoundary * wSy)
             wTextOverflow=true;
-
 
         if (wTextOverflow)
             {
@@ -1394,18 +1328,14 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
 /* First : process starting horizontal position for current line */
 
     if (CurrentLine.MaxAdvanceX==0.0) /* for example, only return on current line */
-                    CurrentLine.MaxAdvanceX = StdMaxAdvanceX;
-
-    /* watch out interval between character columns */
-    wBoxHAvailable -= CurrentLine.MaxAdvanceX ;/* compute remaining horizontal size after this column */
+                    CurrentLine.MaxAdvanceX = StdMinAdvanceX;
 
     /* evaluate text truncation due to horizontal lack of space */
-    if (CurrentLine.StartPosX  >= ((wRightMargin - CurrentLine.MaxAdvanceX  - StdMaxAdvanceX) *wSx))
-        if (CurrentLine.EndIdx < (TextLen - 1)) /* if not at the end of text */
+    /* enough right space after current column ? */
+    if (CurrentLine.StartPosX    >= ((wRightMargin - CurrentLine.MaxAdvanceX  - StdMaxAdvanceX  ) *wSx))
+        if (CurrentLine.EndIdx < (TextLen - 1)) /* Not at the end of text */
             wTruncated = true;/* text will be truncated to this last column */
-    if ((wBoxHAvailable-StdMaxAdvanceX) <= (StdMaxAdvanceX * 2.0f)  ) /* no more columns available after this one ? */
-        if (CurrentLine.EndIdx < (TextLen - 1)) /* if not at the end of text */
-            wTruncated = true;              /* text will be truncated to this last column */
+
 
 /* Second : compute starting vertical position for current line */
 
@@ -1417,15 +1347,15 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
     {
         float wRemain= wDispoHeight - CurrentLine.TextHeightSize  - UTexChar[CurrentLine.StartIdx]->Advance.y ;
 
-        if (pFlag & RBP_VertCenter) /* request text is vertically centered */
+        if (pFlag & RBP_Center) /* request text is vertically centered */
             {
 
             if (wTruncated && (pFlag&RBP_TruncChar)) /* if text truncated and truncation character is required */
                 {
                 wRemain -=  UTexChar[TextLen]->Advance.y ;/* reserve room for truncation character */
-                if (wRemain < 0.0f) /* column is already full */
+                while ((wRemain < 0.0f) &&(CurrentLine.EndIdx > CurrentLine.StartIdx))/* column is already full  */
                     {
-                     CurrentLine.EndIdx --; /* do not print last character to be replace by truncation character */
+                     CurrentLine.EndIdx --; /* do not print last character to be replaced by truncation character */
                      wRemain += UTexChar[CurrentLine.EndIdx]->Advance.y ; /* and add its height to remaining */
                     }
                 }
@@ -1440,7 +1370,7 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
                 if (wTruncated && (pFlag&RBP_TruncChar)) /* if text truncated and truncation character is required */
                     {
                     wRemain -=  UTexChar[TextLen]->Advance.y ;/* reserve room for truncation character */
-                    if (wRemain < 0.0f) /* line is already full */
+                    while ((wRemain < 0.0f)&&(CurrentLine.EndIdx > CurrentLine.StartIdx)) /* line is already full : find room for truncation character */
                         {
                          CurrentLine.EndIdx --; /* do not print last character to be replace by truncation character */
                          wRemain += UTexChar[CurrentLine.EndIdx]->Advance.y ; /* and add its width to remaining */
@@ -1476,24 +1406,23 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
         for (size_t wi=CurrentLine.StartIdx; wi < CurrentLine.EndIdx; wi++)
             {
             if (UTexChar[wi]->isSpace)
-            {
-//                CurrentLine.StartPosY -= UTexChar[wi]->Advance.y*wSy / 2.0f;
+                {
                 CurrentLine.StartPosY -= StdMinAdvanceY*wSy ;
 //                CurrentLine.StartPosY -= UTexChar[wi]->Advance.y*wSy ;
                 continue;
-            }
+                }
+            /* StartPosY is updated by _setupOneCharVertical, while StartPosX stays the same */
             _setupOneCharVertical(CurrentLine.StartPosX,CurrentLine.StartPosY, wSx,wSy,UTexChar[wi],wCoordinates);
-//            CurrentLine.StartPosY -= UTexChar[wi]->Advance.y*wSy ;
             }//for (p = (const uint8_t *)pText; *p; p++)
 
         if (wTruncated) /* text has been truncated to current column */
                 {
-                if (pFlag & RBP_TruncChar) /* display truncation character if requested */
+                if (pFlag & RBP_TruncChar) /* display truncation character if requested : room has been reserved previously */
                     _setupOneCharVertical(CurrentLine.StartPosX,CurrentLine.StartPosY, wSx,wSy,UTexChar[TextLen],wCoordinates);
                 break;
                 }
 
-
+/*---------------- next column ------------------*/
 
         CurrentLine.StartPosX +=  (CurrentLine.MaxAdvanceX  * wSy); /* take line width into account */
 
@@ -1507,7 +1436,7 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
         CurrentLine.MaxCharHeight=0.0f; /* idem */
 
         if (UTexChar[wIdx]->isNewLineChar)
-                    CurrentLine.StartIdx++; /* skip new line character when encountered at the end and line is processed*/
+                    CurrentLine.StartIdx++; /* skip new line character when encountered at the end and column is processed*/
         wCol++;
 
     } // while  loop until no more characters or truncated

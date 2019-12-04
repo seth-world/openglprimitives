@@ -155,6 +155,10 @@ public:
 
     void setCuttingCharList(const utf32_t*pCuttingCharList) {CuttingCharList=pCuttingCharList;}
 
+    utf32_t getTruncateCharacter() {return TruncChar;}
+    void setTruncateCharacter(utf32_t pChar) {TruncChar=pChar;}
+
+
     zbs::ZArray <ZTexture*> Textures;
     zbs::ZArray <ZShader*> Shaders;
     zbs::ZArray <ZObject*> Objects;
@@ -166,6 +170,8 @@ public:
     const utf32_t* NewLineCharList=(utf32_t*)U"\n";
     const utf32_t* SpaceList=(utf32_t*)U" ";
 private:
+    utf32_t     TruncChar = 0xB6 ; /* pilcrow character */
+//    utf32_t     TruncChar= 0x2BC1 ;
 
     FT_Library FreetypeLib=nullptr;
 

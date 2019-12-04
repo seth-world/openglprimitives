@@ -100,15 +100,17 @@ struct textPoint
 enum RBoxPos : uint16_t
 {
     RBP_Nothing         = 0,
-    RBP_HorizCenter     = 0x01, /* horizontally centered */
-    RBP_VertCenter      = 0x02, /* vertically centered */
+    /* for horizontal display only */
+    RBP_Center          = 0x01, /* centered either horizontally or vertically according diplay mode (vertical or horizontal)*/
     RBP_LeftJust        = 0x04, /* text is horizontally left justified (default) */
     RBP_RightJust       = 0x08, /* text is horizontally right justified */
+    /* for vertical text display only */
+//    RBP_VertCenter      = 0x02, /* vertically centered */
     RBP_TopJust         = 0x10, /* text is vertically display starting at top of box (default) */
     RBP_BotJust         = 0x20, /* text is vertically displayed to box bottom */
 
-    RBP_LineWrap        = 0x40, /* Text is wrapped horizontally if it does not fit into box boundary (default)*/
-    RBP_WordWrap        = 0x80, /* Text is wrapped horizontally if it does not fit into box boundary (default)*/
+    RBP_LineWrap        = 0x40, /* Text is cut where line/column ends without taking care of words*/
+    RBP_WordWrap        = 0x80, /* Text is wrapped by word if it does not fit into box boundary (default)*/
     RBP_TruncChar       = 0x0100, /* Displays a truncate sign at the end of the truncated line */
 //    RBP_FitVertical     = 0x80,          /* Text should fit into vertical box boundary  */
 
@@ -262,7 +264,9 @@ public:
                          glm::vec3 pColor,
                          float pSx, float pSy);
 
-
+    int _storeOneChar(utf32_t pChar,
+                      int &offsetX,int &offsetY,
+                      unsigned int &wCurrentWidth,unsigned int &wCurrentHeight);
 
     void _setupOneChar(float &wStartPosX,                /* starting position x updated to next character position */
                        float wStartPosY,                 /* starting position y : not updated */
