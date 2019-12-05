@@ -231,7 +231,7 @@ int main()
      if (wRet<0)
              fprintf (stderr," Font <%s> is not loaded \n","FreeSans");
 
-     wBText->setBox(700.0,350.0,ZYellowBright,RBP_LeftJust|RBP_WordWrap, true,1.0,0.0);
+     wBText->setBox(700,350,ZYellowBright,RBP_Center|RBP_WordWrap, true,1.0,0.0);
 
      wBText->setPosition(-0.9f,0.5f,0.0f);
 
@@ -254,10 +254,11 @@ int main()
      if (wRet<0)
              fprintf (stderr," Font <%s> is not loaded \n","FreeSans");
 
-     wNLText->setBox(700.0,350.0,ZYellowBright,RBP_LeftJust|RBP_WordWrap|RBP_TruncChar, true,1.0,2.0);
+     wNLText->setBox(700.0,350.0,ZYellowBright,RBP_Center|RBP_WordWrap|RBP_TruncChar, true,1.0,2.0);
 
      wNLText->setPosition(0.5f,0.5f,0.0f);
 
+     wNLText->rotate270();
 
 
      ZGLUnicodeText* w90Text=wUWriter.newText();
@@ -425,9 +426,9 @@ int main()
 
 
 
-//        wBText->renderToBox(ZBlueColor);
+        wBText->renderToBox(ZBlueColor);
 
-//        wNLText->renderToBox(ZGreyColor);
+        wNLText->renderToBox(ZGreyColor);
 
         w90Text->renderToBoxVertical(ZBlueColor);
 

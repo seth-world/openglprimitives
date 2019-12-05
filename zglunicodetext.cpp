@@ -114,8 +114,6 @@ void ZGLUnicodeText::_cloneFrom(ZGLUnicodeText&pIn)
         UTexChar.push_back(new ZGLUnicodeChar(*pIn.UTexChar[wi]));
 
     FontHeight=pIn.FontHeight;
-    MaxBearingH=pIn.MaxBearingH;
-    MaxBearingW=pIn.MaxBearingW;
     MaxWidth=pIn.MaxWidth;
     MaxHeight=pIn.MaxHeight;
 }
@@ -131,8 +129,7 @@ void ZGLUnicodeText::clear ()
     Font=nullptr;
     Writer=nullptr;
     FontHeight=0;
-    MaxBearingH=0;
-    MaxBearingW=0;
+
     MaxWidth=0;
     MaxHeight=0;
 
@@ -1717,9 +1714,13 @@ void ZGLUnicodeText::renderToBox(glm::vec3 pTextColor)
         GLDescriptor->Texture->bind();
         }
         */
+    if (RotationAngle != 0.0f)
+            Model = glm::rotate(Model,RotationAngle,RotationAxis);
+
     Writer->TextShader->setMat4(__MODEL__,Model);
     Writer->TextShader->setMat4(__PROJECTION__,Projection);
     Writer->TextShader->setMat4(__VIEW__,View);
+
 
     _drawBox();
 

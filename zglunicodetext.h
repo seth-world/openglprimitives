@@ -204,6 +204,11 @@ public:
     void setBoxLineSize (float pLineSize) {BoxLineSize=pLineSize;}
     void setBoxDimensions (int pBoxWidth, int pBoxHeight);
 
+    void setModelRotation (float pAngle,glm::vec3 pAxis) {RotationAngle=pAngle;RotationAxis=pAxis;}
+
+    void rotate90 () {RotationAngle = glm::radians(90.0f); RotationAxis= glm::vec3(0.0,0.0,1.0);}
+    void rotate270 () {RotationAngle = glm::radians(270.0f); RotationAxis= glm::vec3(0.0,0.0,1.0);}
+
     void setBoxMargins  (int pLeftMargin, int pRightMargin,int pTopMargin,int pBottomMargin)
         {
         BoxRightMargin=pRightMargin;
@@ -218,15 +223,9 @@ public:
         BoxTopMargin=pMargin;
         BoxBottomMargin=pMargin;
         }
+
     void setBoxVisible (bool pVisible) {BoxVisible=pVisible;}
     void setBoxFlag (uint16_t pFlag) {BoxFlag=pFlag;}
-
-    void _boxSetupGL ();
-
-    void _setupMatrices ();
-
-    void _drawBox ();
-
 
     inline int loadChar(FT_ULong pChar);
 
@@ -243,7 +242,13 @@ public:
     void renderToBox(glm::vec3 pTextColor);
     void renderToBoxVertical(glm::vec3 pTextColor);
 
+private:
 
+    void _boxSetupGL ();
+
+    void _setupMatrices ();
+
+    void _drawBox ();
 
     void _render(glm::vec3 pPosition,
                  glm::vec3 pColor,
@@ -289,14 +294,17 @@ public:
                        ZGLUnicodeChar* pChar,              /* character data content */
                        zbs::ZArray<textPoint>& wCoords);  /* array point coords table to draw characters */
 
+    inline void _setUpGLState(glm::vec3 pColor);
+
+    inline void _postGL();
+
+
     ZGLTextWriter* Writer=nullptr;
 
-    unsigned int TexSumWidth=0;	// texture width in pixels
+    unsigned int TexSumWidth=0;     // texture width in pixels
     unsigned int TexSumHeight=0;	// texture height in pixels
 
     long FontHeight=0;
-    FT_Int MaxBearingH=0;   // Maximum bearing high (to top of the glyph)
-    FT_Int MaxBearingW=0;   // Maximum bearing width (to left of the glyph)
 
     FT_Int MaxWidth=0;      // Maximum width for a font character
     FT_Int MaxHeight=0;     // Maximum height to a font character
@@ -330,6 +338,9 @@ public:
     glm::mat4   Projection; /* model matrix for text and text box if any */
     glm::mat4   View; /* model matrix for text and text box if any */
 
+    float RotationAngle=0.0;
+    glm::vec3 RotationAxis=glm::vec3(0.0);
+
 private:
 /* text box */
     uint16_t BoxFlag=RBP_Default;
@@ -345,12 +356,13 @@ private:
 
     bool  BoxVisible=false;
     float BoxLineSize=-1.0;
+
+
+
     glm::vec3 BoxColor=ZBlueColor;
 /* end text box */
 
-    inline void _setUpGLState(glm::vec3 pColor);
 
-    inline void _postGL();
 
     GLboolean   BlendEnabled=false;
     int         TextCoordsAttLocation;
