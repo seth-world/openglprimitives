@@ -96,6 +96,13 @@ GLFWcursor* HandCursor=nullptr;
 GLFWcursor* CurrentCursor=nullptr;
 int main()
 {
+
+ //   _linuxListFonts();
+
+    _linuxSearchFonts((const utf8_t*)"liberation");
+
+
+
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
@@ -210,26 +217,32 @@ int main()
     // Define the viewport dimensions
     glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
-    int wRet=GLResources->addFont("FreeSans.ttf","FreeSans",false);
-    wRet=GLResources->addFont("Architex.ttf","Architex",false);
+    long wRet=GLResources->addFont("LiberationMono-Regular","LiberationMono",FLOC_Sytem);
+    wRet=GLResources->addFont("Architex","Architex",FLOC_User);
+    wRet=GLResources->addFont("UbuntuMono-R","UbuntuMono",FLOC_Sytem);
 
 
     ZGLTextWriter wUWriter(GL_TEXTURE0);
 
     ZGLUnicodeText* wUText=wUWriter.newText();
-    wRet=wUText->setText((utf32_t*)U"Жди меня, и я вернусь.","FreeSans",24);
+    wRet=wUText->setText((utf32_t*)U"Жди меня, и я вернусь.","LiberationMono",24);
 
     if (wRet<0)
-            fprintf (stderr," Font <%s> is not loaded \n","FreeSans");
-
+            {
+            wUText->printLastError();
+            exit(1);
+            }
      ZGLUnicodeText* wBText=wUWriter.newText();
 
      wRet=wBText->setText((utf32_t*)U"Жди меня, и я вернусь.Только очень жди, Жди, когда наводят грусть Желтые дожди, Жди, когда снега метут, Жди, когда жара,\
-Жди, когда других не ждут,Позабыв вчера.Жди, когда из дальних мест Писем не придет, Жди, когда уж надоест Всем, кто вместе ждет.","FreeSans",24);
+Жди, когда других не ждут,Позабыв вчера.Жди, когда из дальних мест Писем не придет, Жди, когда уж надоест Всем, кто вместе ждет.","LiberationMono",24);
 
 
      if (wRet<0)
-             fprintf (stderr," Font <%s> is not loaded \n","FreeSans");
+         {
+          wBText->printLastError();
+         exit(1);
+         }
 
      wBText->setBox(700,350,ZYellowBright,RBP_Center|RBP_WordWrap, true,1.0,0.0);
 
@@ -249,10 +262,13 @@ int main()
 Жди, когда из дальних мест\n\
 Писем не придет,\n\
 Жди, когда уж надоест\n\
-Всем, кто вместе ждет.\n","FreeSans",24);
+Всем, кто вместе ждет.\n","LiberationMono",24);
 
      if (wRet<0)
-             fprintf (stderr," Font <%s> is not loaded \n","FreeSans");
+         {
+         wNLText->printLastError();
+         exit(1);
+         }
 
      wNLText->setBox(700.0,350.0,ZYellowBright,RBP_Center|RBP_WordWrap|RBP_TruncChar, true,1.0,2.0);
 
@@ -275,10 +291,13 @@ int main()
 Жди, когда из дальних мест\n\
 Писем не придет,\n\
 Жди, когда уж надоест\n\
-Всем, кто вместе ждет.\n","FreeSans",24);
+Всем, кто вместе ждет.\n","UbuntuMono",32);
 
      if (wRet<0)
-             fprintf (stderr," Font <%s> is not loaded \n","FreeSans");
+         {
+         w90Text->printLastError();
+         exit(1);
+         }
 
 //     w90Text->setBox(250.0,500.0,ZYellowBright,RBP_TopJust|RBP_WordWrap|RBP_TruncChar, true,1.0,
 //                     5.0,5.0,5.0,5.0);

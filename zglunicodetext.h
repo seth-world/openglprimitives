@@ -242,6 +242,13 @@ public:
     void renderToBox(glm::vec3 pTextColor);
     void renderToBoxVertical(glm::vec3 pTextColor);
 
+
+    void printLastError(FILE* pOuput=stderr){fprintf (pOuput,"%s\n",LastError);}
+    char* getLastError () {return LastError;}
+    void clearLastError() {if (LastError)
+                                free(LastError);
+                            LastError=nullptr;}
+
 private:
 
     void _boxSetupGL ();
@@ -342,6 +349,8 @@ private:
     glm::vec3 RotationAxis=glm::vec3(0.0);
 
 private:
+    char*   LastError=nullptr;
+
 /* text box */
     uint16_t BoxFlag=RBP_Default;
     float BoxWidth=-1.0;

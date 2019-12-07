@@ -33,10 +33,14 @@ ZGLUnicodeText::ZGLUnicodeText(ZGLTextWriter* pWriter, GLenum pTextureEngine)
 {
     Writer=pWriter;
     Texture = new ZTexture(pTextureEngine);
+
 }
 
 ZGLUnicodeText::~ZGLUnicodeText()
     {
+    if (LastError)
+            free(LastError);
+
 //        FT_Done_Face(Face);
     delete Texture;
     while (UTexChar.count())
@@ -238,13 +242,15 @@ unsigned int wCurrentHeight = 0;
     Font=GLResources->getFontByName(pFontName);
 
     if (Font==nullptr)
+            {
+            LastError=(char*)realloc(LastError,200);
+            sprintf(LastError,"setText-E-FNLOAD Error Font <%s> not loaded.",pFontName);
             return -1;
-/*
-    long wFontIdx=Writer->getFontIndex(pFontName);
-    Font=Writer->FontList[wFontIdx];
-*/
+            }
+    Font->FontSize =pFontSize;
+
 //    FT_Set_Pixel_Sizes(Font->Face, 0, Font->FontSize);
-    FT_Set_Pixel_Sizes(Font->Face, 0, (FT_UInt)pFontSize);
+    FT_Set_Pixel_Sizes(Font->Face, 0, (FT_UInt)Font->FontSize);
 
     const utf32_t* p=pUtf32Text;
     TextLen=0;
@@ -268,6 +274,7 @@ unsigned int wCurrentHeight = 0;
 
     if (GlyphSlot->bitmap.width > __TEX_MAXWIDTH__)
        {
+
        fprintf (stderr,
                 "%s-F Font <%s> Fatal error texture maximum width overflow\n"
                 " for character code <%u>\n"
@@ -374,7 +381,7 @@ unsigned int wCurrentHeight = 0;
      * while last character index of the text is given by TextLen -1
      * --------------------------------------------------------------------
      */
-    fprintf(stderr,
+    fprintf(stdout,
             "GLUnicodeText::%s-I For font <%s> <%d> generated a %d x %d (%d kb) texture atlas with <%d> errors\n",
             _GET_FUNCTION_NAME_,
             Font->Name,

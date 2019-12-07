@@ -18,6 +18,53 @@
 
 const char* getFTErrorString(const FT_Error error_code);
 
+
+#define __WINFONTSYSTEMROOTENV__ "WINDIR"
+#define __WINFONTLOCALROOTENV__ "USERPROFILE"
+#define __WINFONTSYSTEMDIR__  "\\Fonts\\"
+#define __WINFONTLOCALDIR__   "\\AppData\\Local\\Microsoft\\Windows\\Fonts\\"
+
+#define __LINUXFONTLOCALROOTENV__ "HOME"
+#define __LINUXFONTSYSTEMDIR__  "/usr/share/fonts/truetype/"
+#define __LINUXFONTLOCALDIR__  "/.fonts"
+
+#define __FONTFILESUFFIX__ ".ttf"
+
+
+enum FontLoc_type : uint8_t
+{
+    FLOC_Default, /* default : First search custom location then local to user then system */
+    FLOC_Sytem, /* forces search to system location and disregard other locations */
+    FLOC_User,  /* forces search to user local location and disregard other locations */
+    FLOC_Adhoc, /* forces search to custom location and disregard other locations */
+
+};
+
+
+
+#ifdef  __USE_WINDOWS__
+    /* "%windir%\Fonts\" */
+    static constexpr const char * FontRootPath ="%windir%\Fonts\";
+    /*"%userprofile%\AppData\Local\Microsoft\Windows\Fonts\"*/
+    static constexpr const char * FontLocalPath ="%userprofile%\AppData\Local\Microsoft\Windows\Fonts\";
+
+
+
+
+
+#else
+    static constexpr const char * FontLocalPath ="/home/gerard/.fonts/";
+    static constexpr const char * FontRootPath ="/usr/share/fonts/truetype/";
+#endif
+
+
+
+    void _linuxListFonts(FILE* pOutput=stdout);
+    void _linuxListSystemFonts(FILE* pOutput=stdout);
+    void _linuxListLocalFonts(FILE* pOutput=stdout);
+    void _linuxSearchFonts(const utf8_t* pSearch,FILE* pOutput=stdout);
+
+
 class ZCamera;
 
 class ZGLUnicodeFont;
@@ -68,7 +115,43 @@ public:
     static constexpr  const char * ShaderRootPath ="/home/gerard/Development/TestOpenGl/shaders/";
     static constexpr const char * TextureRootPath ="/home/gerard/Development/TestOpenGl/textures/";
 
-    static constexpr const char * FontRootPath ="/home/gerard/Development/TestOpenGl/fonts/";
+//    static constexpr const char * FontCustomPath ="/home/gerard/Development/TestOpenGl/fonts/";
+
+    static constexpr const char * FontCustomPath =nullptr;
+
+
+    int searchForFont(std::string& pFontPath, const char* pFontName, FontLoc_type pLocFlag);
+
+    int searchForLocalFont(std::string& pFontPath,const char* pFontName);
+    int searchForSystemFont(std::string& pFontPath,const char* pFontName);
+
+
+
+    static std::string _winGetSystemFontPath(const char* pFontName);
+    static std::string _winGetLocalFontPath(const char* pFontName);
+
+    static std::string _getLinuxLocalFontPath(const char* pFontName);
+    static std::string _getLinuxSystemFontPath(const char* pGenericName, const char*pFileName);
+    static std::string _buildLinuxAdhocFontPath(const char*pGenericName,const char*pFullName);
+
+
+
+    static void listSystemFonts(FILE* pOutput=stdout)
+    {
+        _linuxListSystemFonts(pOutput);
+    }
+    static void listLocalFonts(FILE* pOutput=stdout)
+    {
+        _linuxListLocalFonts(pOutput);
+    }
+    static void listFonts(FILE* pOutput=stdout)
+    {
+        _linuxListFonts(pOutput);
+    }
+    static void searchFonts(const utf8_t* pSearch,FILE* pOutput=stdout)
+    {
+        _linuxSearchFonts(pSearch,pOutput);
+    }
 
     static std::string getShaderPath (const char*pName)
     {
@@ -82,7 +165,8 @@ public:
         wFullPath += pName;
         return wFullPath;
     }
-    static std::string getFontPath (const char*pName)
+
+    static std::string getFontPath (const char* pCategory,const char*pFonName,const char*pName)
     {
         std::string wFullPath=FontRootPath ;
         wFullPath += pName;
@@ -100,13 +184,25 @@ public:
         wFullPath += pName;
         return wFullPath;
     }
-    static std::string getFontPath (const std::string pName)
+    static std::string getLocalFontPath (const std::string pName)
+    {
+        std::string wFullPath=FontRootPath ;
+        wFullPath += pName;
+        wFullPath += ".ttf";
+        return wFullPath;
+    }
+    static std::string getCustomFontPath (const std::string pName)
     {
         std::string wFullPath=FontRootPath ;
         wFullPath += pName;
         return wFullPath;
     }
-
+    static std::string getSystemFontPath (const std::string pName)
+    {
+        std::string wFullPath=FontRootPath ;
+        wFullPath += pName;
+        return wFullPath;
+    }
     static ZShader loadShader(const char*pVPath, const char*pFPath, const char*pGPath, const char *pName);
 
 
@@ -125,8 +221,7 @@ public:
     void closeFreeType();
     FT_Library getFreeTypeLibrary() {return FreetypeLib; }
 
-    long addFont(const char *pFontPath,const char*pName, const bool pResident=true);
-
+    long addFont(const char *pFontName, const char*pIntName, const FontLoc_type pLocFlag=FLOC_Default);
     ZGLUnicodeFont* getFontByName(const char* pName);
     ZGLUnicodeFont* getFont(const long pFontIdx,size_t pFontsize);
 
@@ -179,5 +274,8 @@ private:
 } ;
 
 extern ZGLResource* GLResources;
+
+
+
 
 #endif // ZRESOURCE_H

@@ -19,7 +19,17 @@
 #include <ztoolset/zdatabuffer.h>
 
 class ZGLUnicodeFont;
+#ifdef __COMMENT__
+#define __FONTLOCTYPE__
+enum FontLoc_type : uint8_t
+{
+    FLOC_Default, /* default : First search custom location then local to user then system */
+    FLOC_Sytem, /* forces search to system location and disregard other locations */
+    FLOC_User,  /* forces search to user local location and disregard other locations */
+    FLOC_Adhoc, /* forces search to custom location and disregard other locations */
 
+};
+#endif
 /**
  * @brief The ZFont class holds the freetype2 font.
  * loads font definition from font file
@@ -34,15 +44,18 @@ public:
     ~ZFont();
 
  public:
-    int add(const char* pFontPath,const char* pName,const bool pResident);
-    ZGLUnicodeFont* newFont();
+    int _add(const char* pFontPath, const char* pIntName, const bool pResident);
 
+    int add(const char* pName, const char *pIntName, const uint8_t pLocation);
+    ZGLUnicodeFont* newFont();
+    static bool _testExist(std::string& pPath);
 private:
     bool _testExist();
+
 public:
     const char* Name=nullptr;
 //    ZDataBuffer*Content=nullptr;
-    const char* FontPath=nullptr;
+    std::string FontPath;
     bool        Resident=false;
     FT_Long     UnicodeFaceIndex=-1;
     FT_Face     MainFace=nullptr;
