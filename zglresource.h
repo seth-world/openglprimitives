@@ -59,10 +59,6 @@ enum FontLoc_type : uint8_t
 
 
 
-    void _linuxListFonts(FILE* pOutput=stdout);
-    void _linuxListSystemFonts(FILE* pOutput=stdout);
-    void _linuxListLocalFonts(FILE* pOutput=stdout);
-    void _linuxSearchFonts(const utf8_t* pSearch,FILE* pOutput=stdout);
 
 
 class ZCamera;
@@ -126,31 +122,63 @@ public:
     int searchForSystemFont(std::string& pFontPath,const char* pFontName);
 
 
+    static std::string _winGetSystemRootFontPath();
+    static std::string _winGetLocalRootFontPath();
+
+    static std::string _winGetLocalFontDir();
+    static std::string _winGetSystemFontDir();
 
     static std::string _winGetSystemFontPath(const char* pFontName);
     static std::string _winGetLocalFontPath(const char* pFontName);
 
-    static std::string _getLinuxLocalFontPath(const char* pFontName);
+    static std::string _linuxGetSystemRootFontDir();
+    static std::string _linuxGetLocalFontDir();
+    static std::string _linuxGetLocalFontPath(const char* pFontName);
     static std::string _getLinuxSystemFontPath(const char* pGenericName, const char*pFileName);
     static std::string _buildLinuxAdhocFontPath(const char*pGenericName,const char*pFullName);
 
+    static void _linuxListFonts(FILE* pOutput=stdout);
+    static void _linuxListSystemFonts(FILE* pOutput=stdout);
+    static void _linuxListLocalFonts(FILE* pOutput=stdout);
+    static void _linuxSearchFonts(const utf8_t* pSearch,FILE* pOutput=stdout);
+
+    static void _winListFonts(FILE* pOutput=stdout);
+    static void _winListSystemFonts(FILE* pOutput=stdout);
+    static void _winListLocalFonts(FILE* pOutput=stdout);
+    static void _winSearchFonts(const utf8_t* pSearch,FILE* pOutput=stdout);
 
 
     static void listSystemFonts(FILE* pOutput=stdout)
     {
+#ifdef __USE_WINDOWS__
+         _winListSystemFonts(pOutput);
+#else
         _linuxListSystemFonts(pOutput);
+#endif
     }
     static void listLocalFonts(FILE* pOutput=stdout)
     {
+#ifdef __USE_WINDOWS__
+        _winListLocalFonts(pOutput);
+#else
         _linuxListLocalFonts(pOutput);
+#endif
     }
     static void listFonts(FILE* pOutput=stdout)
     {
+#ifdef __USE_WINDOWS__
+        _winListFonts(pOutput);
+#else
         _linuxListFonts(pOutput);
     }
     static void searchFonts(const utf8_t* pSearch,FILE* pOutput=stdout)
+#endif
     {
+#ifdef __USE_WINDOWS__
+        _winSearchFonts(pSearch,pOutput);
+#else
         _linuxSearchFonts(pSearch,pOutput);
+#endif
     }
 
     static std::string getShaderPath (const char*pName)
@@ -275,7 +303,8 @@ private:
 
 extern ZGLResource* GLResources;
 
-
+std::string& _addConditionalDelimiter(std::string& pString);
+bool _testConditionalDelimiter(std::string& pString);
 
 
 #endif // ZRESOURCE_H

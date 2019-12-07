@@ -111,14 +111,30 @@ std::string ZGLResource::_winGetSystemFontPath(const char* pFontName)
     wFontPath += __FONTFILESUFFIX__;
     return wFontPath;
 }
-std::string ZGLResource::_winGetLocalFontPath(const char* pFontName)
+
+#ifdef __USE_WINDOWS__
+const char DirectoryDelimiter='\\';
+#else
+const char DirectoryDelimiter='/';
+#endif
+
+std::string&
+_addConditionalDelimiter(std::string& pString)
 {
-    std::string wFontPath;
-    wFontPath = getenv(__WINFONTLOCALROOTENV__);
-    wFontPath += __WINFONTLOCALDIR__;
-    wFontPath += pFontName;
-    wFontPath += __FONTFILESUFFIX__;
-    return wFontPath;
+    std::string::iterator wPos= pString.end();
+    wPos--;
+    if (*wPos==DirectoryDelimiter)
+            return pString;
+    pString += DirectoryDelimiter;
+    return pString;
+}
+bool _testConditionalDelimiter(std::string& pString)
+{
+    std::string::iterator wPos= pString.end();
+    wPos--;
+    if (*wPos==DirectoryDelimiter)
+            return true;
+    return false;
 }
 
 
@@ -126,6 +142,7 @@ std::string ZGLResource::_getLinuxSystemFontPath(const char* pGenericName, const
 {
     std::string wFontPath;
     wFontPath += __LINUXFONTSYSTEMDIR__;
+    _addConditionalDelimiter(wFontPath);
     wFontPath += pGenericName;  /* font files are located within a subdirectory named as generic font family */
     wFontPath += "/";
     wFontPath += pFileName;
@@ -133,19 +150,24 @@ std::string ZGLResource::_getLinuxSystemFontPath(const char* pGenericName, const
 
     return wFontPath;
 }
-std::string ZGLResource::_getLinuxLocalFontPath(const char* pFontName)
+std::string ZGLResource::_linuxGetLocalFontPath(const char* pFontName)
 {
     std::string wFontPath;
-    wFontPath = getenv(__LINUXFONTLOCALROOTENV__);
-    wFontPath +=(const char*) __LINUXFONTLOCALDIR__;  /* Remark : no subdirectory  */
+    wFontPath=_linuxGetLocalFontDir();
+    _addConditionalDelimiter(wFontPath);
     wFontPath += pFontName;
     wFontPath += __FONTFILESUFFIX__;
     return wFontPath;
 }
+
 std::string ZGLResource::_buildLinuxAdhocFontPath(const char*pGenericName,const char*pFullName)
 {
     std::string wFontPath;
-    wFontPath =pGenericName;  /* Remark : may include directory path  */
+    if (pGenericName!=nullptr)
+        {
+        wFontPath =pGenericName;  /* Remark : may include directory path  */
+        _addConditionalDelimiter(wFontPath);
+        }
     wFontPath += pFullName;
     wFontPath += __FONTFILESUFFIX__;
     return wFontPath;
@@ -153,19 +175,34 @@ std::string ZGLResource::_buildLinuxAdhocFontPath(const char*pGenericName,const 
 
 #include <zio/zdir.h>
 #include <ztoolset/uristring.h>
-std::string _linuxGetLocalFontDirPath()
+std::string ZGLResource::_linuxGetLocalFontDir()
 {
     std::string wFontPath;
     wFontPath = getenv(__LINUXFONTLOCALROOTENV__);
     wFontPath +=(const char*) __LINUXFONTLOCALDIR__;  /* Remark : no subdirectory  */
     return wFontPath;
 }
-std::string _linuxGetSystemFontRoot()
+std::string ZGLResource::_linuxGetSystemRootFontDir()
 {
     std::string wFontPath;
     wFontPath +=(const char*) __LINUXFONTSYSTEMDIR__;  /* Remark : no subdirectory  */
     return wFontPath;
 }
+
+std::string ZGLResource::_winGetLocalFontDir()
+{
+    std::string wFontPath;
+    wFontPath = getenv(__WINFONTLOCALROOTENV__);
+    wFontPath += __WINFONTLOCALDIR__;
+}
+std::string ZGLResource::_winGetSystemFontDir()
+{
+    std::string wFontPath;
+    wFontPath += getenv(__WINFONTSYSTEMROOTENV__);
+    wFontPath +=(const char*) __WINFONTLOCALROOTENV__;  /* Remark : no subdirectory  */
+    return wFontPath;
+}
+
 
 
 int ZGLResource::searchForFont(std::string &pFontPath, const char* pFontName, FontLoc_type pLocFlag)
@@ -192,7 +229,12 @@ int ZGLResource::searchForFont(std::string &pFontPath, const char* pFontName, Fo
 
 int ZGLResource::searchForLocalFont(std::string &pFontPath, const char* pFontName)
 {
-    std::string wFontPath=_linuxGetLocalFontDirPath();
+    std::string wFontPath;
+#ifdef __USE_WINDOWS__
+    wFontPath=_winGetLocalFontDir();
+#else
+    wFontPath=_linuxGetLocalFontDir();
+#endif
     uriString wDirEntry;
     ZDir wFontDir;
     if (wFontDir.setPath((const utf8_t*)wFontPath.c_str())!=ZS_SUCCESS)
@@ -210,10 +252,13 @@ int ZGLResource::searchForLocalFont(std::string &pFontPath, const char* pFontNam
 
 int ZGLResource::searchForSystemFont(std::string &pFontPath, const char* pFontName)
 {
-    std::string wFontPath=_linuxGetSystemFontRoot();
+    std::string wFontPath;
     uriString wFontFamily,wDirEntry;
     ZDir wFontDir;
     ZDir wFontDirFamily;
+#ifndef __USE_WINDOWS__
+/* for linux */
+    wFontPath=_linuxGetSystemRootFontDir();
     if (wFontDir.setPath((const utf8_t*)wFontPath.c_str())!=ZS_SUCCESS)
             return -1;
     while (wFontDir.readDir(wFontFamily,ZDFT_Directory)==ZS_SUCCESS)
@@ -229,10 +274,70 @@ int ZGLResource::searchForSystemFont(std::string &pFontPath, const char* pFontNa
         }
     }
     return -1;
+#else
+/* for windows */
+    wFontPath=_winGetSystemFontDir();
+
+    if (wFontDir.setPath((const utf8_t*)wFontPath.c_str())!=ZS_SUCCESS)
+            return -1;
+    while (wFontDir.readDir(wDirEntry,ZDFT_Directory)==ZS_SUCCESS)
+        {
+        if (wDirEntry.getRootBasename()!=(const utf8_t*)pFontName)
+                continue;
+        pFontPath = wDirEntry.toCString_Strait();
+        return 0;
+        }
+    return -1;
+#endif // __USE_WINDOWS__
 }
 
 
-void _linuxListFonts(FILE* pOutput)
+
+ZGLUnicodeFont* ZGLResource::getFontByName(const char* pName)
+{
+    for (long wi=0;wi<FontList.count();wi++)
+            if (strcmp(FontList[wi]->Name,pName)==0)
+                        return FontList[wi]->newFont();
+
+    return nullptr;
+}
+
+
+
+ZGLUnicodeFont* ZGLResource::getFont(const long pFontIdx,size_t pFontsize)
+{
+    return FontList[pFontIdx]->newFont();
+}
+
+void ZGLResource::initFreeType()
+{
+
+    FT_Error wFTerr    = FT_Init_FreeType(&FreetypeLib);
+    if (wFTerr!=FT_Err_Ok) // All functions return a value different than 0 whenever an error occurred
+        {
+            fprintf (stderr,"ZGLResource::Load-E Freetype error while initializing Freetype library.\n"
+                     "    Error <%d>  <%s>\n",
+                     wFTerr,
+                     getFTErrorString( wFTerr));
+            abort();
+        }
+}
+void ZGLResource::closeFreeType()
+{
+    if (FreetypeLib != nullptr)
+            FT_Done_FreeType(FreetypeLib);
+    FreetypeLib=nullptr;
+}
+
+
+void ZGLResource::registerZCamera (ZCamera* pCamera)
+{
+    Camera=pCamera;
+}
+
+/* Font local routines */
+
+void ZGLResource::_linuxListFonts(FILE* pOutput)
 {
     std::string wFontPath;
     wFontPath = getenv(__LINUXFONTLOCALROOTENV__);
@@ -268,7 +373,7 @@ void _linuxListFonts(FILE* pOutput)
     return;
 }//_linuxListFonts
 
-void _linuxListSystemFonts(FILE* pOutput)
+void ZGLResource::_linuxListSystemFonts(FILE* pOutput)
 {
     ZDir wFontDirFamily ;
     uriString wFontFamily;
@@ -291,7 +396,7 @@ void _linuxListSystemFonts(FILE* pOutput)
     return;
 }//_linuxListSystemFonts
 
-void _linuxListLocalFonts(FILE* pOutput)
+void ZGLResource::_linuxListLocalFonts(FILE* pOutput)
 {
     std::string wFontPath;
     wFontPath = getenv(__LINUXFONTLOCALROOTENV__);
@@ -309,12 +414,10 @@ void _linuxListLocalFonts(FILE* pOutput)
     while (wFontLocalDir.readDir(wFontFamily,ZDFT_RegularFile)==ZS_SUCCESS)
         fprintf(pOutput,
                 "       <%s>\n",wFontFamily.getBasename().toUtf());
-
-
     return;
 }//_linuxListLocalFonts
 
-void _linuxSearchFonts(const utf8_t* pSearch,FILE* pOutput)
+void ZGLResource::_linuxSearchFonts(const utf8_t* pSearch,FILE* pOutput)
 {
     fprintf(pOutput,
             "Searching font files names matching <%s>\n",pSearch);
@@ -366,47 +469,114 @@ void _linuxSearchFonts(const utf8_t* pSearch,FILE* pOutput)
     return;
 }//_linuxListFonts
 
-
-
-ZGLUnicodeFont* ZGLResource::getFontByName(const char* pName)
+/* windows */
+void ZGLResource::_winListFonts(FILE* pOutput)
 {
-    for (long wi=0;wi<FontList.count();wi++)
-            if (strcmp(FontList[wi]->Name,pName)==0)
-                        return FontList[wi]->newFont();
-
-    return nullptr;
-}
-
-
-
-ZGLUnicodeFont* ZGLResource::getFont(const long pFontIdx,size_t pFontsize)
-{
-    return FontList[pFontIdx]->newFont();
-}
-
-void ZGLResource::initFreeType()
-{
-
-    FT_Error wFTerr    = FT_Init_FreeType(&FreetypeLib);
-    if (wFTerr!=FT_Err_Ok) // All functions return a value different than 0 whenever an error occurred
+    std::string wFontPath;
+    wFontPath = _winGetLocalFontDir();
+    ZDir wFontLocalDir;
+    if (wFontLocalDir.setPath((const utf8_t*)wFontPath.c_str())!=ZS_SUCCESS)
         {
-            fprintf (stderr,"ZGLResource::Load-E Freetype error while initializing Freetype library.\n"
-                     "    Error <%d>  <%s>\n",
-                     wFTerr,
-                     getFTErrorString( wFTerr));
-            abort();
+        fprintf (stderr,"%s-F-CNTFIND Cannot find directory %s",wFontPath.c_str());
         }
-}
-void ZGLResource::closeFreeType()
+    ZDir wFontDirFamily ;
+    uriString wFontFamily;
+    uriString wMan;
+    fprintf(pOutput,
+            "--Local fonts........................\n");
+    while (wFontLocalDir.readDir(wFontFamily,ZDFT_RegularFile)==ZS_SUCCESS)
+        fprintf(pOutput,
+                "       <%s>\n",wFontFamily.getBasename().toUtf());
+
+    ZDir wFontSysDir((const utf8_t*)_winGetSystemFontDir().c_str());
+    fprintf(pOutput,
+            "--System fonts........................\n");
+    while (wFontSysDir.readDir(wFontFamily,ZDFT_Directory)==ZS_SUCCESS)
+        {
+        fprintf(pOutput,
+                "     <%s>\n",wFontFamily.getBasename().toUtf());
+        }
+
+    return;
+}//_winListFonts
+
+void ZGLResource::_winListSystemFonts(FILE* pOutput)
 {
-    if (FreetypeLib != nullptr)
-            FT_Done_FreeType(FreetypeLib);
-    FreetypeLib=nullptr;
-}
+    ZDir wFontDirFamily ;
+    uriString wFontFamily;
+    uriString wMan;
+
+    ZDir wFontSysDir((const utf8_t*)_winGetSystemFontDir().c_str());
+    fprintf(pOutput,
+            "--System fonts........................\n");
+    while (wFontSysDir.readDir(wFontFamily,ZDFT_Directory)==ZS_SUCCESS)
+    {
+            fprintf(pOutput,
+                    "     <%s>\n",wFontFamily.getBasename().toUtf());
+    }
+
+    return;
+}//_winListSystemFonts
+
+void ZGLResource::_winListLocalFonts(FILE* pOutput)
+{
+    std::string wFontPath;
+    wFontPath = _winGetLocalFontDir();
+    ZDir wFontLocalDir;
+    if (wFontLocalDir.setPath((const utf8_t*)wFontPath.c_str())!=ZS_SUCCESS)
+        {
+        fprintf (stderr,"%s-F-CNTFIND Cannot find directory %s",wFontPath.c_str());
+        }
+    ZDir wFontDirFamily ;
+    uriString wFontFamily;
+    uriString wMan;
+    fprintf(pOutput,
+            "--Local fonts........................\n");
+    while (wFontLocalDir.readDir(wFontFamily,ZDFT_RegularFile)==ZS_SUCCESS)
+        fprintf(pOutput,
+                "       <%s>\n",wFontFamily.getBasename().toUtf());
+    return;
+}//_winListLocalFonts
+
+void ZGLResource::_winSearchFonts(const utf8_t* pSearch,FILE* pOutput)
+{
+    fprintf(pOutput,
+            "Searching font files names matching <%s>\n",pSearch);
+    std::string wFontPath;
+    wFontPath = _winGetLocalFontDir();
+    ZDir wFontLocalDir;
+    if (wFontLocalDir.setPath((const utf8_t*)wFontPath.c_str())!=ZS_SUCCESS)
+        {
+        fprintf (stderr,"%s-F-CNTFIND Cannot find directory %s",wFontPath.c_str());
+        }
+    ZDir wFontDirFamily ;
+    uriString wFontFamily;
+    uriString wFontFile;
+    uriString wMan;
+    fprintf(pOutput,
+            "--Local fonts........................\n");
+    while (wFontLocalDir.readDir(wFontFile,ZDFT_RegularFile)==ZS_SUCCESS)
+    {
+        if (wFontFile.strcasestr(pSearch)==nullptr)
+                continue;
+        fprintf(pOutput,
+                "       <%s>\n",wFontFile.getBasename().toUtf());
+    }
+    ZDir wFontSysDir((const utf8_t*)_winGetSystemFontDir().c_str());
+    fprintf(pOutput,
+            "--System fonts........................\n");
+    while (wFontSysDir.readDir(wFontFile,ZDFT_Directory)==ZS_SUCCESS)
+    {
+            if (wFontFile.strcasestr(pSearch)==nullptr)
+                    continue;
+            fprintf(pOutput,
+                    "     <%s>\n",wFontFile.getBasename().toUtf());
+    }
+
+    return;
+}//_winListFonts
 
 
-void ZGLResource::registerZCamera (ZCamera* pCamera)
-{
-    Camera=pCamera;
-}
+
+
 
