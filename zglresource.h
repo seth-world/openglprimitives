@@ -18,6 +18,8 @@
 
 const char* getFTErrorString(const FT_Error error_code);
 
+#define __SHADERROOTLOCATION__ "shaderroot"
+#define __TEXTUREROOTLOCATION__ "textureroot"
 
 #define __WINFONTSYSTEMROOTENV__ "WINDIR"
 #define __WINFONTLOCALROOTENV__ "USERPROFILE"
@@ -26,7 +28,7 @@ const char* getFTErrorString(const FT_Error error_code);
 
 #define __LINUXFONTLOCALROOTENV__ "HOME"
 #define __LINUXFONTSYSTEMDIR__  "/usr/share/fonts/truetype/"
-#define __LINUXFONTLOCALDIR__  "/.fonts"
+#define __LINUXFONTLOCALDIR__  ".fonts"
 
 #define __FONTFILESUFFIX__ ".ttf"
 
@@ -102,16 +104,26 @@ class ZFont;
  *  . cleans up GL resources when application terminates
  *
  */
+
 class ZGLResource
 {
 public:
     ZGLResource() {initFreeType();}
     ~ZGLResource() ;
 
-    static constexpr  const char * ShaderRootPath ="/home/gerard/Development/TestOpenGl/shaders/";
-    static constexpr const char * TextureRootPath ="/home/gerard/Development/TestOpenGl/textures/";
+#ifdef __USE_WINDOWS__
+    static constexpr  const char * ShaderRootPath_Default ="\\shaders";
+    static constexpr const char * TextureRootPath_Default ="\\textures";
+#else
+    static constexpr  const char * ShaderRootPath_Default ="/home/gerard/Development/TestOpenGl/shaders";
+    static constexpr const char * TextureRootPath_Default ="/home/gerard/Development/TestOpenGl/textures";
+#endif
+    std::string TextureRootPath;
+    std::string ShaderRootPath;
 
 //    static constexpr const char * FontCustomPath ="/home/gerard/Development/TestOpenGl/fonts/";
+
+    static bool _testExist(std::string& pPath);
 
     static constexpr const char * FontCustomPath =nullptr;
 
@@ -181,18 +193,10 @@ public:
 #endif
     }
 
-    static std::string getShaderPath (const char*pName)
-    {
-        std::string wFullPath=ShaderRootPath ;
-        wFullPath += pName;
-        return wFullPath;
-    }
-    static std::string getTexturePath (const char*pName)
-    {
-        std::string wFullPath=TextureRootPath ;
-        wFullPath += pName;
-        return wFullPath;
-    }
+    std::string getShaderPath (const char*pName);
+
+    std::string getTexturePath (const char*pName);
+
 
     static std::string getFontPath (const char* pCategory,const char*pFonName,const char*pName)
     {
@@ -200,13 +204,13 @@ public:
         wFullPath += pName;
         return wFullPath;
     }
-    static std::string getShaderPath (const std::string pName)
+    std::string getShaderPath (const std::string pName)
     {
         std::string wFullPath=ShaderRootPath ;
         wFullPath += pName;
         return wFullPath;
     }
-    static std::string getTexturePath (const std::string pName)
+    std::string getTexturePath (const std::string pName)
     {
         std::string wFullPath=TextureRootPath ;
         wFullPath += pName;
@@ -251,7 +255,7 @@ public:
 
     long addFont(const char *pFontName, const char*pIntName, const FontLoc_type pLocFlag=FLOC_Default);
     ZGLUnicodeFont* getFontByName(const char* pName);
-    ZGLUnicodeFont* getFont(const long pFontIdx,size_t pFontsize);
+    ZGLUnicodeFont* getFont(const long pFontIdx);
 
 
     void registerGLWindow(GLFWwindow* pWindow) {GLWindow=pWindow;}
@@ -303,8 +307,8 @@ private:
 
 extern ZGLResource* GLResources;
 
-std::string& _addConditionalDelimiter(std::string& pString);
-bool _testConditionalDelimiter(std::string& pString);
-
+std::string&    _addConditionalDelimiter(std::string& pString);
+bool            _testConditionalDelimiter(std::string& pString);
+std::string&    _RTrim(std::string& pString);
 
 #endif // ZRESOURCE_H

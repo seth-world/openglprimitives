@@ -176,6 +176,8 @@ DISTFILES += \
     shaders/znormvisu.vs \
     shaders/ztextbox.fs \
     shaders/ztextbox.vs \
+    shaders/ztextboxtexture.fs \
+    shaders/ztextboxtexture.vs \
     shaders/ztextrenderer.fs \
     shaders/ztextrenderer.vs \
     shaders/ztextrenderer_copy.fs \

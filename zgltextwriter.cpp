@@ -28,7 +28,11 @@ ZGLUnicodeText* ZGLTextWriter::newText()
     return wT;
 }
 
-void ZGLTextWriter::_newBoxShader()
+void ZGLTextWriter::_newBoxShaderShape()
 {
-    BoxShader=new  ZShader("ztextbox.vs", "ztextbox.fs", "BoxShader");
+    BoxShader=new  ZShader("ztextbox.vs", "ztextbox.fs", "BoxShaderShape");
+}
+void ZGLTextWriter::_newBoxShaderTexture()
+{
+    BoxShader=new  ZShader("ztextboxtexture.vs", "ztextboxtexture.fs", "BoxShaderTexture");
 }

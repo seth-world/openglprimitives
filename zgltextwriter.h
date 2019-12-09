@@ -55,19 +55,24 @@ public:
     void setProjection(glm::mat4 pProjection) {Projection=pProjection;}
     glm::mat4  getProjection() {return Projection;}
 
-    int updateShader()
+
+    ZShader* getBoxShaderShape()
     {
 
-    }
-
-    ZShader* getBoxShader()
-    {
         if (BoxShader==nullptr)
-                    _newBoxShader();
+//                    _newBoxShaderShape();
+                    _newBoxShaderTexture();
         return BoxShader;
     }
+    ZShader* getBoxShaderFill()
+    {
 
-    void _newBoxShader();
+        if (BoxShader==nullptr)
+                    _newBoxShaderTexture();
+        return BoxShader;
+    }
+    void _newBoxShaderShape();
+    void _newBoxShaderTexture();
 
     glm::mat4 Model;
     glm::mat4 View;

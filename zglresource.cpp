@@ -117,17 +117,29 @@ const char DirectoryDelimiter='\\';
 #else
 const char DirectoryDelimiter='/';
 #endif
+std::string&
+_RTrim(std::string& pString)
+{
+    std::string::iterator wPos= pString.end();
+    wPos--;
+    while ((wPos>pString.begin())&&(*wPos==' ')) /* trim trailing spaces */
+                wPos--;
+    pString.resize((wPos-pString.begin())+1);
+    return pString;
+}
 
 std::string&
 _addConditionalDelimiter(std::string& pString)
 {
-    std::string::iterator wPos= pString.end();
-    wPos--;
+
+    _RTrim(pString); /* trim trailing spaces */
+    std::string::iterator wPos= pString.end()-1;
     if (*wPos==DirectoryDelimiter)
-            return pString;
+                                return pString;
     pString += DirectoryDelimiter;
     return pString;
 }
+
 bool _testConditionalDelimiter(std::string& pString)
 {
     std::string::iterator wPos= pString.end();
@@ -179,6 +191,7 @@ std::string ZGLResource::_linuxGetLocalFontDir()
 {
     std::string wFontPath;
     wFontPath = getenv(__LINUXFONTLOCALROOTENV__);
+    _addConditionalDelimiter(wFontPath);
     wFontPath +=(const char*) __LINUXFONTLOCALDIR__;  /* Remark : no subdirectory  */
     return wFontPath;
 }
@@ -211,7 +224,7 @@ int ZGLResource::searchForFont(std::string &pFontPath, const char* pFontName, Fo
     switch (pLocFlag)
     {
     case FLOC_Adhoc:
-        if (ZFont::_testExist(pFontPath))
+        if (ZGLResource::_testExist(pFontPath))
                 return 0;
         return -1;
     case FLOC_User:
@@ -304,8 +317,10 @@ ZGLUnicodeFont* ZGLResource::getFontByName(const char* pName)
 
 
 
-ZGLUnicodeFont* ZGLResource::getFont(const long pFontIdx,size_t pFontsize)
+ZGLUnicodeFont* ZGLResource::getFont(const long pFontIdx)
 {
+    if (!FontList.exists(pFontIdx))
+            return nullptr;
     return FontList[pFontIdx]->newFont();
 }
 
@@ -334,6 +349,57 @@ void ZGLResource::registerZCamera (ZCamera* pCamera)
 {
     Camera=pCamera;
 }
+/* Root Paths for shaders and textures */
+std::string ZGLResource::getShaderPath (const char*pName)
+{
+    if (ShaderRootPath.empty())
+    {
+        const char* wShaderRootEnv=getenv(__SHADERROOTLOCATION__);
+        if (wShaderRootEnv==nullptr)
+                {
+                ShaderRootPath=ShaderRootPath_Default;
+                }
+            else
+                {
+                ShaderRootPath=wShaderRootEnv;
+                }
+        fprintf (stdout,"GLResource-I-SHADERPATH Shaders root path is set to <%s> \n",ShaderRootPath.c_str());
+        if (!ZGLResource::_testExist(ShaderRootPath))
+            {
+            fprintf (stderr,"GLResource-E-PATHNOTEXIST Shader path <%s> does NOT exist.\n",ShaderRootPath.c_str());
+            }
+    }
+    std::string wFullPath=ShaderRootPath ;
+    _addConditionalDelimiter(wFullPath);
+    wFullPath += pName;
+    return wFullPath;
+}
+std::string ZGLResource::getTexturePath (const char*pName)
+{
+    if (TextureRootPath.empty())
+    {
+        const char* wTextureRootEnv=getenv(__TEXTUREROOTLOCATION__);
+        if (wTextureRootEnv==nullptr)
+                {
+                TextureRootPath=TextureRootPath_Default;
+                }
+        else
+            {
+            TextureRootPath=wTextureRootEnv;
+            }
+        fprintf (stdout,"GLResource-I-TEXTUREPATH Textures root path is set to <%s> \n",TextureRootPath.c_str());
+        if (!ZGLResource::_testExist(TextureRootPath))
+            {
+            fprintf (stderr,"GLResource-E-PATHNOTEXIST Texture path <%s> does NOT exist.\n",TextureRootPath.c_str());
+            }
+    }//if (TextureRootPath.empty())
+    std::string wFullPath=TextureRootPath ;
+    _addConditionalDelimiter(wFullPath);
+
+    wFullPath += pName;
+    return wFullPath;
+}
+
 
 /* Font local routines */
 
@@ -381,7 +447,7 @@ void ZGLResource::_linuxListSystemFonts(FILE* pOutput)
 
     ZDir wFontSysDir((const utf8_t*)__LINUXFONTSYSTEMDIR__);
     fprintf(pOutput,
-            "--System fonts........................\n");
+            "--System fonts as <%s>\n",wFontSysDir.getPath().toCString_Strait());
     while (wFontSysDir.readDir(wFontFamily,ZDFT_Directory)==ZS_SUCCESS)
     {
         fprintf(pOutput,
@@ -410,7 +476,7 @@ void ZGLResource::_linuxListLocalFonts(FILE* pOutput)
     uriString wFontFamily;
     uriString wMan;
     fprintf(pOutput,
-            "--Local fonts........................\n");
+            "--Local fonts as <%s>\n",wFontPath.c_str());
     while (wFontLocalDir.readDir(wFontFamily,ZDFT_RegularFile)==ZS_SUCCESS)
         fprintf(pOutput,
                 "       <%s>\n",wFontFamily.getBasename().toUtf());
@@ -423,11 +489,12 @@ void ZGLResource::_linuxSearchFonts(const utf8_t* pSearch,FILE* pOutput)
             "Searching font files names matching <%s>\n",pSearch);
     std::string wFontPath;
     wFontPath = getenv(__LINUXFONTLOCALROOTENV__);
+    _addConditionalDelimiter(wFontPath);
     wFontPath +=(const char*) __LINUXFONTLOCALDIR__;  /* Remark : no subdirectory  */
     ZDir wFontLocalDir;
     if (wFontLocalDir.setPath((const utf8_t*)wFontPath.c_str())!=ZS_SUCCESS)
         {
-        fprintf (stderr,"%s-F-CNTFIND Cannot find directory %s",wFontPath.c_str());
+        fprintf (stderr,"%s-F-CNTFIND Cannot find directory %s",_GET_FUNCTION_NAME_, wFontPath.c_str());
         }
     ZDir wFontDirFamily ;
     uriString wFontFamily;
@@ -576,7 +643,16 @@ void ZGLResource::_winSearchFonts(const utf8_t* pSearch,FILE* pOutput)
     return;
 }//_winListFonts
 
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-
+bool
+ZGLResource::_testExist(std::string& pPath)
+{
+    struct stat wStatBuffer;
+    int wSt= stat(  pPath.c_str(),&wStatBuffer);
+    return !(wSt<0);
+}
 
 

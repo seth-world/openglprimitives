@@ -118,9 +118,20 @@ enum RBoxPos : uint16_t
                                     This option must be set only if RBP_Wrap is not set
                                     to make text with fit into box maximum width */
 
+    RBP_TextMask        = 0x0FFF,
+
+/* box drawing flag */
+    RBP_Visible         = 0x1000,
+    RBP_Shape           = 0x2000,
+    RBP_Fill            = 0x4000,
+    RBP_Texture         = 0x8000,
+
+    RBP_BoxMask         = 0xF000,
+
 //    RBP_AdjustBestTry   = 0x0200,       /* Text size is being adjusted if it does not fit vertically after being cut (default) */
 
-    RBP_Default         = RBP_LeftJust | RBP_TopJust | RBP_LineWrap
+    RBP_Default         = RBP_LeftJust | RBP_TopJust | RBP_LineWrap | RBP_Visible | RBP_Shape,
+
 };
 
 
@@ -155,7 +166,6 @@ struct RefLine {
     float MaxAdvanceX;    /* maximum Advance position width for the line to be printed : vertical display */
     bool  Truncated;      /* is line being truncated or not */
 } ;
-
 
 
 /**
@@ -196,18 +206,14 @@ public:
                  int pTopMargin= 1.0f,
                  int pBottomMargin=1.0f); /* 1.0 is a minimum margin */
 
+    int setBoxTexture (const char* pTexFile,GLenum pTextureEngine=GL_TEXTURE0);
 
     void setPosition(float pX,float pY,float pZ) {Position=glm::vec3(pX,pY,pZ);}
     void setPosition(glm::vec3 pPosition) {Position=pPosition;}
 
-    void setBoxColor(glm::vec3 pColor) {BoxColor=pColor;}
+    void setBoxBorderColor(glm::vec3 pColor) {BoxLineColor=pColor;}
     void setBoxLineSize (float pLineSize) {BoxLineSize=pLineSize;}
     void setBoxDimensions (int pBoxWidth, int pBoxHeight);
-
-    void setModelRotation (float pAngle,glm::vec3 pAxis) {RotationAngle=pAngle;RotationAxis=pAxis;}
-
-    void rotate90 () {RotationAngle = glm::radians(90.0f); RotationAxis= glm::vec3(0.0,0.0,1.0);}
-    void rotate270 () {RotationAngle = glm::radians(270.0f); RotationAxis= glm::vec3(0.0,0.0,1.0);}
 
     void setBoxMargins  (int pLeftMargin, int pRightMargin,int pTopMargin,int pBottomMargin)
         {
@@ -216,7 +222,7 @@ public:
         BoxTopMargin=pTopMargin;
         BoxBottomMargin=pBottomMargin;
         }
-    void setBoxMarginAll(int pMargin)
+    void setBoxMarginsAll(int pMargin)
         {
         BoxRightMargin=pMargin;
         BoxLeftMargin=pMargin;
@@ -224,14 +230,81 @@ public:
         BoxBottomMargin=pMargin;
         }
 
-    void setBoxVisible (bool pVisible) {BoxVisible=pVisible;}
-    void setBoxFlag (uint16_t pFlag) {BoxFlag=pFlag;}
+    void setBoxVisible (bool pVisible)
+        {
+        if (pVisible)
+            BoxFlag |= RBP_Visible ;
+        else
+            BoxFlag &= (uint16_t)~RBP_Visible;
+        }
 
-    inline int loadChar(FT_ULong pChar);
+    void setBoxFillColor(glm::vec3 pColor)
+        {
+        BoxFillColor = pColor;
+        BoxFlag |= RBP_Fill ;
+        }
+    void setBoxFill(bool pFill)
+        {
+        if (pFill)
+            BoxFlag |= RBP_Fill ;
+        else
+            BoxFlag &= (uint16_t)~RBP_Fill;
+        }
+    void setBoxBorder(bool pBorder)
+    {
+        if (pBorder)
+            BoxFlag |= RBP_Shape ;
+        else
+            BoxFlag &= (uint16_t)~RBP_Shape;
+    }
+    void setBoxBorderSize(int pBorder)
+    {
+            BoxLineSize= pBorder;
+    }
+    void setBoxAlpha(float pAlpha)
+    {
+            BoxAlpha= pAlpha;
+    }
 
+    void setTextFlag (uint16_t pFlag)
+        {
+        uint16_t wF = BoxFlag & RBP_BoxMask;
+        BoxFlag= wF | pFlag;
+        }
+    void setBoxFlag (uint16_t pFlag)
+        {
+        uint16_t wF = BoxFlag & RBP_TextMask;
+        BoxFlag= wF | pFlag;
+        }
+    uint16_t getBoxFlag() {return BoxFlag;}
+
+/* text & text box rotation */
+    void setModelRotation (float pAngle,glm::vec3 pAxis) {RotationAngle=pAngle;RotationAxis=pAxis;}
+
+    void rotate90 () {RotationAngle = glm::radians(90.0f); RotationAxis= glm::vec3(0.0,0.0,1.0);}
+    void rotate270 () {RotationAngle = glm::radians(270.0f); RotationAxis= glm::vec3(0.0,0.0,1.0);}
+
+/* text setup and rendering */
+    /**
+     * @brief GLUnicodeText::setText prepares a unicode text (expressed in unicode codepoints) ready to be rendered by render() or renderVertical().
+     *  This routine formats a texture whose texture engine has been set within UnicodeWriter object according glyphs from font given by pFontName.
+     *  pFonName must point to a font that must have been loaded within object UnicodeWriter.
+     *
+     * @param pUtf32Text text to be rendered as UTF32 codepoint string
+     * @param pFontName  internal registrated name for font
+     * @param pFontSize  self explainatory : size of the font 12, 24, etc.
+     */
     int setText(const utf32_t* pUtf32Text, const char* pFontName, size_t pFontSize);
-
-    int setText(const utf32_t* pUtf32Text,const int pFontIdx);
+    /**
+     * @brief GLUnicodeText::setText prepares a unicode text (expressed in unicode codepoints) ready to be rendered by render() or renderVertical().
+     *  This routine formats a texture whose texture engine has been set within UnicodeWriter object according glyphs from font given by pFontName.
+     *  pFonName must point to a font that must have been loaded within object UnicodeWriter.
+     *
+     * @param pUtf32Text text to be rendered as UTF32 codepoint string
+     * @param pFontId    internal registrated id for font (quicker than search by internal name)
+     * @param pFontSize  self explainatory : size of the font 12, 24, etc.
+     */
+    int setText(const utf32_t* pUtf32Text,const int pFontId, size_t pFontSize);
 
     void render(glm::vec3 pPosition,
                 glm::vec3 pColor);
@@ -249,13 +322,22 @@ public:
                                 free(LastError);
                             LastError=nullptr;}
 
+    void setupGL ();
+    void drawBox ();
+
 private:
 
-    void _boxSetupGL ();
+    int _setText(const utf32_t* pUtf32Text);
+
+    void _boxSetupGLShape   ();
+    void _boxSetupGLFill ();
 
     void _setupMatrices ();
 
-    void _drawBox ();
+    void _drawBoxShape ();
+    void _drawBoxBackground ();
+
+
 
     void _render(glm::vec3 pPosition,
                  glm::vec3 pColor,
@@ -275,6 +357,10 @@ private:
     void _renderVertical(glm::vec3 pPosition,
                          glm::vec3 pColor,
                          float pSx, float pSy);
+
+/* per character */
+
+    inline int loadChar(FT_ULong pChar);
 
     int _storeOneChar(utf32_t pChar,
                       int &offsetX,int &offsetY,
@@ -301,9 +387,9 @@ private:
                        ZGLUnicodeChar* pChar,              /* character data content */
                        zbs::ZArray<textPoint>& wCoords);  /* array point coords table to draw characters */
 
-    inline void _setUpGLState(glm::vec3 pColor);
+    inline void _textsetUpGLState(glm::vec3 pColor);
 
-    inline void _postGL();
+    inline void _textpostGL();
 
 
     ZGLTextWriter* Writer=nullptr;
@@ -327,9 +413,9 @@ private:
 
 /* Text Box */
     // Render state
-    GLuint BoxVAO=0, BoxVBO=0;
-
+    GLuint BoxVAOShape=0, BoxVBOShape=0 , BoxVAOFill=0, BoxVBOFill=0 ,BoxVBOTexture=0 ;
     ZTexture* BoxTexture=nullptr;  /* unused for the time being        */
+    float BoxAlpha=1.0f;
 
 /* End Text Box */
 
@@ -363,15 +449,14 @@ private:
     int IBoxWidth=-1;
     int IBoxHeight=-1;
 
-    bool  BoxVisible=false;
     float BoxLineSize=-1.0;
 
 
-
-    glm::vec3 BoxColor=ZBlueColor;
+    glm::vec3 BoxLineColor=ZBlueColor;
+    glm::vec3 BoxFillColor=ZBlueColor;
 /* end text box */
 
-
+    float TextAdvanceWhenFilled = 0.01f;
 
     GLboolean   BlendEnabled=false;
     int         TextCoordsAttLocation;
@@ -385,5 +470,6 @@ private:
 
 };//GLUnicodeText
 
+void _printfBoxFlag (uint16_t pBoxFlag,FILE* pOutput=stdout);
 
 #endif // ZGLUNICODETEXT_H

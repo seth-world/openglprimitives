@@ -99,7 +99,7 @@ int main()
 
  //   _linuxListFonts();
 
-    _linuxSearchFonts((const utf8_t*)"liberation");
+    GLResources->_linuxSearchFonts((const utf8_t*)"liberation");
 
 
 
@@ -244,10 +244,25 @@ int main()
          exit(1);
          }
 
-     wBText->setBox(700,350,ZYellowBright,RBP_Center|RBP_WordWrap, true,1.0,0.0);
+ //    wBText->setBox(700,350,ZYellowBright,RBP_Center|RBP_WordWrap, true,1.0,0.0);
 
-     wBText->setPosition(-0.9f,0.5f,0.0f);
+     wBText->setBoxDimensions(700,350);
+     wBText->setBoxMarginsAll(5.0);
+     wBText->setBoxBorderColor(ZYellowBright);
+     wBText->setBoxVisible(true);
+     wBText->setBoxBorder(true);
+//     wBText->setBoxFill(false);
+     wBText->setTextFlag((uint16_t)RBP_Center|(uint16_t)RBP_WordWrap);
+//     wBText->setBoxTexture("tissuegrey.jpeg");
+     wBText->setBoxTexture("wood.png");
+     wBText->setBoxFlag(RBP_Visible|RBP_Texture|RBP_Shape);
+ //    wBText->setBoxFillColor(ZBlueColor);
+     wBText->setPosition(-0.9f,0.5f,0.0f);  
 
+     _printfBoxFlag(wBText->getBoxFlag());
+
+     wBText->setupGL();
+#ifdef __COMMENT__
      ZGLUnicodeText* wNLText=wUWriter.newText();
 
 
@@ -275,6 +290,8 @@ int main()
      wNLText->setPosition(0.5f,0.5f,0.0f);
 
      wNLText->rotate270();
+
+     wNLText->setupGL();
 
 
      ZGLUnicodeText* w90Text=wUWriter.newText();
@@ -310,6 +327,8 @@ int main()
 
      w90Text->setPosition(-0.8f,0.8f,0.0f);
 
+     w90Text->setupGL();
+#endif
 
 //    GLUnicodeText wUText((uint32_t*)U"Жди меня, и я вернусь.","FreeSans48",48,GL_TEXTURE0);
 
@@ -445,11 +464,10 @@ int main()
 
 
 
-        wBText->renderToBox(ZBlueColor);
+        wBText->renderToBox(ZBlue1Color);
 
-        wNLText->renderToBox(ZGreyColor);
-
-        w90Text->renderToBoxVertical(ZBlueColor);
+//        wNLText->renderToBox(ZGreyColor);
+//        w90Text->renderToBoxVertical(ZBlueColor);
 
         // render lamp object
         lampShader.use();

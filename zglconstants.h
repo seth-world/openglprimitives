@@ -17,7 +17,7 @@
 #define __TEXTCOLOR__   "TextColor"
 /* z position (depth) for text : set to shader under this name as uniform */
 #define __TEXTPOSZ__ "TextPosZ"
-
+#define __BOXPOSZ__ "BoxPosZ"
 
 #define __MODEL__   "mModel"
 #define __VIEW__   "mView"
@@ -31,6 +31,8 @@ const Color_type ZBlackColor(0.0f, 0.0f, 0.0f);
 const Color_type ZWhiteColor(1.0f, 1.0f, 1.0f);
 
 const Color_type ZBlueColor(0.5f, 0.8f, 1.0f);
+const Color_type ZBlue1Color(0.2f, 0.0f, 1.0f);
+
 const Color_type ZGreyColor(0.8, 0.8, 0.8);
 
 const Color_type ZRedMedium(0.952, 0.207, 0.207);

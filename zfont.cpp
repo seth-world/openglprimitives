@@ -40,9 +40,7 @@ const char* decodeFTEncoding(FT_Encoding pEncoding)
         return "Unknown freetype character encoding";
     }
 }
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+
 
 ZFont::~ZFont()
 {
@@ -56,64 +54,9 @@ ZFont::~ZFont()
 bool
 ZFont::_testExist()
 {
-    struct stat wStatBuffer;
-    int wSt= stat(  FontPath.c_str(),&wStatBuffer);
-    return !(wSt<0);
-}
-bool
-ZFont::_testExist(std::string& pPath)
-{
-    struct stat wStatBuffer;
-    int wSt= stat(  pPath.c_str(),&wStatBuffer);
-    return !(wSt<0);
+    return GLResources->_testExist(FontPath);
 }
 
-#include <zio/zdir.h>
-/*
-int
-ZFont::add(const char* pName,const char* pIntName,const uint8_t pLocFlag)
-{
-std::string wFontPath;
-
-    searchForFont(wFontPath,pName,pLocFlag)
-    switch (pLocation)
-    {
-    case FLOC_User:
-    wFontPath=GLResources->_getLinuxLocalFontPath(pFullName);
-
-    if (!_testExist(wFontPath))
-    {
-        wFontPath=GLResources->_getLinuxSystemFontPath(pGenericName,pFullName);
-        if (!_testExist(wFontPath))
-        {
-            wFontPath=GLResources->_getLinuxSystemFontPath("Liberation","Arial");
-            if (!_testExist(wFontPath))
-                    return -1;
-        }
-    }
-        break;
-    case FLOC_Sytem:
-        wFontPath=GLResources->_getLinuxSystemFontPath(pGenericName,pFullName);
-        if (!_testExist(wFontPath))
-        {
-            wFontPath=GLResources->_getLinuxSystemFontPath("Arial","Arial");
-            if (!_testExist(wFontPath))
-                    return -1;
-        }
-        break;
-    case FLOC_Adhoc:
-
-        wFontPath = GLResources->_buildLinuxAdhocFontPath(pGenericName,pFullName);
-        if (!_testExist(wFontPath))
-            return -1;
-
-    }// switch
-
-    Name=pIntName;
-
-    return _add(wFontPath.c_str(),pIntName,false);
-}
-*/
 int
 ZFont::_add(const char* pFontPath,const char* pIntName,const bool pResident)
 {
