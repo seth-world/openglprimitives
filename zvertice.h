@@ -56,7 +56,7 @@ public:
     Vertice_type    point;
     Vertice_type    normal;
 //    Color_type      color;
-    TexCoords_type texcoords;
+    TexCoords_type  texcoords;
 };
 
 //#pragma pack(pop)

@@ -71,6 +71,8 @@ class ZGLUnicodeFont;
 class ZTexture;
 class ZObject;
 class ZShader;
+class _ShaderBase;
+class _TextureBase;
 
 class ZFont;
 /**
@@ -192,12 +194,46 @@ public:
         _linuxSearchFonts(pSearch,pOutput);
 #endif
     }
+/* Textures */
+    std::string getTexturePath (const char*pFileName);
 
-    std::string getShaderPath (const char*pName);
+    /* loads a texture within resource base and returns its rank (not to be confused with gl texture id) returns -1 if not successfull */
+    long loadTexture(const char*pTextureName, const char *pIntlName, GLenum pEngine);
+    /* gets a shared pointer to ZTexture corresponding to its given internal name pIntlName */
+    ZTexture* getTextureByName(const char* pIntlName);
+    /* gets a shared pointer to ZTexture corresponding to its given rank within resource base */
+    ZTexture* getTextureByRank(const long pIdx);
 
-    std::string getTexturePath (const char*pName);
+/* Shaders */
+    std::string getShaderPath (const char*pFileName);
 
+    long loadShader(const char*pVPath, const char*pFPath, const char*pGPath, const char *pIntlName);
+    long loadShader(const char*pVPath, const char*pFPath, const char *pIntlName);
 
+    long registerShaderBase(_ShaderBase* pShader) ;
+    void deregisterShader(ZShader &pShader);
+    void deregisterShaderBase(_ShaderBase* pShader);
+
+    /* gets a shared pointer to ZShader corresponding to its given internal name pIntlName */
+    ZShader getShaderByName(const char* pIntlName);
+    /* idem by case regardless */
+    ZShader getShaderByNameCase(const char* pIntlName);
+    /* gets a shared pointer to ZShader corresponding to its given rank within resource base */
+    ZShader getShaderByRank(const long pIdx);
+    ZShader getActiveShader();
+
+   /* gets pointers to shaders */
+    /* gets a shared pointer to ZShader corresponding to its given internal name pIntlName */
+    ZShader* getShaderByNamePtr(const char* pIntlName);
+    /* idem by case regardless */
+    ZShader* getShaderByNameCasePtr(const char* pIntlName);
+    /* gets a shared pointer to ZShader corresponding to its given rank within resource base */
+    ZShader* getShaderByRankPtr(const long pIdx);
+    ZShader* getActiveShaderPtr();
+
+    void listRegistratedShaders(FILE*pOutput=stdout);
+
+/* Fonts */
     static std::string getFontPath (const char* pCategory,const char*pFonName,const char*pName)
     {
         std::string wFullPath=FontRootPath ;
@@ -235,19 +271,24 @@ public:
         wFullPath += pName;
         return wFullPath;
     }
-    static ZShader loadShader(const char*pVPath, const char*pFPath, const char*pGPath, const char *pName);
 
 
-    inline void registerObject(ZObject* pObject) {Objects.push_back(pObject);}
-    inline void registerTexture(ZTexture* pTexture) {Textures.push_back(pTexture);}
-    inline void registerShader(ZShader* pObject) {Shaders.push_back(pObject);}
 
-    void deregisterShader(ZShader* pObject);
+    inline long registerObject(ZObject* pObject) {return Objects.push(pObject);}
     void deregisterObject(ZObject* pObject);
+
+    long registerTextureBase(_TextureBase* pTexture) ;
+//    long registerTextTextureBase(_TextureBase* pTexture) ;
     void deregisterTexture(ZTexture* pObject);
+    void deregisterTextureBase(_TextureBase* pTexture);
+
+    void listTextures(FILE* pOutput=stdout);
+    void listShaders(FILE* pOutput=stdout);
+    void listObjects(FILE* pOutput=stdout);
 
     void cleanAll();
 
+/* Fonts and FreeType */
 
     void initFreeType();
     void closeFreeType();
@@ -286,8 +327,8 @@ public:
     void setTruncateCharacter(utf32_t pChar) {TruncChar=pChar;}
 
 
-    zbs::ZArray <ZTexture*> Textures;
-    zbs::ZArray <ZShader*> Shaders;
+    zbs::ZArray <_TextureBase*> Textures;
+    zbs::ZArray <_ShaderBase*> Shaders;
     zbs::ZArray <ZObject*> Objects;
 
     GLFWwindow* GLWindow=nullptr;

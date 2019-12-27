@@ -39,12 +39,12 @@ const int MIN_STACK_COUNT  = 2;
 ///////////////////////////////////////////////////////////////////////////////
 // ctor
 ///////////////////////////////////////////////////////////////////////////////
-ZSphere::ZSphere(float radius, int sectors, int stacks, bool smooth,const char* pName) :
+/*ZSphere::ZSphere(float radius, int sectors, int stacks, bool smooth,const char* pName) :
     ZObject(pName,ZObject::Sphere)
 {
-    generate(radius, sectors, stacks, smooth);
-}
 
+}
+*/
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -61,13 +61,15 @@ void ZSphere::generate(float radius, int sectors, int stacks, bool smooth)
         this->sectorCount = MIN_STACK_COUNT;
     this->smooth = smooth;
 
+
+
     if(smooth)
         buildVerticesSmooth();
     else
         buildVertices();
 
-    ZObject::setComputeNormals(false);
-    ZObject::setComputeTexCoords(false);
+ //   ZObject::setComputeNormals(Draw,false); /*this is the default value */
+ //   ZObject::setComputeTexCoords(Draw,false);
 }
 
 void ZSphere::setRadius(float radius)
@@ -112,7 +114,7 @@ void ZSphere::print(const int pLimit,FILE*pOutput) const
               << "Smooth Shading: " << (smooth ? "true" : "false") << "\n"
               << "Triangle Count: " << getTriangleCount() << "\n"
               << "   Index Count: " << getIndexCount() << "\n"
-              << "  Vertex Count: " << vertices.count() << "\n" << std::endl;
+              << "  Vertex Count: " << GLDesc[Draw]->VertexData->count() << "\n" << std::endl;
 
     ZObject::print(pLimit,pOutput);
 
@@ -218,13 +220,14 @@ void ZSphere::draw() const
 ///////////////////////////////////////////////////////////////////////////////
 void ZSphere::updateRadius()
 {
-    float scale = sqrtf(radius * radius / ( vertices[0].point.x * vertices[0].point.x +
-                                            vertices[0].point.y * vertices[0].point.y +
-                                            vertices[0].point.z * vertices[0].point.z));
+    Vertice_type wPoint = GLDesc[Draw]->VertexData->Tab[0].point;
+    float scale = sqrtf(radius * radius / ( wPoint.x * wPoint.x +
+                                            wPoint.y * wPoint.y +
+                                            wPoint.z * wPoint.z));
 
-    for(long i = 0; i < vertices.count(); i ++)
+    for(long wi = 0; wi < GLDesc[Draw]->VertexData->count(); wi ++)
                 {
-                vertices[i].point *= scale;
+                GLDesc[Draw]->VertexData->Tab[wi].point *= scale;
                 }
   /*  float scale = sqrtf(radius * radius / ( vertices_only[0].x * vertices_only[0].x +
                                             vertices_only[0].y * vertices_only[0].y +
@@ -246,12 +249,12 @@ void ZSphere::updateRadius()
 
     }
 */
-    ZObject::setComputeNormals(false);
-    ZObject::setComputeTexCoords(false);
+//    ZObject::setComputeNormals(Draw,false);
+//    ZObject::setComputeTexCoords(Draw,false);
 }
 
 
-
+#ifdef __COMMENT__
 ///////////////////////////////////////////////////////////////////////////////
 // dealloc vectors
 ///////////////////////////////////////////////////////////////////////////////
@@ -266,11 +269,17 @@ void ZSphere::clearArrays()
 //    vertices_only.clear();
 //    normals.clear();
 //    texCoords.clear();
-    lineIndices.clear();
-    Indices.clear();
-    vertices.clear();
+    for (int wi=0;wi<MaxShaderContext;wi++)
+    if (GLDesc[wi])
+        {
+        if (GLDesc[wi]->VertexData)
+                GLDesc[wi]->VertexData->clear();
+        if (GLDesc[wi]->Indexes)
+               GLDesc[wi]->Indexes->clear();
+        }
 }
 
+#endif // __COMMENT__
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -281,8 +290,11 @@ void ZSphere::clearArrays()
 // where u: stack(latitude) angle (-90 <= u <= 90)
 //       v: sector(longitude) angle (0 <= v <= 360)
 ///////////////////////////////////////////////////////////////////////////////
-void ZSphere::buildVerticesSmooth()
+void ZSphere::buildVerticesSmooth(bool pBuildShape)
 {
+
+//    zbs::ZArray<ZVertice>* wVertices;
+
     const float PI = 3.1415926f;
 
     // clear memory of prev arrays
@@ -325,10 +337,16 @@ void ZSphere::buildVerticesSmooth()
             t = (float)i / stackCount;
 //            addTexCoord(s, t);
 
-            vertices << ZVertice(x,y,z,nx,ny,nz,s,t);
-
+            if (addVertex(Draw,ZVertice(x,y,z,nx,ny,nz,s,t))<0)
+                {
+                fprintf(stderr,"ZSphere::buildVerticesSmooth-F-VERTPUSH Sphere <%s> Cannot add vertex.\n",
+                        Name);
+                exit (EXIT_FAILURE);
+                }
         }// for j
     }//for i
+
+// ------------ Process Shape Context ----------------
 
     // Indices
     //  k1--k1+1
@@ -345,30 +363,49 @@ void ZSphere::buildVerticesSmooth()
         {
             // 2 triangles per sector excluding 1st and last stacks
             if(i != 0)
-            {
-                addIndices(k1, k2, k1+1);   // k1---k2---k1+1
-            }
+                {
+                // k1---k2---k1+1
+ //               addIndices_old(k1, k2, k1+1);
+                addIndice(Draw,k1);
+                addIndice(Draw,k2);
+                addIndice(Draw,k1+1);
+                }
 
             if(i != (stackCount-1))
-            {
-                addIndices(k1+1, k2, k2+1); // k1+1---k2---k2+1
-            }
+                {
+                // k1+1---k2---k2+1
+//                addIndices_old(k1+1, k2, k2+1);
+                addIndice(Draw,k1+1);
+                addIndice(Draw,k2);
+                addIndice(Draw,k2+1);
+                }
 
+            if (pBuildShape)
+            {
 
             // vertical lines for all stacks
-            lineIndices.push_back(k1);
-            lineIndices.push_back(k2);
+            addIndice(Shape,k1);
+            addIndice(Shape,k2);
+//            GLDesc[Draw]->Indexes->push(k1);
+//            GLDesc[Shape]->Indexes->push(k2);
             if(i != 0)  // horizontal lines except 1st stack
-            {
-                lineIndices.push_back(k1);
-                lineIndices.push_back(k1 + 1);
-            }
-        }
-    }
+                {
+                addIndice(Shape,k1);
+                addIndice(Shape,k1 + 1);
+ //               GLDesc[Shape]->Indexes->push(k1);
+ //               GLDesc[Shape]->Indexes->push(k1 + 1);
+                }
+            }//if (pBuildShape)
+        }//for(int j
+    }//for(int i
 
     // generate interleaved vertex array as well
     //buildInterleavedVertices();
-}
+
+    /* copy vertex data to shape data */
+/*    for (long wi=0;wi<GLDesc[Draw]->VertexData->count();wi++)
+        GLDesc[Shape]->VertexData->push(GLDesc[Draw]->VertexData->Tab[wi]);*/
+}//buildVerticesSmooth
 
 
 
@@ -422,6 +459,26 @@ void ZSphere::buildVertices()
     Vertice_type        wNormal;                    // 1 face normal
     ZVertice            wPoint;                     // storage unit : vertices - normals - texture coords
 
+//    zbs::ZArray<ZVertice>* wVertices=GLDesc[Draw]->VertexData;
+//    zbs::ZArray<unsigned int>* wIndexes=GLDesc[Draw]->Indexes;
+
+//    zbs::ZArray<unsigned int>* wLineIndexes=GLDesc[Shape]->Indexes;
+
+    if (!GLDesc[Draw]->VertexData)
+        {
+        fprintf(stderr,"ZSphere::buildVertices-E-VERTNULL Vertex data is nullptr for object <%s>. PLease create Draw context first,\n",
+                Name);
+        exit (EXIT_FAILURE);
+        }
+    if (!GLDesc[Draw]->Indexes)
+        GLDesc[Draw]->Indexes=new zbs::ZArray<unsigned int>;
+
+    if (!GLDesc[Shape])
+        GLDesc[Shape]=new ZGLObjDescriptor;
+
+    if (!GLDesc[Shape]->Indexes)
+       GLDesc[Shape]->Indexes=new zbs::ZArray<unsigned int>;
+
     int i, j, k, vi1, vi2;
     int index = 0;                                  // index for vertex
     for(i = 0; i < stackCount; ++i)
@@ -447,13 +504,13 @@ void ZSphere::buildVertices()
                 // put a triangle
                 wNormal = computeFaceNormal(v1.x,v1.y,v1.z, v2.x,v2.y,v2.z, v4.x,v4.y,v4.z);
 
-                vertices << ZVertice(v1.x,v1.y,v1.z,wNormal.x,wNormal.y,wNormal.z,v1.s,v1.t);
-                vertices << ZVertice(v2.x,v2.y,v2.z,wNormal.x,wNormal.y,wNormal.z,v2.s,v2.t);
-                vertices << ZVertice(v4.x,v4.y,v4.z,wNormal.x,wNormal.y,wNormal.z,v4.s,v4.t);
+                addVertex(Draw,ZVertice(v1.x,v1.y,v1.z,wNormal.x,wNormal.y,wNormal.z,v1.s,v1.t));
+                addVertex(Draw,ZVertice(v2.x,v2.y,v2.z,wNormal.x,wNormal.y,wNormal.z,v2.s,v2.t));
+                addVertex(Draw,ZVertice(v4.x,v4.y,v4.z,wNormal.x,wNormal.y,wNormal.z,v4.s,v4.t));
                 // put Indices of 1 triangle
-                Indices.push_back(index);
-                Indices.push_back(index+1);
-                Indices.push_back(index+2);
+                addIndice(Draw,index);
+                addIndice(Draw,index+1);
+                addIndice(Draw,index+2);
 
 
    /*             addVertex(v1.x, v1.y, v1.z);
@@ -485,8 +542,8 @@ void ZSphere::buildVertices()
                 addIndices(index, index+1, index+2);
 */
                 // Indices for line (first stack requires only vertical line)
-                lineIndices.push_back(index);
-                lineIndices.push_back(index+1);
+                addIndice(Shape,index);
+                addIndice(Shape,index+1);
 
                 index += 3;     // for next
             }
@@ -494,14 +551,14 @@ void ZSphere::buildVertices()
             {
                 wNormal = computeFaceNormal(v1.x,v1.y,v1.z, v2.x,v2.y,v2.z, v3.x,v3.y,v3.z);
 
-                vertices << ZVertice(v1.x,v1.y,v1.z,wNormal.x,wNormal.y,wNormal.z,v1.s,v1.t);
-                vertices << ZVertice(v2.x,v2.y,v2.z,wNormal.x,wNormal.y,wNormal.z,v2.s,v2.t);
-                vertices << ZVertice(v3.x,v3.y,v3.z,wNormal.x,wNormal.y,wNormal.z,v3.s,v3.t);
+                addVertex(Draw,ZVertice(v1.x,v1.y,v1.z,wNormal.x,wNormal.y,wNormal.z,v1.s,v1.t));
+                addVertex(Draw,ZVertice(v2.x,v2.y,v2.z,wNormal.x,wNormal.y,wNormal.z,v2.s,v2.t));
+                addVertex(Draw,ZVertice(v3.x,v3.y,v3.z,wNormal.x,wNormal.y,wNormal.z,v3.s,v3.t));
 
                 // put Indices of 1 triangle
-                Indices.push_back(index);
-                Indices.push_back(index+1);
-                Indices.push_back(index+2);
+                addIndice(Draw,index);
+                addIndice(Draw,index+1);
+                addIndice(Draw,index+2);
 
      /*
                 // put a triangle
@@ -536,11 +593,11 @@ void ZSphere::buildVertices()
                 addIndices(index, index+1, index+2);
 */
 
-                // Indices for lines (last stack requires both vert/hori lines)
-                lineIndices.push_back(index);
-                lineIndices.push_back(index+1);
-                lineIndices.push_back(index);
-                lineIndices.push_back(index+2);
+                // Indices for lines (last stack requires both vert/hori lines) (Shape)
+                addIndice(Shape,index);
+                addIndice(Shape,index+1);
+                addIndice(Shape,index);
+                addIndice(Shape,index+2);
 
                 index += 3;     // for next
             }
@@ -549,19 +606,19 @@ void ZSphere::buildVertices()
                 // put quad vertices: v1-v2-v3-v4
                 wNormal = computeFaceNormal(v1.x,v1.y,v1.z, v2.x,v2.y,v2.z, v3.x,v3.y,v3.z);
 
-                vertices << ZVertice(v1.x,v1.y,v1.z,wNormal.x,wNormal.y,wNormal.z,v1.s,v1.t);
-                vertices << ZVertice(v2.x,v2.y,v2.z,wNormal.x,wNormal.y,wNormal.z,v2.s,v2.t);
-                vertices << ZVertice(v3.x,v3.y,v3.z,wNormal.x,wNormal.y,wNormal.z,v3.s,v3.t);
-                vertices << ZVertice(v4.x,v4.y,v4.z,wNormal.x,wNormal.y,wNormal.z,v4.s,v4.t);
+                addVertex(Draw,ZVertice(v1.x,v1.y,v1.z,wNormal.x,wNormal.y,wNormal.z,v1.s,v1.t));
+                addVertex(Draw,ZVertice(v2.x,v2.y,v2.z,wNormal.x,wNormal.y,wNormal.z,v2.s,v2.t));
+                addVertex(Draw,ZVertice(v3.x,v3.y,v3.z,wNormal.x,wNormal.y,wNormal.z,v3.s,v3.t));
+                addVertex(Draw,ZVertice(v4.x,v4.y,v4.z,wNormal.x,wNormal.y,wNormal.z,v4.s,v4.t));
 
                 // put Indices of quad (2 triangles)
-                Indices.push_back(index);
-                Indices.push_back(index+1);
-                Indices.push_back(index+2);
+                addIndice(Draw,index);
+                addIndice(Draw,index+1);
+                addIndice(Draw,index+2);
 
-                Indices.push_back(index+2);
-                Indices.push_back(index+1);
-                Indices.push_back(index+3);
+                addIndice(Draw,index+2);
+                addIndice(Draw,index+1);
+                addIndice(Draw,index+3);
 
  /*
                 // put quad vertices: v1-v2-v3-v4
@@ -601,11 +658,11 @@ void ZSphere::buildVertices()
                 addIndices(index, index+1, index+2);
                 addIndices(index+2, index+1, index+3);
 */
-                // Indices for lines
-                lineIndices.push_back(index);
-                lineIndices.push_back(index+1);
-                lineIndices.push_back(index);
-                lineIndices.push_back(index+2);
+                // Indices for lines (Shape)
+                addIndice(Shape,index);
+                addIndice(Shape,index+1);
+                addIndice(Shape,index);
+                addIndice(Shape,index+2);
 
                 index += 4;     // for next
             } // else
@@ -617,21 +674,23 @@ void ZSphere::buildVertices()
 }//buildVerticesFlat
 
 
-
+#ifdef __COMMENT__
 ///////////////////////////////////////////////////////////////////////////////
 // generate interleaved vertices: V/N/T
 // stride must be 32 bytes
 ///////////////////////////////////////////////////////////////////////////////
 void ZSphere::buildInterleavedVertices()
 {
-//    std::vector<float>().swap(interleavedVertices);
 
+    //    std::vector<float>().swap(interleavedVertices);
+    zbs::ZArray<ZVertice>* wVertices=GLDesc[Draw]->VertexData;
+    zbs::ZArray<unsigned int>* wIndexes=GLDesc[Draw]->Indexes;
     long i;
     long count = vertices_only.size();
     for(i = 0; i < count; i ++)
     {
  //       Vertice_type wN=normals[i];
-        ZObject::vertices.push_back(ZVertice(vertices_only[i],normals[i],texCoords[i]));
+        wVertices->push(ZVertice(vertices_only[i],normals[i],texCoords[i]));
         //interleavedVertices.push_back(ZVertice(vertices[i],normals[i],texCoords[i]));
 
  /*       interleavedVertices.push_back(vertices[i]);
@@ -646,29 +705,31 @@ void ZSphere::buildInterleavedVertices()
         interleavedVertices.push_back(texCoords[j+1]);
         */
     }
-    for(i = 0; i < Indices.count(); i ++)
+    for(long wi = 0; wi < Indices.count(); wi ++)
     {
-        ZObject::Indices.push_back(Indices[i]);
+        wIndexes->push_back(Indices[i]);
     }
-}
 
+}
+#endif // __COMMENT__
 
 
 ////////////////////////(long)///////////////////////////////////////////////////////
 // add single vertex to array
 ///////////////////////////////////////////////////////////////////////////////
-void ZSphere::addVertex(float x, float y, float z)
+/*void ZSphere::addVertex(float x, float y, float z)
 {
     vertices_only.push_back(Vertice_type(x, y,  z));
 //    vertices.push_back(y);
 //    vertices.push_back(z);
 }
+*/
 
-
-
+#ifdef __COMMENT__
 ///////////////////////////////////////////////////////////////////////////////
 // add single normal to array
 ///////////////////////////////////////////////////////////////////////////////
+
 void ZSphere::addNormal(float nx, float ny, float nz)
 {
     normals.push_back(Vertice_type(nx, ny,  nz));
@@ -689,16 +750,17 @@ void ZSphere::addTexCoord(float s, float t)
 //    texCoords.push_back(t);
 }
 
+#endif // __COMMENT__
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // add 3 Indices to array
 ///////////////////////////////////////////////////////////////////////////////
-void ZSphere::addIndices(unsigned int i1, unsigned int i2, unsigned int i3)
+void ZSphere::addIndices_old(unsigned int i1, unsigned int i2, unsigned int i3)
 {
-    Indices.push_back(i1);
-    Indices.push_back(i2);
-    Indices.push_back(i3);
+    GLDesc[Draw]->Indexes->push(i1);
+    GLDesc[Draw]->Indexes->push(i2);
+    GLDesc[Draw]->Indexes->push(i3);
 }
 
 
@@ -710,7 +772,7 @@ void ZSphere::addIndices(unsigned int i1, unsigned int i2, unsigned int i3)
 /*zbs::ZArray<float> ZSphere::computeFaceNormal(float x1, float y1, float z1,  // v1
                                              float x2, float y2, float z2,  // v2
                                              float x3, float y3, float z3)  // v3*/
-Vertice_type ZSphere::computeFaceNormal(float x1, float y1, float z1,  // v1
+glm::vec3 ZSphere::computeFaceNormal(float x1, float y1, float z1,  // v1
                                         float x2, float y2, float z2,  // v2
                                         float x3, float y3, float z3)  // v3
 {
@@ -752,4 +814,4 @@ Vertice_type ZSphere::computeFaceNormal(float x1, float y1, float z1,  // v1
 
 //    return normal;
     return wNormal;
-}
+} //computeFaceNormal

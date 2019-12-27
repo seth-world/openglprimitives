@@ -119,13 +119,16 @@ HEADERS += \
     zglunicode.h \
     zglunicodechar.h \
     zglunicodetext.h \
+    zmatrices.h \
     zmetaobject.h \
+    zshadercontext.h \
     zsphere.h \
     zshader.h \
     camera.h \
     zmaterial.h \
     zobject.h \
     zobjectfunctions.h \
+    ztextbox.h \
     ztexture.h \
     zvertice.h
 
@@ -139,13 +142,16 @@ SOURCES += \
         zgltextwriter.cpp \
         zglunicodechar.cpp \
         zglunicodetext.cpp \
+        zmatrices.cpp \
         zmetaobject.cpp \
         zshader.cpp \
+        zshadercontext.cpp \
         zsphere.cpp \
         main.cpp \
         ../opengl/LearnOpenGL-master/src/stb_image.cpp \
         zobject.cpp \
         zobjectfunctions.cpp \
+        ztextbox.cpp \
         ztexture.cpp \
         zvertice.cpp
 

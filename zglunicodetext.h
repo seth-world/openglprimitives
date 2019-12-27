@@ -76,17 +76,21 @@ USER-> | UnicodeText |   . application text with usable font sample : here are m
 
 /* documentation : https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Text_Rendering_01 */
 
+#include <ztextbox.h>
+
 
 
 class ZTexture;
+class ZTextTexture;
 class ZGLTextWriter;
 class ZGLUnicodeChar;
 class ZGLUnicodeFont;
 
-
+class ZMatCtx;
 
 #ifndef __TEXTPOINT__
 #define __TEXTPOINT__
+
 struct textPoint
 {
     GLfloat x;
@@ -96,43 +100,6 @@ struct textPoint
 };
 #endif
 
-
-enum RBoxPos : uint16_t
-{
-    RBP_Nothing         = 0,
-    /* for horizontal display only */
-    RBP_Center          = 0x01, /* centered either horizontally or vertically according diplay mode (vertical or horizontal)*/
-    RBP_LeftJust        = 0x04, /* text is horizontally left justified (default) */
-    RBP_RightJust       = 0x08, /* text is horizontally right justified */
-    /* for vertical text display only */
-//    RBP_VertCenter      = 0x02, /* vertically centered */
-    RBP_TopJust         = 0x10, /* text is vertically display starting at top of box (default) */
-    RBP_BotJust         = 0x20, /* text is vertically displayed to box bottom */
-
-    RBP_LineWrap        = 0x40, /* Text is cut where line/column ends without taking care of words*/
-    RBP_WordWrap        = 0x80, /* Text is wrapped by word if it does not fit into box boundary (default)*/
-    RBP_TruncChar       = 0x0100, /* Displays a truncate sign at the end of the truncated line */
-//    RBP_FitVertical     = 0x80,          /* Text should fit into vertical box boundary  */
-
-    RBP_AdjustFSize     = 0x0200,/* Text should fit as it is adjusting font size if necessary :
-                                    This option must be set only if RBP_Wrap is not set
-                                    to make text with fit into box maximum width */
-
-    RBP_TextMask        = 0x0FFF,
-
-/* box drawing flag */
-    RBP_Visible         = 0x1000,
-    RBP_Shape           = 0x2000,
-    RBP_Fill            = 0x4000,
-    RBP_Texture         = 0x8000,
-
-    RBP_BoxMask         = 0xF000,
-
-//    RBP_AdjustBestTry   = 0x0200,       /* Text size is being adjusted if it does not fit vertically after being cut (default) */
-
-    RBP_Default         = RBP_LeftJust | RBP_TopJust | RBP_LineWrap | RBP_Visible | RBP_Shape,
-
-};
 
 
 
@@ -206,77 +173,42 @@ public:
                  int pTopMargin= 1.0f,
                  int pBottomMargin=1.0f); /* 1.0 is a minimum margin */
 
-    int setBoxTexture (const char* pTexFile,GLenum pTextureEngine=GL_TEXTURE0);
+
+
 
     void setPosition(float pX,float pY,float pZ) {Position=glm::vec3(pX,pY,pZ);}
     void setPosition(glm::vec3 pPosition) {Position=pPosition;}
 
-    void setBoxBorderColor(glm::vec3 pColor) {BoxLineColor=pColor;}
-    void setBoxLineSize (float pLineSize) {BoxLineSize=pLineSize;}
-    void setBoxDimensions (int pBoxWidth, int pBoxHeight);
+    void setBoxBorderColor(glm::vec3 pColor) {Box->setBorderColor(pColor);}
+    void setBoxLineSize (float pLineSize) {Box->setLinesWidth(pLineSize);}
+    void setBoxDimensions (int pBoxWidth, int pBoxHeight) {Box->setDimensions(pBoxWidth,pBoxHeight);}
 
     void setBoxMargins  (int pLeftMargin, int pRightMargin,int pTopMargin,int pBottomMargin)
-        {
-        BoxRightMargin=pRightMargin;
-        BoxLeftMargin=pLeftMargin;
-        BoxTopMargin=pTopMargin;
-        BoxBottomMargin=pBottomMargin;
-        }
-    void setBoxMarginsAll(int pMargin)
-        {
-        BoxRightMargin=pMargin;
-        BoxLeftMargin=pMargin;
-        BoxTopMargin=pMargin;
-        BoxBottomMargin=pMargin;
-        }
+                { Box->setMargins(pLeftMargin,pRightMargin,pTopMargin,pBottomMargin); }
+    void setBoxMarginsAll(int pMargin) {Box->setMarginsAll(pMargin);}
 
-    void setBoxVisible (bool pVisible)
-        {
-        if (pVisible)
-            BoxFlag |= RBP_Visible ;
-        else
-            BoxFlag &= (uint16_t)~RBP_Visible;
-        }
+    void setBoxVisible (bool pVisible) { Box->setVisible(pVisible);}
 
-    void setBoxFillColor(glm::vec3 pColor)
-        {
-        BoxFillColor = pColor;
-        BoxFlag |= RBP_Fill ;
-        }
-    void setBoxFill(bool pFill)
-        {
-        if (pFill)
-            BoxFlag |= RBP_Fill ;
-        else
-            BoxFlag &= (uint16_t)~RBP_Fill;
-        }
-    void setBoxBorder(bool pBorder)
-    {
-        if (pBorder)
-            BoxFlag |= RBP_Shape ;
-        else
-            BoxFlag &= (uint16_t)~RBP_Shape;
-    }
-    void setBoxBorderSize(int pBorder)
-    {
-            BoxLineSize= pBorder;
-    }
-    void setBoxAlpha(float pAlpha)
-    {
-            BoxAlpha= pAlpha;
-    }
+    void setBoxFillColor(glm::vec3 pColor) { Box->setFillColor(pColor);}
+    void setBoxFill(bool pFill) {   Box->setFill(pFill);}
+    void setBoxBorder(bool pBorder) { Box->setBorder(pBorder);}
 
-    void setTextFlag (uint16_t pFlag)
-        {
-        uint16_t wF = BoxFlag & RBP_BoxMask;
-        BoxFlag= wF | pFlag;
-        }
-    void setBoxFlag (uint16_t pFlag)
-        {
-        uint16_t wF = BoxFlag & RBP_TextMask;
-        BoxFlag= wF | pFlag;
-        }
-    uint16_t getBoxFlag() {return BoxFlag;}
+    void setBoxAlpha(float pAlpha) {Box->setAlpha(pAlpha);}
+
+    void setTextFlag (uint16_t pFlag) {TextFlag=  pFlag;}
+    void setBoxFlag (uint16_t pFlag) {Box->setFlag(pFlag);}
+
+    uint16_t getBoxFlag() {return Box->Flag | TextFlag ;}
+
+    int setBoxTextureByName(const char* pIntName)   {return Box->setTextureByName(pIntName);}
+    int setBoxTextureByRank (const long pIdx)       {return Box->setTextureByRank(pIdx);}
+    int changeBoxShaderByName(const int pCtx, const char* pIntName);
+    int replaceBoxShaderByName(const int pCtx, const char* pIntName);
+    int changeBoxShaderByRank(const int pCtx,const long pRank) ;
+    int replaceBoxShaderByRank(const int pCtx,const long pRank) ;
+    void setupGL();
+
+
 
 /* text & text box rotation */
     void setModelRotation (float pAngle,glm::vec3 pAxis) {RotationAngle=pAngle;RotationAxis=pAxis;}
@@ -306,6 +238,9 @@ public:
      */
     int setText(const utf32_t* pUtf32Text,const int pFontId, size_t pFontSize);
 
+
+
+
     void render(glm::vec3 pPosition,
                 glm::vec3 pColor);
 
@@ -322,16 +257,16 @@ public:
                                 free(LastError);
                             LastError=nullptr;}
 
-    void setupGL ();
-    void drawBox ();
 
 private:
 
     int _setText(const utf32_t* pUtf32Text);
 
+/*
     void _boxSetupGLShape   ();
     void _boxSetupGLFill ();
-
+    void _boxSetupGLFill3D ();
+*/
     void _setupMatrices ();
 
     void _drawBoxShape ();
@@ -348,9 +283,9 @@ private:
                       float     pBoxHeight,
                       glm::vec3 pColor,
                       float pSx, float pSy,
-                      uint16_t pFlag=RBP_Default); /* flag : how to position text within the box */
+                      uint16_t pTextFlag=RBP_Default); /* flag : text appearance and positionning */
 
-    void _renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,uint16_t pFlag=RBP_Default);
+    void _renderToBoxVertical(glm::vec3 pTextColor, float pSx, float pSy, uint16_t pTextFlag=RBP_Default);
 
 
 
@@ -409,13 +344,13 @@ private:
 
     // Render state
     GLuint VAO=0, VBO=0;
-    ZTexture* Texture=nullptr;  /* One texture object for all text          */
+    ZTextTexture* TextTexture=nullptr;  /* One texture object for all text          */
 
 /* Text Box */
     // Render state
-    GLuint BoxVAOShape=0, BoxVBOShape=0 , BoxVAOFill=0, BoxVBOFill=0 ,BoxVBOTexture=0 ;
-    ZTexture* BoxTexture=nullptr;  /* unused for the time being        */
-    float BoxAlpha=1.0f;
+ //   GLuint BoxVAOShape=0, BoxVBOShape=0 , BoxVAOFill=0, BoxVBOFill=0 ,BoxVBOTexture=0 ;
+ //   ZTexture* BoxTexture=nullptr;  /* unused for the time being        */
+ //   float BoxAlpha=1.0f;
 
 /* End Text Box */
 
@@ -426,19 +361,23 @@ private:
     ZGLUnicodeFont* Font=nullptr;
 
     glm::vec3 Position=glm::vec3(0.0,0.0,0.0);
-
+public:
     glm::mat4   Model; /* model matrix for text and text box if any */
-    glm::mat4   Projection; /* model matrix for text and text box if any */
-    glm::mat4   View; /* model matrix for text and text box if any */
-
+    glm::mat4   Projection; /* Projection matrix for text and text box if any */
+    glm::mat4   View; /* View matrix for text and text box if any */
+    glm::mat4   Normal; /* Normal matrix for text and text box if any */
+private:
     float RotationAngle=0.0;
     glm::vec3 RotationAxis=glm::vec3(0.0);
+
 
 private:
     char*   LastError=nullptr;
 
 /* text box */
-    uint16_t BoxFlag=RBP_Default;
+
+    ZTextBox* Box=nullptr;
+/*    uint16_t BoxFlag=RBP_Default;
     float BoxWidth=-1.0;
     float BoxHeight=-1.0;
     float BoxRightMargin    = 0.0;
@@ -454,7 +393,9 @@ private:
 
     glm::vec3 BoxLineColor=ZBlueColor;
     glm::vec3 BoxFillColor=ZBlueColor;
+    */
 /* end text box */
+
 
     float TextAdvanceWhenFilled = 0.01f;
 
@@ -466,10 +407,12 @@ private:
     float StdMinAdvanceY=0;    /* standard vertical advance */
     float StdMinAdvanceX=0;    /* standard minimal horizontal advance */
     //zbs::ZArray<glm::vec3>* TextBoxCoords=nullptr;
-    float TextBoxcoords[];
+//    float TextBoxcoords[];
+
+    uint16_t TextFlag;
 
 };//GLUnicodeText
 
-void _printfBoxFlag (uint16_t pBoxFlag,FILE* pOutput=stdout);
+void _printTextBoxFlag (uint16_t pBoxFlag,FILE* pOutput=stdout);
 
 #endif // ZGLUNICODETEXT_H

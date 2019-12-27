@@ -16,9 +16,15 @@
 #include <stdlib.h>  // for malloc, memset
 #include <stdint.h>  // for uintxx_t
 
+
+
 class ZShader;
 
 class ZGLUnicodeText;
+
+class ZTextBox;
+
+class ZShaderContext;
 
 /** For all dependent GLTextWriter generated, this object holds
  *   shader (generated)
@@ -41,10 +47,15 @@ public:
 
     ZGLUnicodeText* newText();
 
-    // Shader used for text rendering
+    // Shader used for text rendering : text shader is used in standalone without shader context & rules
     ZShader* TextShader=nullptr;
-    /* shader used for text boxes rendering */
-    ZShader* BoxShader=nullptr;
+
+
+    /* shader context used for text boxes rendering */
+    ZShaderContext* BoxShader[2]={nullptr,nullptr};
+
+    ZShaderContext* setBoxShader(const int pCtx) {return BoxShader[pCtx];}
+
 
     void setModel(glm::mat4 pModel) {Model=pModel;}
     glm::mat4  getModel() {return Model;}
@@ -56,23 +67,13 @@ public:
     glm::mat4  getProjection() {return Projection;}
 
 
-    ZShader* getBoxShaderShape()
-    {
+    ZShader* getBoxShaderShape();
+    ZShader* getBoxShader(const int pCtx);
 
-        if (BoxShader==nullptr)
-//                    _newBoxShaderShape();
-                    _newBoxShaderTexture();
-        return BoxShader;
-    }
-    ZShader* getBoxShaderFill()
-    {
+    ZShaderContext* getBoxShaderContext(const int pCtx);
 
-        if (BoxShader==nullptr)
-                    _newBoxShaderTexture();
-        return BoxShader;
-    }
-    void _newBoxShaderShape();
-    void _newBoxShaderTexture();
+    void _newDefaultBoxShader(const int pCtx);
+    int newBoxShader(const int pCtx, const char* pIntName);
 
     glm::mat4 Model;
     glm::mat4 View;

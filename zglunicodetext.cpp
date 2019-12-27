@@ -1,4 +1,4 @@
-#include <zglunicodetext.h>
+﻿#include <zglunicodetext.h>
 
 /* Freetype error description management as described per Freetype doc */
 /*  defined within <zresources.h>
@@ -29,20 +29,34 @@ const char* getFTErrorString(const FT_Error error_code)
 
 #include <ztoolset/utfutils.h> // for utfStrstr
 
+#include <zobjectfunctions.h>
+
+#include <zmatrices.h>
+#include <zshadercontext.h>
+
+
+
 ZGLUnicodeText::ZGLUnicodeText(ZGLTextWriter* pWriter, GLenum pTextureEngine)
 {
     Writer=pWriter;
-    Texture = new ZTexture(pTextureEngine);
+    TextTexture = new ZTextTexture(pTextureEngine);
 
+    Box=new ZTextBox(this);
+
+    /* create a local copy of BoxShaders into Box : all rules, texture etc. are inherited from ZGLTextWriter */
+
+    Box->ShaderContext[0]=new ZShaderContext(*Writer->BoxShader[0]);
+    Box->ShaderContext[1]=new ZShaderContext(*Writer->BoxShader[1]);
 }
 
 ZGLUnicodeText::~ZGLUnicodeText()
     {
+    delete Box;
     if (LastError)
             free(LastError);
 
 //        FT_Done_Face(Face);
-    delete Texture;
+    delete TextTexture;
     while (UTexChar.count())
             delete UTexChar.popR();
 
@@ -51,22 +65,6 @@ ZGLUnicodeText::~ZGLUnicodeText()
     if (VAO)
             glDeleteVertexArrays(1 ,&VAO);
 
-    if (BoxVBOShape)
-            glDeleteBuffers(1 ,&BoxVBOShape);
-    if (BoxVAOShape)
-            glDeleteVertexArrays(1 ,&BoxVAOShape);
-
-
-    if (BoxVBOFill)
-            glDeleteBuffers(1 ,&BoxVBOFill);
-    if (BoxVBOTexture)
-            glDeleteBuffers(1 ,&BoxVBOTexture);
-    if (BoxVAOFill)
-            glDeleteVertexArrays(1 ,&BoxVAOFill);
- //   if (Texture!=nullptr)
- //               delete Texture;
-    if (BoxTexture!=nullptr)
-                delete BoxTexture;
     }//~ZGLUnicodeText
 
 
@@ -119,9 +117,9 @@ int wRet=0;
 void ZGLUnicodeText::_cloneFrom(ZGLUnicodeText&pIn)
 {
 //        TexCode=pIn.TexCode;
-    if (Texture!=nullptr)
-            delete Texture;
-    Texture = new ZTexture(pIn.Texture);
+    if (TextTexture!=nullptr)
+            delete TextTexture;
+    TextTexture = new ZTextTexture(*pIn.TextTexture);
     TexSumWidth=pIn.TexSumWidth;
     TexSumHeight=pIn.TexSumHeight;
     Font=pIn.Font;
@@ -136,9 +134,9 @@ void ZGLUnicodeText::_cloneFrom(ZGLUnicodeText&pIn)
 void ZGLUnicodeText::clear ()
 {
 //        TexCode=0;
-    if (Texture!=nullptr)
-            delete Texture;
-    Texture=nullptr;
+    if (TextTexture!=nullptr)
+            delete TextTexture;
+    TextTexture=nullptr;
 
     TexSumWidth=0;      // total width for texture including all face characters
     TexSumHeight=0;     // total height for texture including all face characters
@@ -362,8 +360,8 @@ unsigned int wCurrentHeight = 0;
 
     /* Create a texture that will be used to hold all Unicode text glyphs */
 
-    this->Texture->reset(); /* texture is GL_TEXTURE0 by default */
-    this->Texture->bind();
+//    this->TextTexture->reset(); /* texture is GL_TEXTURE0 by default */
+    this->TextTexture->bind();
 
     glTexImage2D(GL_TEXTURE_2D,
                  0,
@@ -463,15 +461,15 @@ inline void ZGLUnicodeText::_textsetUpGLState(glm::vec3 pColor)
     if (!BlendEnabled)
             glEnable(GL_BLEND);
 
-    Writer->TextShader->setupTexSampler(Texture);
+    Writer->TextShader->setupTexSampler(TextTexture);
 
     /* if there is a box either filled or textured, advance z coords a bit for text */
-    if (BoxFlag & (RBP_Fill | RBP_Texture))
-        Writer->TextShader->setFloat(__TEXTPOSZ__,Position.z + TextAdvanceWhenFilled);
+    if (Box->Flag & (RBP_BoxFill | RBP_BoxTexture))
+        Writer->TextShader->setFloat(__SHD_TEXTPOSZ_UN__,Position.z + TextAdvanceWhenFilled);
     else
-        Writer->TextShader->setFloat(__TEXTPOSZ__,Position.z);
+        Writer->TextShader->setFloat(__SHD_TEXTPOSZ_UN__,Position.z);
 
-    Writer->TextShader->setVec3(__TEXTCOLOR__,pColor);
+    Writer->TextShader->setVec3(__SHD_TEXTCOLOR_UN__,pColor);
 }//_textsetUpGLState
 
 inline void ZGLUnicodeText::_textpostGL()
@@ -550,7 +548,7 @@ void ZGLUnicodeText::_render(glm::vec3 pPosition,
     /* Draw all the character on the screen in one go */
     glBufferData(GL_ARRAY_BUFFER, (int)sizeof (wCoords), wCoords, GL_DYNAMIC_DRAW);
 
-    Texture->bind();
+    TextTexture->bind();
     glDrawArrays(GL_TRIANGLES, 0, wC);
 
     _textpostGL();
@@ -927,8 +925,7 @@ ZGLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
                             float     pBoxHeight,
                             glm::vec3 pColor,
                             float pSx, float pSy,
-                            uint16_t pFlag
-                            )
+                            uint16_t pTextFlag)
 {
     _textsetUpGLState(pColor);
 
@@ -940,10 +937,10 @@ ZGLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
     float wBoxHeight =(float)pBoxHeight>0?pBoxHeight:(float)INT_MAX;
  //   wBoxHeight *= wSy;
 
-    float wSpaceRight= (this->BoxRightMargin  + this->BoxLineSize )* wSx;
-    float wSpaceLeft = (this->BoxLeftMargin  + this->BoxLineSize )* wSx;
-    float wSpaceTop = (this->BoxTopMargin  + this->BoxLineSize )* wSx;
-    float wSpaceBottom = (this->BoxBottomMargin  + this->BoxLineSize )* wSx;
+    float wSpaceRight= (this->Box->RightMargin  + this->Box->LineSize )* wSx;
+    float wSpaceLeft = (this->Box->LeftMargin  + this->Box->LineSize )* wSx;
+    float wSpaceTop = (this->Box->TopMargin  + this->Box->LineSize )* wSx;
+    float wSpaceBottom = (this->Box->BottomMargin  + this->Box->LineSize )* wSx;
 
     float wBoxRightBoundary = pBoxPosition.x + wBoxWidth - wSpaceRight ;
     float wBoxBottomBoundary = pBoxPosition.y -(wBoxHeight - wSpaceBottom - wSpaceTop);
@@ -951,7 +948,7 @@ ZGLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
 
     if (pBoxWidth >  0.0f ) /* control if horizontal values are acceptable */
         {
-//        wBoxRightBoundary -= (this->BoxRightMargin * wSx) + (this->BoxLineSize * wSx);
+//        wBoxRightBoundary -= (this->Box->RightMargin * wSx) + (this->Box->LineSize * wSx);
         wBoxHAvailable= wBoxWidth - wSpaceLeft -wSpaceRight;
 
         if (wBoxHAvailable < 0.0f)
@@ -963,9 +960,9 @@ ZGLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
                          " Text box line size %f\n"
                          " Available to print <%f> : invalid value ",
                          wBoxHeight,
-                         this->BoxLeftMargin * wSy,
-                         this->BoxRightMargin * wSy,
-                         this->BoxLineSize * wSx,
+                         this->Box->LeftMargin * wSy,
+                         this->Box->RightMargin * wSy,
+                         this->Box->LineSize * wSx,
                          wBoxHAvailable);
                 return;
                 }
@@ -973,7 +970,7 @@ ZGLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
     float wBoxVAvailable=wBoxHeight;
     if (pBoxHeight >  0.0f ) /* control if vertical values are acceptable */
         {
-//        wBoxRightBoundary -= (this->BoxRightMargin * wSx) + (this->BoxLineSize * wSx);
+//        wBoxRightBoundary -= (this->Box->RightMargin * wSx) + (this->Box->LineSize * wSx);
         wBoxVAvailable= wBoxHeight - wSpaceTop -wSpaceBottom;
 
         if (wBoxHAvailable < 0.0f)
@@ -985,9 +982,9 @@ ZGLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
                          " Text box line size %f\n"
                          " Available to print <%f> : invalid value ",
                          wBoxHeight,
-                         this->BoxTopMargin * wSy,
-                         this->BoxBottomMargin * wSy,
-                         this->BoxLineSize * wSx,
+                         this->Box->TopMargin * wSy,
+                         this->Box->BottomMargin * wSy,
+                         this->Box->LineSize * wSx,
                          wBoxVAvailable);
                 return;
                 }
@@ -1042,13 +1039,13 @@ ZGLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
             }
         if ((wDisplayRelPosX + (UTexChar[wIdx]->Advance.x * wSx)) >= wBoxRightBoundary)
             {
-            if (pFlag & RBP_LineWrap) /* if no wrap : cut line to current character */
+            if (pTextFlag & RBP_LineWrap) /* if no wrap : cut line to current character */
                 {
                 /* wrap text to next line */
                     CurrentLine.EndIdx=wIdx;
                     break;
                 }
-            if (pFlag & RBP_WordWrap) /* if no wrap : cut line to current character */
+            if (pTextFlag & RBP_WordWrap) /* if no wrap : cut line to current character */
                 {
                 /* wrap text to next line */
                     CurrentLine=WrapPosition;
@@ -1056,7 +1053,7 @@ ZGLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
                     break;
                 }
             /* no wrap : end the line is end of display, text is truncated */
-            if (pFlag & RBP_TruncChar)
+            if (pTextFlag & RBP_TruncChar)
                     CurrentLine.EndIdx=wIdx-1;
             wTruncated=true;
             wEndPrint=true;
@@ -1099,14 +1096,14 @@ ZGLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
 
  /* here compute identation for <left / right / center> adjust */
 
-        if (pFlag & RBP_Center)
+        if (pTextFlag & RBP_Center)
             {
             /* compute space left by text phrase to display : divide by 2 and add it to */
 
             if (pBoxWidth > 0) /* if there is a box width boundary */
                 {
                 float wRemain= wBoxWidth - wSpaceLeft -wSpaceRight - (CurrentLine.TextWidthSize * wSx) ;
-                if (wTruncated && (pFlag&RBP_TruncChar)) /* if text truncated and truncation character is required */
+                if (wTruncated && (pTextFlag&RBP_TruncChar)) /* if text truncated and truncation character is required */
                     {
                     wRemain -=  UTexChar[TextLen]->Advance.x* wSx ;/* reserve room for truncation character */
                     if (wRemain < 0.0f) /* line is already full */
@@ -1119,19 +1116,19 @@ ZGLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
                 }
             else /* No boundaries : process it as left justified */
                 {
-                    if (wTruncated && (pFlag & RBP_TruncChar))
+                    if (wTruncated && (pTextFlag & RBP_TruncChar))
                                             CurrentLine.EndIdx=wIdx-1;
                     CurrentLine.StartPosX = wDisplayRelPosX =  pBoxPosition.x +  wSpaceLeft ;   /* reset x coord to box origin left */
                 }//else
             }
         else
             {
-            if (pFlag & RBP_RightJust) /* Text must be right justified */
+            if (pTextFlag & RBP_RightJust) /* Text must be right justified */
                 {
                 if (pBoxWidth > 0) /* if there is a box width boundary */
                     {
                     float wRemain= wBoxWidth - wSpaceLeft -wSpaceRight - (CurrentLine.TextWidthSize * wSx) ;
-                    if (wTruncated && (pFlag&RBP_TruncChar)) /* if text truncated and truncation character is required */
+                    if (wTruncated && (pTextFlag&RBP_TruncChar)) /* if text truncated and truncation character is required */
                         {
                         wRemain -=  UTexChar[TextLen]->Advance.x * wSx ;/* reserve room for truncation character */
                         if (wRemain < 0.0f) /* line is already full */
@@ -1144,14 +1141,14 @@ ZGLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
                     }
                 else /* No boundaries : process it as left justified */
                     {
-                        if (wTruncated && (pFlag & RBP_TruncChar))
+                        if (wTruncated && (pTextFlag & RBP_TruncChar))
                                                 CurrentLine.EndIdx=wIdx-1;
                         CurrentLine.StartPosX = wDisplayRelPosX =  pBoxPosition.x +  wSpaceLeft ;   /* reset x coord to box origin left */
                     }//else
                 }//if (pFlag & RBP_RightJust)
             else /* Left justifed */
             {
-                if (wTruncated && (pFlag & RBP_TruncChar))
+                if (wTruncated && (pTextFlag & RBP_TruncChar))
                                         CurrentLine.EndIdx=wIdx-1;
                 CurrentLine.StartPosX = wDisplayRelPosX =  pBoxPosition.x +  wSpaceLeft ;   /* reset x coord to box origin left */
             }//else
@@ -1167,7 +1164,7 @@ ZGLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
 
         if (wTruncated) /* line has been truncated */
                 {
-                if (pFlag & RBP_TruncChar) /* display truncation character if requested */
+                if (pTextFlag & RBP_TruncChar) /* display truncation character if requested */
                     _setupOneChar(CurrentLine.StartPosX,CurrentLine.StartPosY, wSx,wSy,UTexChar[TextLen],wCoordinates);
                 break;
                 }
@@ -1185,7 +1182,7 @@ ZGLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
     /* Draw all the character on the screen in one go */
     glBufferData(GL_ARRAY_BUFFER, (int)wCoordinates.usedSize(), wCoordinates.getDataPtr(), GL_DYNAMIC_DRAW);
 
-    Texture->bind();
+    TextTexture->bind();
     glDrawArrays(GL_TRIANGLES, 0, wCoordinates.count());
 
     _textpostGL();
@@ -1202,7 +1199,7 @@ ZGLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
  * @param pFlag
  */
 void
-ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,uint16_t pFlag)
+ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,uint16_t pTextFlag)
 {
     _textsetUpGLState(pTextColor);
 
@@ -1210,17 +1207,17 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
     float wSy=pSy;
 
 
-    float wSpaceRight= (this->BoxRightMargin  + this->BoxLineSize );
-    float wSpaceLeft = (this->BoxLeftMargin  + this->BoxLineSize );
-    float wSpaceTop = (this->BoxTopMargin  + this->BoxLineSize );
-    float wSpaceBottom = (this->BoxBottomMargin  + this->BoxLineSize );
+    float wSpaceRight= (this->Box->RightMargin  + this->Box->LineSize );
+    float wSpaceLeft = (this->Box->LeftMargin  + this->Box->LineSize );
+    float wSpaceTop = (this->Box->TopMargin  + this->Box->LineSize );
+    float wSpaceBottom = (this->Box->BottomMargin  + this->Box->LineSize );
 
-    float wBoxRightBoundary = (float)IBoxWidth - wSpaceRight ;
-    float wBoxBottomBoundary =- ((float)IBoxHeight - wSpaceBottom - wSpaceTop);
+    float wBoxRightBoundary = (float)Box->IWidth - wSpaceRight ;
+    float wBoxBottomBoundary =- ((float)Box->IHeight - wSpaceBottom - wSpaceTop);
 
-    float wBoxHAvailable= (float)IBoxWidth - wSpaceLeft -wSpaceRight;
+    float wBoxHAvailable= (float)Box->IWidth - wSpaceLeft -wSpaceRight;
 
-    if (IBoxWidth >  0 ) /* control if horizontal values are acceptable */
+    if (Box->IWidth >  0 ) /* control if horizontal values are acceptable */
         {
         if (wBoxHAvailable < 0.0f)
                 {
@@ -1230,16 +1227,16 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
                          "    right margin    f\n"
                          " Text box line size %f\n"
                          " Available to print <%f> : invalid value ",
-                         (float)IBoxHeight,
-                         this->BoxLeftMargin ,
-                         this->BoxRightMargin ,
-                         this->BoxLineSize ,
+                         (float)Box->IHeight,
+                         this->Box->LeftMargin ,
+                         this->Box->RightMargin ,
+                         this->Box->LineSize ,
                          wBoxHAvailable);
                 return;
                 }
         }
-    float wBoxVAvailable= (float)IBoxHeight - wSpaceTop -wSpaceBottom;
-    if (IBoxHeight >  0 ) /* control if vertical values are acceptable */
+    float wBoxVAvailable= (float)Box->IHeight - wSpaceTop -wSpaceBottom;
+    if (Box->IHeight >  0 ) /* control if vertical values are acceptable */
         {
         if (wBoxVAvailable < 0.0f)
                 {
@@ -1249,10 +1246,10 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
                          "    bottom margin   %f\n"
                          " Text box line size %f\n"
                          " Available to print <%f> : invalid value ",
-                         (float)IBoxHeight,
-                         this->BoxTopMargin ,
-                         this->BoxBottomMargin ,
-                         this->BoxLineSize ,
+                         (float)Box->IHeight,
+                         this->Box->TopMargin ,
+                         this->Box->BottomMargin ,
+                         this->Box->LineSize ,
                          wBoxVAvailable);
                 return;
                 }
@@ -1262,10 +1259,10 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
 
     /*       compute how text will fit into box      */
 
-    const float wDispoWidth = (float)IBoxWidth - (BoxLineSize * 2.0) - BoxLeftMargin - BoxRightMargin ;
-    const float wDispoHeight= (float)IBoxHeight - (BoxLineSize * 2.0) - BoxTopMargin - BoxBottomMargin ;
-    const float wRightMargin = (float)IBoxWidth - BoxLineSize - BoxRightMargin ;
-    const float wBottomMargin= -((float)IBoxHeight - BoxLineSize - BoxBottomMargin) ;
+    const float wDispoWidth = (float)Box->IWidth - (Box->LineSize * 2.0) - Box->LeftMargin - Box->RightMargin ;
+    const float wDispoHeight= (float)Box->IHeight - (Box->LineSize * 2.0) - Box->TopMargin - Box->BottomMargin ;
+    const float wRightMargin = (float)Box->IWidth - Box->LineSize - Box->RightMargin ;
+    const float wBottomMargin= -((float)Box->IHeight - Box->LineSize - Box->BottomMargin) ;
 
     int wCol=0;
     zbs::ZArray<RefLine> Lines;
@@ -1288,7 +1285,7 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
     CurrentLine.StartPosY = wDisplayRelPosY =  - (wSpaceTop * wSy);
 
     /* for current column : initialize vertical space available (true values) */
-    wBoxVAvailable= (float)IBoxHeight - wSpaceTop -wSpaceBottom;
+    wBoxVAvailable= (float)Box->IHeight - wSpaceTop -wSpaceBottom;
 
     wIdx=CurrentLine.StartIdx;
     WrapPosition = CurrentLine;
@@ -1336,13 +1333,13 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
 
         if (wTextOverflow)
             {
-            if (pFlag & RBP_LineWrap) /* if no wrap : cut line to current character */
+            if (pTextFlag & RBP_LineWrap) /* if no wrap : cut line to current character */
                 {
                 /* wrap text to next line */
                     CurrentLine.EndIdx=wIdx;
                     break;
                 }
-            if (pFlag & RBP_WordWrap) /* if no wrap : cut line to current character */
+            if (pTextFlag & RBP_WordWrap) /* if no wrap : cut line to current character */
                 {
                 /* wrap text to next line according last word beginning mark*/
                     CurrentLine=WrapPosition;
@@ -1350,7 +1347,7 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
                     break;
                 }
             /* no wrap : end the line is end of display, text is truncated */
-            if (pFlag & RBP_TruncChar)
+            if (pTextFlag & RBP_TruncChar)
                     CurrentLine.EndIdx=wIdx-1;
             wTruncated=true;
             wEndPrint=true;
@@ -1390,14 +1387,14 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
 
     while (true)
     {
-    if (IBoxHeight > 0) /* if there is a box height boundary */
+    if (Box->IHeight > 0) /* if there is a box height boundary */
     {
         float wRemain= wDispoHeight - CurrentLine.TextHeightSize  - UTexChar[CurrentLine.StartIdx]->Advance.y ;
 
-        if (pFlag & RBP_Center) /* request text is vertically centered */
+        if (pTextFlag & RBP_Center) /* request text is vertically centered */
             {
 
-            if (wTruncated && (pFlag&RBP_TruncChar)) /* if text truncated and truncation character is required */
+            if (wTruncated && (pTextFlag&RBP_TruncChar)) /* if text truncated and truncation character is required */
                 {
                 wRemain -=  UTexChar[TextLen]->Advance.y ;/* reserve room for truncation character */
                 while ((wRemain < 0.0f) &&(CurrentLine.EndIdx > CurrentLine.StartIdx))/* column is already full  */
@@ -1412,9 +1409,9 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
             break;
             }
 
-        if (pFlag & RBP_BotJust) /* Text must be justified to bottom */
+        if (pTextFlag & RBP_BotJust) /* Text must be justified to bottom */
                 {
-                if (wTruncated && (pFlag&RBP_TruncChar)) /* if text truncated and truncation character is required */
+                if (wTruncated && (pTextFlag&RBP_TruncChar)) /* if text truncated and truncation character is required */
                     {
                     wRemain -=  UTexChar[TextLen]->Advance.y ;/* reserve room for truncation character */
                     while ((wRemain < 0.0f)&&(CurrentLine.EndIdx > CurrentLine.StartIdx)) /* line is already full : find room for truncation character */
@@ -1428,7 +1425,7 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
                 CurrentLine.StartPosY  = -( (  wRemain ) * wSy ) ;
                 break;
                 }//if (pFlag & RBP_RightJust)
-    }// if (IBoxHeight > 0)
+    }// if (Box->IHeight > 0)
 
     /* in all other cases : text is justified to top of the box
         This covers :
@@ -1436,7 +1433,7 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
             - there is no box limit and pFlag might take any value
     */
 
-    if (wTruncated && (pFlag & RBP_TruncChar))
+    if (wTruncated && (pTextFlag & RBP_TruncChar))
                             CurrentLine.EndIdx=wIdx-1;
     CurrentLine.StartPosY -=    wSpaceTop * wSy   ;   /* reset y coord to origin top */
     break;
@@ -1464,7 +1461,7 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
 
         if (wTruncated) /* text has been truncated to current column */
                 {
-                if (pFlag & RBP_TruncChar) /* display truncation character if requested : room has been reserved previously */
+                if (pTextFlag & RBP_TruncChar) /* display truncation character if requested : room has been reserved previously */
                     _setupOneCharVertical(CurrentLine.StartPosX,CurrentLine.StartPosY, wSx,wSy,UTexChar[TextLen],wCoordinates);
                 break;
                 }
@@ -1491,7 +1488,7 @@ ZGLUnicodeText::_renderToBoxVertical(glm::vec3 pTextColor,float pSx, float pSy,u
     /* Draw all the character on the screen in one go */
     glBufferData(GL_ARRAY_BUFFER, (int)wCoordinates.usedSize(), wCoordinates.getDataPtr(), GL_DYNAMIC_DRAW);
 
-    Texture->bind();
+    TextTexture->bind();
     glDrawArrays(GL_TRIANGLES, 0, wCoordinates.count());
 
     _textpostGL();
@@ -1525,9 +1522,9 @@ void ZGLUnicodeText::_renderVertical(glm::vec3 pPosition,
     if (!wBlendEnabled)
             glEnable(GL_BLEND);
 
-    Writer->TextShader->setupTexSampler(Texture);
-    Writer->TextShader->setFloat(__TEXTPOSZ__,pPosition.z);
-    Writer->TextShader->setVec3(__TEXTCOLOR__,pColor);
+    Writer->TextShader->setupTexSampler(TextTexture);
+    Writer->TextShader->setFloat(__SHD_TEXTPOSZ_UN__,pPosition.z);
+    Writer->TextShader->setVec3(__SHD_TEXTCOLOR_UN__,pColor);
 
       /* no offset from buffer beginning */
 
@@ -1590,7 +1587,7 @@ void ZGLUnicodeText::_renderVertical(glm::vec3 pPosition,
     /* Draw all the character on the screen in one go */
     glBufferData(GL_ARRAY_BUFFER, (int)sizeof (wCoords), wCoords, GL_DYNAMIC_DRAW);
 
-    Texture->bind();
+    TextTexture->bind();
     glDrawArrays(GL_TRIANGLES, 0, wC);
 
     glDisableVertexAttribArray(wTextCoordsAttLocation);
@@ -1646,180 +1643,13 @@ void ZGLUnicodeText::setBox (int pBoxWidth,
     setBoxDimensions(pBoxWidth,pBoxHeight);
     setBoxVisible( pVisible);
     setBoxLineSize( pLineSize);
-    setBoxFlag( pBoxFlag);
+    setBoxFlag( pBoxFlag & RBP_BoxMask);
+    TextFlag = pBoxFlag & ~RBP_BoxMask ;
     setBoxBorderColor( pColor);
     setBoxMargins(pLeftMargin,pRightMargin,pTopMargin,pBottomMargin);
 }
 
-void ZGLUnicodeText::setBoxDimensions (int pBoxWidth, int pBoxHeight)
-{
-    glm::vec2 wSCDim=GLResources->getGLWindowSize();
-    IBoxWidth = pBoxWidth;
-    IBoxHeight = pBoxHeight;
-    BoxWidth= (float)pBoxWidth*2.0f/wSCDim.x;
-    BoxHeight=(float)pBoxHeight*2.0f/wSCDim.y;
-}
 
- int ZGLUnicodeText::setBoxTexture (const char* pTexFile,GLenum pTextureEngine)
- {
-     BoxFlag &=(uint16_t)~RBP_Texture;
-     if (BoxTexture!=nullptr)
-            {
-            delete BoxTexture;
-            }
-     BoxTexture=new ZTexture(pTextureEngine);
-     int wRet=BoxTexture->load2D(pTexFile);
-     if (wRet<0)
-     {
-         delete BoxTexture;
-         return wRet;
-     }
-     BoxFlag |= (uint16_t)RBP_Texture;
-    return wRet;
- }// setBoxTexture
-
-
-void ZGLUnicodeText::setupGL ()
-{
-    if (BoxFlag&(RBP_Fill|RBP_Texture))
-                            _boxSetupGLFill();
-    if (BoxFlag&RBP_Shape)
-                            _boxSetupGLShape();
-}//_boxSetupGL
-
-void ZGLUnicodeText::_boxSetupGLShape ()
-{
-    /* setup box coordinates */
-     float wTextBoxShapecoords[15] = {
-        0.0      ,        0.0   ,   0.0,
-        BoxWidth ,   0.0        ,   0.0,
-        BoxWidth ,   -BoxHeight  ,   0.0,
-        0.0      ,   -BoxHeight  ,   0.0,
-        0.0      ,   0.0        ,   0.0
-        };
-
-    /* setup GL context */
-    Writer->getBoxShaderShape();
-    Writer->BoxShader->use();
-
-    if (BoxVAOShape==0)
-        glGenVertexArrays(1, &this->BoxVAOShape);
-    if (BoxVBOShape==0)
-        glGenBuffers(1, &this->BoxVBOShape);
-
-    glBindVertexArray(BoxVAOShape);
-
-    glBindBuffer(GL_ARRAY_BUFFER, BoxVBOShape);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(wTextBoxShapecoords), wTextBoxShapecoords, GL_STATIC_DRAW);
-
-    /* aPosition because ztextbox.vs shader */
-    int wAttPosition=Writer->BoxShader->getNamedAttributeLocation("aPosition",true); /* abort on error option set*/
-    glVertexAttribPointer(wAttPosition,
-                          3,        /* three items */
-                          GL_FLOAT, /* type is float */
-                          GL_FALSE, /* not to be normalized : use floating point directly */
-                          0,        /* no stride */
-                          (void*)0);
-    glEnableVertexAttribArray(wAttPosition);
-   // unbind
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER,0);
-    Writer->BoxShader->release();
-}//_boxSetupGLShape
-
-
-void ZGLUnicodeText::_boxSetupGLFill ()
-{
-    float wMinX , wMinY, wMaxX, wMaxY;
-    float wLineSize=0.005f;
-    if (BoxFlag & RBP_Shape)
-        {
-        wMinX= wLineSize;
-        wMinY= wLineSize - BoxHeight;
-        wMaxX= BoxWidth - wLineSize;
-        wMaxY= -wLineSize;
-        }
-    else
-        {
-        wMinX= 0.0f;
-        wMinY= - BoxHeight;
-        wMaxX= BoxWidth ;
-        wMaxY= 0.0f;
-        }
-    /* setup box coordinates */
-/*     float wTextBoxTriangles [18] =
-     {
-         0.0     , -BoxHeight   ,0.0,
-         BoxWidth, -BoxHeight   ,0.0,
-         BoxWidth, 0.0          ,0.0,
-         BoxWidth, 0.0          ,0.0,
-         0.0    , 0.0           ,0.0,
-         0.0    , -BoxHeight    ,0.0
-     };*/
-     float wTextBoxTriangles [12] =
-     {
-         wMinX  , wMinY   ,
-         wMaxX  , wMinY   ,
-         wMaxX  , wMaxY   ,
-         wMaxX  , wMaxY   ,
-         wMinX  , wMaxY   ,
-         wMinX  , wMinY
-     };
-     float wTextureBoxcoords[12] = {
-        0.0f , 0.0f ,
-        1.0f , 0.0f ,
-        1.0f , 1.0f ,
-        1.0f , 1.0f ,
-        0.0f , 1.0f ,
-        0.0f , 0.0f
-        };
-    /* setup GL context */
-    Writer->getBoxShaderFill();
-    Writer->BoxShader->use();
-
-    if (BoxVAOFill==0)
-        glGenVertexArrays(1, &BoxVAOFill);
-    if (BoxVBOFill==0)
-        glGenBuffers(1, &BoxVBOFill);
-    if (BoxFlag&RBP_Texture)
-        {
-        if (BoxVBOTexture==0)
-            glGenBuffers(1, &BoxVBOTexture);
-        }
-
-    glBindVertexArray(BoxVAOFill);
-
-    glBindBuffer(GL_ARRAY_BUFFER, BoxVBOFill);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(wTextBoxTriangles), wTextBoxTriangles, GL_STATIC_DRAW);
-
-    /* aPosition because ztextbox.vs shader */
-    int wAttPosition=Writer->BoxShader->getNamedAttributeLocation("aPosition",true); /* abort on error option set*/
-    glVertexAttribPointer(wAttPosition,
-                          2,        /* two items <x,y> : z is given by a uniform value */
-                          GL_FLOAT, /* type is float */
-                          GL_FALSE, /* not to be normalized : use floating point directly */
-                          0,        /* no stride */
-                          (void*)0);
-    glEnableVertexAttribArray(wAttPosition);
-    if (BoxFlag&RBP_Texture)
-        {
-        glBindBuffer(GL_ARRAY_BUFFER, BoxVBOTexture);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(wTextureBoxcoords), wTextureBoxcoords, GL_STATIC_DRAW);
-        /* aPosition because ztextbox.vs shader */
-        wAttPosition=Writer->BoxShader->getNamedAttributeLocation("aTextureCoords",true); /* abort on error option set*/
-        glVertexAttribPointer(wAttPosition,
-                              2,        /* two items <s,t>*/
-                              GL_FLOAT, /* type is float */
-                              GL_FALSE, /* not to be normalized : use floating point directly */
-                              0,        /* no stride */
-                              (void*)0);
-        glEnableVertexAttribArray(wAttPosition);
-        }//if (BoxFlag&RBP_Texture)
-   // unbind
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER,0);
-    Writer->BoxShader->release();
-}//_boxSetupGLTexture
 
 
 void ZGLUnicodeText::_setupMatrices ()
@@ -1831,106 +1661,11 @@ void ZGLUnicodeText::_setupMatrices ()
                                                 GLResources->getWindowRatio(),
                                                 0.1f,
                                                 100.0f);
+    Normal= glm::transpose(glm::inverse(GLResources->Camera->GetViewMatrix()*GLResources->Camera->getModel()));
 }
-void ZGLUnicodeText::drawBox()
-{
-    if (BoxFlag & RBP_Visible)
-    {
-        if (BoxFlag & (RBP_Texture | RBP_Fill))
-            {
-            _drawBoxBackground();
-            }
-    if (BoxFlag & RBP_Shape)
-            {
-            _drawBoxShape();
-            }
-    }
-
-}//drawBox
-
-void ZGLUnicodeText::_drawBoxShape ()
-{
-float wLineWidth;
-    glGetFloatv(GL_LINE_WIDTH,&wLineWidth); /* get current line width */
-    if (BoxLineSize>0)
-            glLineWidth(BoxLineSize);
-
-    Writer->BoxShader->use();
-
-    Writer->BoxShader->setMat4(__MODEL__,Model);
-    Writer->BoxShader->setMat4(__PROJECTION__,Projection);
-    Writer->BoxShader->setMat4(__VIEW__,View);
-
-                            /* DefaultColor because using ztextbox.fs shader*/
-    Writer->BoxShader->setVec3("DefaultColor",BoxLineColor);
-
-    Writer->BoxShader->setFloat("Alpha",BoxAlpha);
-
-    Writer->BoxShader->setFloat(__BOXPOSZ__,0.0f);
-    Writer->BoxShader->setBool("UseTexture",false);
-
- //   glBindBuffer(GL_ARRAY_BUFFER, BoxVBOShape);
-    glBindVertexArray(BoxVAOShape);
-
-    glDrawArrays(GL_LINE_LOOP, 0 , 5);
-
-    glLineWidth(wLineWidth);/* restore line width to its previous value */
-
-    // unbind
-    glBindVertexArray(0);
-//    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    Writer->BoxShader->release();
-
-    return;
-}//_drawBoxShape
-
-
-void ZGLUnicodeText::_drawBoxBackground ()
-{
-
-    Writer->BoxShader->use();
-    Writer->BoxShader->setFloat("Alpha",BoxAlpha);
-
-    if (BoxFlag & RBP_Texture)
-        {
-        BoxTexture->bind();
-        Writer->BoxShader->setBool("UseTexture",true);
-//        glBindBuffer(GL_ARRAY_BUFFER, BoxVBOTexture);
-        Writer->BoxShader->setupTexSampler(BoxTexture);
-        }
-    else
-        {
-        Writer->BoxShader->setBool("UseTexture",false);
-        Writer->BoxShader->setVec3("DefaultColor",BoxFillColor);
-        }
-    Writer->BoxShader->setFloat(__BOXPOSZ__,0.0f);
-
-    Writer->BoxShader->setMat4(__MODEL__,Model);
-    Writer->BoxShader->setMat4(__PROJECTION__,Projection);
-    Writer->BoxShader->setMat4(__VIEW__,View);
-
-    /* DefaultColor because using ztextbox.fs shader*/
-
-//    glBindBuffer(GL_ARRAY_BUFFER, BoxVBOFill);
-    glBindVertexArray(BoxVAOFill);
-
-    glDrawArrays(GL_TRIANGLES, 0 , 6);
-
-//    glLineWidth(wLineWidth);/* restore line width to its previous value */
-
-    // unbind
-    if (BoxFlag&RBP_Texture)
-            BoxTexture->unbind();
-    glBindVertexArray(0);
-//    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    Writer->BoxShader->release();
-
-    return;
-}//_drawBoxTexture
 
 void ZGLUnicodeText::renderToBox(glm::vec3 pTextColor)
 {
-
     glm::vec2 wWSize = GLResources->getGLWindowSize();
 
     float SX =  2.0f / wWSize.x;
@@ -1938,23 +1673,23 @@ void ZGLUnicodeText::renderToBox(glm::vec3 pTextColor)
 
     _setupMatrices ();
 
-    drawBox();
-
-    Writer->TextShader->use();
-
     if (RotationAngle != 0.0f)
             Model = glm::rotate(Model,RotationAngle,RotationAxis);
 
-    Writer->TextShader->setMat4(__MODEL__,Model);
-    Writer->TextShader->setMat4(__PROJECTION__,Projection);
-    Writer->TextShader->setMat4(__VIEW__,View);
+    Box->drawBox();
+
+    Writer->TextShader->use();
+
+    Writer->TextShader->setMat4(__SHD_MODEL__,Model);
+    Writer->TextShader->setMat4(__SHD_PROJECTION__,Projection);
+    Writer->TextShader->setMat4(__SHD_VIEW__,View);
 
     _renderToBox(glm::vec3(0,0,0),
-                 BoxWidth,
-                 BoxHeight,
+                 Box->Width,
+                 Box->Height,
                  pTextColor,
                  SX,SY,
-                 BoxFlag
+                 TextFlag
                  );
 
 
@@ -1972,32 +1707,46 @@ void ZGLUnicodeText::renderToBoxVertical(glm::vec3 pTextColor)
 
     _setupMatrices ();
 
-    drawBox();
+    Box->drawBox();
 
     Writer->TextShader->use();
 
-/*    if (GLDescriptor->hasTexture())
-        {
-        GLDescriptor->Texture->bind();
-        }
-        */
-    Writer->TextShader->setMat4(__MODEL__,Model);
-    Writer->TextShader->setMat4(__PROJECTION__,Projection);
-    Writer->TextShader->setMat4(__VIEW__,View);
-
-
+    Writer->TextShader->setMat4(__SHD_MODEL__,Model);
+    Writer->TextShader->setMat4(__SHD_PROJECTION__,Projection);
+    Writer->TextShader->setMat4(__SHD_VIEW__,View);
 
     _renderToBoxVertical(pTextColor,
                  SX,SY,
-                 BoxFlag
-                 );
+                 TextFlag);
 
 
 
 } //renderToBox
 
+void ZGLUnicodeText::setupGL()
+{
+    Box->setupGL();
+}
 
-void _printfBoxFlag (uint16_t pBoxFlag,FILE* pOutput)
+
+int ZGLUnicodeText::changeBoxShaderByName(const int pCtx,const char* pIntName)
+{
+    Box->changeBoxShaderByName(pCtx,pIntName);
+}
+int ZGLUnicodeText::replaceBoxShaderByName(const int pCtx,const char* pIntName)
+{
+    Box->replaceBoxShaderByName(pCtx,pIntName);
+}
+int ZGLUnicodeText::changeBoxShaderByRank(const int pCtx,const long pRank)
+{
+    Box->changeBoxShaderByRank(pCtx,pRank);
+}
+int ZGLUnicodeText::replaceBoxShaderByRank(const int pCtx,const long pRank)
+{
+    Box->replaceBoxShaderByRank(pCtx,pRank);
+}
+
+void _printTextBoxFlag (uint16_t pBoxFlag,FILE* pOutput)
 {
     bool wJ=false;
 
@@ -2009,28 +1758,28 @@ void _printfBoxFlag (uint16_t pBoxFlag,FILE* pOutput)
             fprintf(pOutput,"RBP_Nothing\n");
             return;
             }
-    if (pBoxFlag & RBP_Fill)
+    if (pBoxFlag & RBP_BoxFill)
             {
             if (wJ)
                 fprintf (pOutput,"| ");
             wJ=true;
             fprintf(pOutput,"RBP_Fill ");
             }
-    if (pBoxFlag & RBP_Shape)
+    if (pBoxFlag & RBP_BoxShape)
             {
             if (wJ)
                 fprintf (pOutput,"| ");
             wJ=true;
             fprintf(pOutput,"RBP_Shape ");
             }
-    if (pBoxFlag & RBP_Texture)
+    if (pBoxFlag & RBP_BoxTexture)
             {
             if (wJ)
                 fprintf (pOutput,"| ");
             wJ=true;
             fprintf(pOutput,"RBP_Texture ");
             }
-    if (pBoxFlag & RBP_Visible)
+    if (pBoxFlag & RBP_BoxVisible)
             {
             if (wJ)
                 fprintf (pOutput,"| ");
@@ -2104,3 +1853,7 @@ void _printfBoxFlag (uint16_t pBoxFlag,FILE* pOutput)
             }
     fprintf (pOutput,"\n");
 }
+
+
+
+

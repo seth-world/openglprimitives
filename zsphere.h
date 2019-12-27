@@ -28,7 +28,19 @@ class ZSphere : public ZObject
 {
 public:
     // ctor/dtor
-    ZSphere(float radius=1.0f, int sectorCount=36, int stackCount=18, bool smooth=true,const char* pName=nullptr);
+    ZSphere
+    (float radius=1.0f,
+     int sectorCount=36,
+     int stackCount=18,
+     bool smooth=true,
+     const char* pName=nullptr) : ZObject(pName,Sphere)
+    {
+
+        createVertexAndIndex(Draw);           // not necessary : arrays will be created by addVertex and addIndex routines
+//        createVertexAndIndex(Shape);
+
+        generate(radius, sectorCount, stackCount, smooth);
+    }
     ~ZSphere() {}
 
     // getters/setters
@@ -42,14 +54,25 @@ public:
     void setSmooth(bool smooth);
 
     // for vertex data
-    unsigned int getIndexCount() const      { return (unsigned int)Indices.size(); }
-    unsigned int getLineIndexCount() const  { return (unsigned int)lineIndices.size(); }
+    unsigned int getIndexCount() const
+    {
+        if (!GLDesc[Draw]->Indexes)
+                return 0;
+        return (unsigned int)GLDesc[Draw]->Indexes->count();
+    }
+    unsigned int getLineIndexCount() const
+    {
+        if (!GLDesc[Shape])
+            return 0;
+        if (!GLDesc[Shape]->Indexes)
+            return 0;
+        return (unsigned int)GLDesc[Shape]->Indexes->count(); }
     unsigned int getTriangleCount() const   { return getIndexCount() / 3; }
 //    const float* getVertices() const        { return (const float*)vertices_only.data(); }
 //    const float* getNormals() const         { return (const float*)normals.data(); }
 //    const float* getTexCoords() const       { return (const float*)texCoords.data(); }
-    const unsigned int* getIndices() const  { return Indices.data(); }
-    const unsigned int* getLineIndices() const  { return lineIndices.data(); }
+    const unsigned int* getIndices() const  { return GLDesc[Draw]->Indexes->data(); }
+    const unsigned int* getLineIndices() const  { return GLDesc[Shape]->Indexes->data(); }
 
     // for interleaved vertices: V/N/T
 //    unsigned int getInterleavedVertexCount() const  { return getVertexCount(); }    // # of vertices
@@ -71,14 +94,14 @@ protected:
 private:
     // member functions
     void updateRadius();
-    void buildVerticesSmooth();
+    void buildVerticesSmooth(bool pBuildShape=false);
     void buildVertices();
     void buildInterleavedVertices();
-    void clearArrays();
-    void addVertex(float x, float y, float z);
-    void addNormal(float x, float y, float z);
+//    void clearArrays();
+//    void addVertex(float x, float y, float z);
+//    void addNormal(float x, float y, float z);
     void addTexCoord(float s, float t);
-    void addIndices(unsigned int i1, unsigned int i2, unsigned int i3);
+    void addIndices_old(unsigned int i1, unsigned int i2, unsigned int i3);
     Vertice_type computeFaceNormal(float x1, float y1, float z1,
                                          float x2, float y2, float z2,
                                          float x3, float y3, float z3);
@@ -95,11 +118,11 @@ private:
     std::vector<unsigned int> indices;
     std::vector<unsigned int> lineIndices;
 */
-    zbs::ZArray<Vertice_type> vertices_only;
-    zbs::ZArray<Vertice_type> normals;
-    zbs::ZArray<TexCoords_type> texCoords;
- //   zbs::ZArray<unsigned int> indices;
-    zbs::ZArray<unsigned int> lineIndices;
+//    zbs::ZArray<Vertice_type> vertices_only;
+//    zbs::ZArray<Vertice_type> normals;
+//    zbs::ZArray<TexCoords_type> texCoords;
+//    zbs::ZArray<unsigned int> indices;
+//    zbs::ZArray<unsigned int> lineIndices;
 
     // interleaved
 //    zbs::ZArray<ZVertice> interleavedVertices;

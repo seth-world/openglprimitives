@@ -10,14 +10,29 @@
 
 #include <zglconstants.h>
 #include <zshader.h>
+#include <camera.h>
+
+
+enum NormalDirection : int8_t
+{
+    Back    = -1,
+    Compute = 0,
+    Front   = 1,
+    Left    = -2,
+    Right   = 4,
+    Top     = 8,
+    Bottom  = 0x10
+} ;
 
 class ZTexture;
+class ZMat4;
 
 class ZGLObjDescriptor
 {
 public:
 
-    ZGLObjDescriptor() = default;
+    ZGLObjDescriptor()=default;
+
     ZGLObjDescriptor(ZGLObjDescriptor &&pDescriptor)
     {
        cloneFrom(pDescriptor);
@@ -28,46 +43,31 @@ public:
         cloneFrom (*pDescriptor);
     }
 
-
-    ~ZGLObjDescriptor()
+    ZGLObjDescriptor(zbs::ZArray<ZVertice>* pVertices, zbs::ZArray<unsigned int>* pIndexes)
     {
-//        deleteGLContext();
+    setupVertex( pVertices, pIndexes);
     }
 
-    inline ZGLObjDescriptor& cloneFrom(const ZGLObjDescriptor &pDescriptor)
+    ZGLObjDescriptor(zbs::ZArray<glm::vec3>* pVertices)
     {
-        VBO=pDescriptor.VBO;
-        VAO=pDescriptor.VAO;
-        NormVBO=pDescriptor.NormVBO;
-        TexVBO=pDescriptor.TexVBO;
-
-        EBO=pDescriptor.EBO;
-
-        Count=pDescriptor.Count;
-
-        Mode=pDescriptor.Mode;
-        Texture=pDescriptor.Texture;
-        UseTexture=pDescriptor.UseTexture;
-        UseDefaultColor=pDescriptor.UseDefaultColor;
-        UseDefaultAlpha=pDescriptor.UseDefaultAlpha;
-
-        return *this;
+    setupVec3( pVertices);
     }
 
-    GLuint getPositionAttribute(ZShader* pShader);
+    ~ZGLObjDescriptor();
 
-    GLuint getNormalAttribute(ZShader* pShader);
+    int setupVertex(zbs::ZArray<ZVertice>* pVertices, zbs::ZArray<unsigned int>* pIndexes=nullptr);
+    int setupVec3(zbs::ZArray<glm::vec3>* pVertices, zbs::ZArray<unsigned int>* pIndexes=nullptr);
 
-    GLuint getTexCoordsAttribute(ZShader* pShader);
+    ZGLObjDescriptor& cloneFrom(const ZGLObjDescriptor &pIn);
 
-    bool hasTexture()
-    {
-    return (Texture!=nullptr) && UseTexture;
-    }
 
-    void setUseTexture(bool pOnOff) {UseTexture=pOnOff;}
-    void useDefaultColor(bool pOnOff) {UseDefaultColor=pOnOff;}
-    void useDefaultAlpha(bool pOnOff) {UseDefaultAlpha=pOnOff;}
+    ZGLObjDescriptor& operator=(const ZGLObjDescriptor &pIn) {cloneFrom(pIn);}
+    ZGLObjDescriptor& operator=(const ZGLObjDescriptor &&pIn) {cloneFrom(pIn);}
+//    void setTexture(ZTexture* pTexture);
+//    ZTexture* loadTexture(const char* pTextureName, const char* pIntlName, GLenum pTextureEngine);
+//    int setTextureByName(const char* pIntlName);
+//    int setTextureByRank(const long pIdx);
+
 
     void deleteGLContext()
     {
@@ -97,12 +97,28 @@ public:
    GLuint TexVBO=0;
    GLuint EBO=0;
 //   GLuint EBO_1=0;
-
+/*
    GLuint       PositionAttribArray=0;
    GLuint       NormalAttribArray=0;
    GLuint       TexCoordsAttribArray=0;
+*/
+   /* Descriptor rules : to be changed with ZArray of rules */
 
+   bool     ComputeNormals=false;
+   bool     ComputeTexCoords=false;
+   bool     ComputeNormVisu=false;
+   bool     KeepVertices=false;
+   float    LineSize=1.0f;
+   float    NormVisuHeight=0.4f;
+
+
+   uint16_t Actions = CSO_setupVertices;//  CoordsSetupOpt
+
+   // Texture is managed under ZShaderContext object
+
+#ifdef __COMMENT__
    int          Count=0;
+
 
    ZTexture*    Texture=nullptr;
 
@@ -111,6 +127,12 @@ public:
    bool         UseTexture=false;
    bool         UseDefaultColor=false;
    bool         UseDefaultAlpha=false;
+#endif // __COMMENT__
+
+   zbs::ZArray<ZVertice>*                   VertexData=nullptr; /* contains coords for Drawing object , normal coords and texture coords */
+   zbs::ZArray<GLuint>*                     Indexes=nullptr;
+   zbs::ZArray<const char*>*                VName=nullptr;
+   zbs::ZArray<NormalDirection>*            VNormalDir=nullptr; /* one rank per triangle : serie of 3 vertices*/
 };//ZGLObjDescriptor
 
 

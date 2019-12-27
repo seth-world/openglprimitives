@@ -10,7 +10,8 @@
 #define __USE_ZARRAY_COPY_CONTRUCTOR__
 
 #include <ztoolset/zarray.h>
-
+#include <zglconstants.h>
+#include <zshadercontext.h>
 
 
 #include <glm/glm.hpp>
@@ -19,22 +20,30 @@
 #include <zvertice.h>
 #include <zglobjdescriptor.h>
 
-class ZTexture;
+#include <zmatrices.h>
 
-class ZObject {  
+static constexpr glm::vec3 NDirFront = glm::vec3(0.0f,0.0f,1.0f);
+static constexpr glm::vec3 NDirBack = glm::vec3(0.0f,0.0f,-1.0f);
+static constexpr glm::vec3 NDirTop = glm::vec3(0.0f,1.0f,0.0f);
+static constexpr glm::vec3 NDirBottom = glm::vec3(0.0f,-1.0f,0.0f);
+static constexpr glm::vec3 NDirLeft = glm::vec3(-1.0f,0.0f,0.0f);
+static constexpr glm::vec3 NDirRight = glm::vec3(1.0f,0.0f,0.0f);
+
+
+
+
+
+
+
+class ZTexture;
+class ZMetaObject;
+class ZSphere;
+
+class ZObject
+{
 public:
 
-    enum ObjType : uint16_t
-    {
-        None = 0,
-        Openbox ,
-        Box,
-        Arc,
-        ArcStrip,
-        Pipe,
-        Sphere,
-        Circle
-    };
+    friend class ZMetaObject;
 
     enum Direction : int
     {
@@ -44,16 +53,21 @@ public:
         DirDown = 3
     } ;
 
-    enum NormalDirection : int8_t
+    enum ObjType : uint16_t
     {
-        Back    = -1,
-        Compute = 0,
-        Front   = 1,
-        Left    = -2,
-        Right   = 4,
-        Top     = 8,
-        Bottom  = 0x10
-    } ;
+        None = 0,
+        Openbox ,
+        Box,
+        Arc,
+        ArcStrip,
+        Pipe,
+        Circle,
+        Sphere,
+        MetaObject,
+        Candy
+    };
+
+
     enum CircleMade : int8_t
     {
         Face    = 0,
@@ -62,59 +76,86 @@ public:
     } ;
 
 
-    enum ShaderSetupOpt : uint16_t
-    {
-        setupVertices       =   0,
-        setupNormals        =   1,
-        setupTextures       =   2,
-        setupAll            =   setupVertices+setupNormals+setupTextures
-
-
-    };
-
-
-
-    static constexpr Vertice_type NDirFront = Vertice_type(0.0f,0.0f,1.0f);
-    static constexpr Vertice_type NDirBack = Vertice_type(0.0f,0.0f,-1.0f);
-    static constexpr Vertice_type NDirTop = Vertice_type(0.0f,1.0f,0.0f);
-    static constexpr Vertice_type NDirBottom = Vertice_type(0.0f,-1.0f,0.0f);
-    static constexpr Vertice_type NDirLeft = Vertice_type(-1.0f,0.0f,0.0f);
-    static constexpr Vertice_type NDirRight = Vertice_type(1.0f,0.0f,0.0f);
-
-
 protected:
     friend class zbs::ZArray<ZObject>;
-    ZObject() {}
+    ZObject()=delete;
     void _cloneFrom(ZObject&pObject);
     void _cloneFrom(ZObject&&pObject);
 public:
     ZObject(const char* pName,ObjType pType) ;
 
+    ZObject(const char* pName,ObjType pType,zbs::ZArray<ZVertice>* pVertices) ;
+
+    void _create(const char* pName,ObjType pType) ;
+
+
     ZObject(ZObject& pObject)
     {
+        _create(pObject.Name,pObject.Type);
         _cloneFrom(pObject);
         GLResources->registerObject(this);
+
     }// copy CTOR
 
     ZObject(ZObject&&pObject)
     {
+        _create(pObject.Name,pObject.Type);
         _cloneFrom(pObject);
         GLResources->registerObject(this);
     }// copy CTOR
 
+    ~ZObject( );
+
+    void clearArrays();
+
+
     ZObject& operator = (ZObject &pInput)
     {
-        clearObject();
+        _create(pInput.Name,pInput.Type);
+//        clearObject(); // _cloneFrom takes care of that
         _cloneFrom(pInput);
         return *this;
     }
     ZObject& operator = (ZObject &&pInput)
     {
-        clearObject();
+//        clearObject();
         _cloneFrom(pInput);
         return *this;
     }
 
+    void createVertexOnly(const DrawContext_type pCtx=Draw)
+    {
+        if (GLDesc[pCtx])
+            {
+            if (GLDesc[pCtx]->VertexData)
+                {
+                fprintf (stderr,
+                         "ZObject::createVertexOnly-E-VRTEXIST Object <%s> vertex data already exists while trying to create vertex only.\n",
+                         Name);
+                exit (EXIT_FAILURE);
+                }
+            delete GLDesc[pCtx];
+            }
+        GLDesc[pCtx]=new ZGLObjDescriptor();
+        GLDesc[pCtx]->VertexData=new zbs::ZArray<ZVertice> ;
+    }
+
+    void createVertexAndIndex(const DrawContext_type pCtx=Draw)
+    {
+        if (GLDesc[pCtx])
+            delete GLDesc[pCtx];
+        GLDesc[pCtx]=new ZGLObjDescriptor();
+        GLDesc[pCtx]->VertexData=new zbs::ZArray<ZVertice> ;
+        GLDesc[pCtx]->Indexes=new zbs::ZArray<unsigned int> ;
+    }
+    void createIndexOnly(const DrawContext_type pCtx=Draw)
+    {
+        if (GLDesc[pCtx])
+            delete GLDesc[pCtx];
+        GLDesc[pCtx]=new ZGLObjDescriptor();
+        GLDesc[pCtx]->VertexData=nullptr ;
+        GLDesc[pCtx]->Indexes=new zbs::ZArray<unsigned int> ;
+    }
 
     ZObject& operator += (ZObject &pInput)
     {
@@ -123,185 +164,386 @@ public:
     }
 
 
-    ~ZObject( )
-    {
-        GLResources->deregisterObject(this);
-        if (GLDescriptor!=nullptr)
-                delete GLDescriptor;
-        if (GLNormVisuDesc!=nullptr)
-                delete GLNormVisuDesc;
-        if (GLShapeDesc!=nullptr)
-                delete GLShapeDesc;
-    }
 
+    /**
+     * @brief addObject aggregates pIn object to current object
+     */
+    ZObject& addObject(ZObject &pIn);
 
-    ZObject& addObject(ZObject &pObject);
+    void addVerticeArray(const DrawContext_type pCtx,zbs::ZArray<glm::vec3>*pIn);
 
-    void addVertice(Vertice_type pInput)
-    {
-        ZVertice wVertice(pInput);
-        vertices.push_back(wVertice);
-        return;
-    }
-    void addVertice(Vertice_type pInput, const char* pName);
-    void computeTexCoords();
-
+    void computeTexCoords(zbs::ZArray<ZVertice> *vertices);
+/*
     void clearObject()
     {
-        vertices.clear();
-        Indices.clear();
-        ShapeIndices.clear();
-        ZANormVisu.clear();
-//        Normals.clear();
-        VNormalDir.clear();
-        VName.clear();
+
+        if (vertices)
+            delete vertices;
+        vertices=nullptr;
+        if (Indices)
+            delete Indices;
+        Indices=nullptr;
+        if (ShapeIndices)
+            delete ShapeIndices;
+        ShapeIndices=nullptr;
+        if (ZANormVisu)
+            delete ZANormVisu;
+        ZANormVisu=nullptr;
+        if (VNormalDir)
+            delete VNormalDir;
+        VNormalDir=nullptr;
+        if (VName)
+            delete VName;
+        VName=nullptr;
+        MatFlag = MM4_Nothing;
 //        isMinMaxInit=false;
     }//clearObject
-
-    zbs::ZArrayIndex_type verticeCount() {return vertices.size();}
-
-    Vertice_type operator [](zbs::ZArrayIndex_type pIdx) {return vertices[pIdx].point;}
-
-    bool hasIndices() {return (Indices.size()>0);}
-
-    long lastVertexIdx() {return vertices.size()-1;}
-
-    ZObject & operator << (ZVertice pInput) {vertices.push_back(pInput); return *this;}
-    ZObject & operator << (Vertice_type pInput)
+*/
+    long verticeCount(const DrawContext_type pCtx=Draw)
     {
-        vertices.push_back(ZVertice(pInput));
-        return *this;
+        if (!GLDesc[pCtx]->VertexData)
+                return -1;
+        return GLDesc[pCtx]->VertexData->count();
     }
+
+    ZVertice operator [](zbs::ZArrayIndex_type pIdx) {return GLDesc[Draw]->VertexData->Tab[pIdx];}
+
+    bool hasIndices(const DrawContext_type pCtx=Draw)
+    {
+        if (GLDesc[pCtx]->Indexes)
+                return GLDesc[pCtx]->Indexes->count() > 0;
+        return (GLDesc[pCtx]->Indexes!=nullptr);
+    }
+
+    long lastVertexIdx(const DrawContext_type pCtx=Draw)
+        {
+        if (!GLDesc[pCtx]->VertexData)
+            {
+            if (!GLDesc[Draw]->VertexData)
+                                    return -1;
+            return GLDesc[Draw]->VertexData->lastIdx();
+            }
+        return GLDesc[pCtx]->VertexData->lastIdx();
+        }
+
+
+
+    ZObject & operator << (ZVertice pInput) {addVertex(Draw,pInput); return *this;}
+
+    ZObject & operator << (Vertice_type pInput) { addVertex(Draw,pInput);  return *this; }
+
     ZObject & operator << (ZObject pInput) {return addObject(pInput); }
 
-//    ZObject & operator << (unsigned int pIndice) {Indices.push_back(pIndice); return *this;}
+    long addVertex(const DrawContext_type pCtx,ZVertice pInput)
+        {
+        if (!GLDesc[pCtx])
+                    return -1;
+        if (!GLDesc[pCtx]->VertexData)
+                GLDesc[pCtx]->VertexData=new zbs::ZArray<ZVertice>;
+        return GLDesc[pCtx]->VertexData->push(pInput);
+        }
 
+    long addVec3(const DrawContext_type pCtx,Vertice_type pInput);
 
-    void addIndice(unsigned int pIndice) {Indices.push_back(pIndice);}
+    void addVec3(const DrawContext_type pCtx,Vertice_type pInput,const char*pName);
 
-    zbs::ZArray<Vertice_type> toFlatVertices();
-    zbs::ZArray<Vertice_type> toFlatNormals();
+    long addIndice(const DrawContext_type pCtx,unsigned int pIndice)
+        {
+        if (!GLDesc[pCtx])
+                    return -1;
+        if (!GLDesc[pCtx]->Indexes)
+                GLDesc[pCtx]->Indexes=new zbs::ZArray<unsigned int>;
+        return GLDesc[pCtx]->Indexes->push(pIndice);
+        }
 
-    zbs::ZArray<Vertice_type> toRawVertices();
-    zbs::ZArray<Vertice_type> toRawNormals();
+    long addNormalDir(const DrawContext_type pCtx,NormalDirection pNormDir )
+    {
+    if (!GLDesc[pCtx])
+                return -1;
+    if (!GLDesc[pCtx]->VNormalDir)
+            GLDesc[pCtx]->VNormalDir=new zbs::ZArray<NormalDirection>;
+    return GLDesc[pCtx]->VNormalDir->push(pNormDir);
+    }
 
-    zbs::ZArray<TexCoords_type> toFlatTexCoords();
+    static zbs::ZArray<glm::vec3> *toFlatVertices(zbs::ZArray<ZVertice> *pVertices, zbs::ZArray<unsigned int> *pIndices=nullptr);
+    static zbs::ZArray<glm::vec3> *toFlatNormals(zbs::ZArray<ZVertice> *pVertices, zbs::ZArray<unsigned int> *pIndices=nullptr);
+    static zbs::ZArray<glm::vec3> *toRawVertices(zbs::ZArray<ZVertice> *pVertices);
+    static zbs::ZArray<glm::vec3> *toRawNormals(zbs::ZArray<ZVertice> *pVertices);
+
+    zbs::ZArray<TexCoords_type>* toFlatTexCoords(zbs::ZArray<ZVertice> *pVertices, zbs::ZArray<unsigned int> *pIndices=nullptr);
 
 //    zbs::ZArray<Color_type> toFlatColors();
 
-    zbs::ZArray<Vertice_type> generateNormals();
-    void computeNormals();
+    zbs::ZArray<glm::vec3>* generateNormals(zbs::ZArray<ZVertice>* pVertices,zbs::ZArray<NormalDirection>*VNormalDir);
+
+    /* calculates normals from pVertices using VNormalDir, and refresh normal coords within pVertices
+     *  if VNormalDir does not exist (nullptr) then normal coords is computed using Triangles
+     *  if VNormalDir exists then normal is given according face orientation given by VNormalDir
+    */
+    void computeNormals(zbs::ZArray<ZVertice> *pVertices, zbs::ZArray<NormalDirection> *VNormalDir);
 
 //    void createGL_ObjectArray(unsigned int pShaderVerticePositions,
 //                              int pShaderNormalPosition);
 
-    ZTexture* setTexture(const char* pTextureName); /* creates a new texture */
-    void setTexture(ZTexture* pTexture); /* re-use an existing texture */
+//    ZTexture* loadTexture(const char* pTextureName, const char* pIntlName, GLenum pTextureEngine); /* creates a new texture */
+//    void setTexture(ZTexture* pTexture); /* re-use an existing texture */
+    int setTextureByName(const char* pIntlName, const int pContext=Draw)
+    {
+        if (ShaderContext[pContext]==nullptr)
+                {
+                fprintf(stderr,"ZObject::setTextureByName-E-CTXNULL Shader context for object <%s> has not be initialized while trying to set texture <%s>.\n",
+                        Name,pIntlName);
+                return -1;
+                }
+        return ShaderContext[pContext]->setTextureByName(pIntlName);
+    }
+    int setTextureByRank(const long pIdx, const int pContext=Draw)
+    {
+        if (ShaderContext[pContext]==nullptr)
+            {
+            fprintf(stderr,"ZObject::setTextureByRank-E-CTXNULL Shader context for object <%s> has not be initialized while trying to set texture rank <%d>.\n",
+                    Name,pIdx);
+            return -1;
+            }
+    return ShaderContext[pContext]->setTextureByRank(pIdx);
+    }
 
-    ZTexture* getTexture() {return getGLDescriptor()->Texture;} /* share already set texture to other objects */
-
-    void setUseTexture(bool pOnOff)
-        {
-        getGLDescriptor()->setUseTexture(pOnOff);
-        }
-
-
-    bool hasTexture() ;
-    bool useTexture() {return getGLDescriptor()->UseTexture;}
+    const ZTexture* getTexture(const int pContext=Draw)
+    {
+        if (!ShaderContext[pContext])
+                return nullptr;
+        return ShaderContext[pContext]->getTexture();
+    } /* share already set texture to other objects */
 
 
-    void _setupGL_ObjectArray(ZShader* pShader,  uint8_t pShaderSetupOpt );
-    void _setupGL_ObjectElement(ZShader *pShader,  uint8_t pShaderSetupOpt );
+ //   void setAction (const DrawContext_type pCtx,uint16_t pAction) {GLDesc[pCtx]->Actions=pAction;}
 
-    void setupGL(ZShader *pShader,
-                 uint8_t    pShaderSetupOpt=setupVertices,
-                 GLenum DrawFigure=GL_TRIANGLES,
-                 ZTexture *pTexture=nullptr);
+    void _setupGL_ObjectArray(const DrawContext_type pCtx,uint16_t pAction);
+    void _setupGL_ObjectArray_old(const DrawContext_type pCtx);
+    void _setupGL_ObjectElement(const DrawContext_type pCtx,uint16_t pAction);
 
-    void setupGLShape(ZShader* pShader);
-    void setupGLNormalVisu(ZShader* pShader);
+    /* prepares and sets up vertices data and set GL buffers and vertex arrays */
+    void setupGL(const DrawContext_type pCtx, uint16_t pAction);
 
-    void drawGL(ZShader *pShader, unsigned int pDrawFigure);
-    void drawGL(ZShader *pShader) {drawGL(pShader,DrawFigure);}
+    void setupGLDraw();
 
-    void drawGLNormalVisu(ZShader* pShader);
-    void drawGLShape(ZShader* pShader);
+    void setupGLShape(zbs::ZArray<ZVertice> *pVertex);
+    void setupGLNormVisu(zbs::ZArray<ZVertice> *pVertex);
+    void setupGLUserDefined(zbs::ZArray<ZVertice> *pVertex, uint16_t pAction);
+
+    void drawGLByContext(const DrawContext_type pCtx);
+
+    void drawGLDraw();
+//    void drawGL() {drawGL(DrawFigure);}
+
+    void drawGLNormVisu();
+    void drawGLShape();
+
+    void drawGLGeneric(const DrawContext_type pCtx);
 
     void print(int pLimit=-1, FILE* pOutput=stdout) const;
+    void printContext(int pCtx, int pLimit,FILE* pOutput=stdout) const;
 
-    void setDefaultColor(Color_type pColor) {DefaultColor=pColor;}
-    void setDefaultAlpha(float pAlpha) {DefaultAlpha=pAlpha;}
-    void setDrawFigure(unsigned int pMode) {DrawFigure=pMode;}
+    void _printContext(int pCtx, int pLimit,FILE* pOutput) const;
 
-    void setDefaultPosition(Vertice_type pPosition) {DefaultPosition=pPosition;}
+    /* DrawFigure is dependent from ZShaderContext */
+    //void setDrawFigure(unsigned int pMode) {DrawFigure=pMode;}
 
-    void setUseDefaultColor(bool pOnOff) {getGLDescriptor()->useDefaultColor(pOnOff);}
-    void setUseDefaultAlpha(bool pOnOff) {getGLDescriptor()->useDefaultAlpha(pOnOff);}
+    void setDrawFigure(const DrawContext_type pCtx,GLenum pMode){DrawFigure[pCtx]=pMode;}
+    void setDrawFigureAll(GLenum pMode)
+    {
+        for (long wi=0;wi < MaxShaderContext;wi++)
+            DrawFigure[wi]=pMode;
+    }
 
-   void setShader(ZShader* pShader) {Shader=pShader;}
+
+    int setShaderByName(const DrawContext_type pCtx,const char* pShader)
+         {
+            ZShader* wSh=GLResources->getShaderByNamePtr(pShader);
+            if (!wSh)
+                            return -1;
+
+                if (ShaderContext[pCtx])
+                    ShaderContext[pCtx]->setShader(wSh);
+                else
+                    return -1;
+         }
+    int setShaderByRank(const DrawContext_type pCtx,const long pShIdx)
+         {
+            ZShader* wSh=GLResources->getShaderByRankPtr(pShIdx);
+            if (!wSh)
+                            return -1;
+
+                if (ShaderContext[pCtx])
+                    ShaderContext[pCtx]->setShader(wSh);
+                else
+                    return -1;
+            return 0;
+         }
+
 
     size_t getStride() {return sizeof(ZVertice);}
 
     void deleteGLContext()
+        {
+ /*       for (int wi=0;wi<MaxShaderContext;wi++)
+            {
+                if (GLDesc[wi])
+                    {
+                    delete GLDesc[wi];
+                    }
+                if (ShaderContext[wi])
+                        delete ShaderContext[wi];
+            }*/
+        }
+
+/*    void setComputeNormals(const DrawContext_type pCtx,bool pOnOff)
     {
-        if (GLDescriptor==nullptr)
+        if (!GLDesc[pCtx])
                 return;
-        GLDescriptor->deleteGLContext();
+        GLDesc[pCtx]->ComputeNormals=pOnOff;
+ //       GLDesc[pCtx]->Actions |= setupNormals;
     }
-
-    void setComputeNormals(bool pOnOff) {ComputeNormals=pOnOff;}
-    bool havetoComputeNormals() {return ComputeNormals;}
-
-    void setComputeTexCoords(bool pOnOff) {ComputeTexCoords=pOnOff;}
-    bool havetoComputeTexCoords() {return ComputeTexCoords;}
-
-    void generateNormVisu();
-    void setMaterial(const ZMaterial& pMaterial) {Material=pMaterial;}
-
-private:
-    inline ZGLObjDescriptor* getGLDescriptor()
+    bool havetoComputeNormals(const DrawContext_type pCtx=Draw)
     {
-        if (GLDescriptor!=nullptr)
-                return GLDescriptor;
-        fprintf(stderr,"ZObject-F-GLDESCNULL Object descriptor has not been initialized for object <%s>.\n"
-                "    invoke setupGL() prior using GLDescriptor.\n",Name);
-        abort();
-//        exit (EXIT_FAILURE);
+        if (!GLDesc[pCtx])
+                return false;
+        return GLDesc[pCtx]->ComputeNormals;
+//        return GLDesc[pCtx]->Actions & setupNormals;
     }
+
+    void setComputeTexCoords(const DrawContext_type pCtx,bool pOnOff)
+    {
+        if (!GLDesc[pCtx])
+                return;
+        GLDesc[pCtx]->ComputeTexCoords=pOnOff;
+//        GLDesc[pCtx]->Actions |= setupTextures;
+    }
+    bool havetoComputeTexCoords(const DrawContext_type pCtx=Draw)
+    {
+        if (!GLDesc[pCtx])
+                return false;
+        return GLDesc[pCtx]->ComputeTexCoords;
+//        return GLDesc[pCtx]->Actions & setupTextures;
+    }
+*/
+    int createNormVisuContextByRank (const long pShaderRank);
+    int createNormVisuContextByName (const char* pShaderName);
+protected:
+    void _createNormVisuContext(ZShader* pShader);
+
+
+    /** @brief generateNormVisu  generates vertices for drawing normal vectors at the center of object's faces
+     *  pVertices must exist and contain the object vertices
+     *  result:  created ZArray of <glm::vec3> with corresponding normal vector coords for drawing using GL_LINE draw figure
+     *  height of the drawn line is given by pNormVisuHeight
+    */
+    static zbs::ZArray<glm::vec3>* generateNormVisu(zbs::ZArray<ZVertice> *pVertices,const float pNormVisuHeight);
 
 public:
-    ZMaterial                   Material=ZChrome ;
+    /* normal vector height */
+    static constexpr float                            NormalVisuHeight=0.04f;
 
-    ZGLObjDescriptor*            GLDescriptor=nullptr;
-    ZGLObjDescriptor*            GLNormVisuDesc=nullptr;
-    ZGLObjDescriptor*            GLShapeDesc=nullptr;
+// material is defined within ZShaderContext using uniform setting
+ //   void setMaterial(const ZMaterial& pMaterial) {Material=pMaterial;}
 
-    ZShader* Shader=nullptr;
+    int createShaderContextByName(const int pCtx, const char* pShaderName);
+    int createShaderContextByRank(const int pCtx, const  int pShaderRank );
+    void createShaderContextFromCopy(const int pCtxDest,const int pCtxSrc);
+
+    void setPosition(Vertice_type pPosition);
+
+    bool hasPosition() {if (!MatCtx) return false; return MatCtx->hasPosition();}
+    bool hasRotation() {if (!MatCtx) return false; return MatCtx->hasRotation();}
+
+    void setModelRotation (float pAngle,glm::vec3 pAxis);
+    void rotate90 ();
+    void rotate270 ();
+
+
+/*---Matrices---------------*/
+
+/* Declares all matrices as local and assigns a value */
+    void setAllMatricesValue (ZMat4* pModel,ZMat4* pView,ZMat4* pProjection, ZMat4* pNormal);
+
+    /**
+     * @brief createMatrices creates Matrix Context and populates it with matrices according corresponding flag value :
+     * set to true : created  and positionned to identity matrix i. e. glm::mat4(1.0f))$
+     * false : nothing is done
+     */
+    void createMatrices (uint8_t pFlag);
+
+/* matrices : set individual matrices as local to the object : */
+
+    void createAllMatrices();
+    void createModel ();
+    void createView ();
+    void createProjection ();
+    void createNormal ();
+/* Assign matrices case per case with local value : matrice will stay local unless overriden */
+
+    void setModelValue (glm::mat4 pModel) {MatCtx->setModelValue(pModel);}
+    void setViewMatrice (ZMat4* pView);
+    void setProjectionMatrice (ZMat4* &&pProjection);
+    void setNormalMatrice (ZMat4* &&pNormal);
+/* Assign matrices case per case as shared from meta object */
+    void shareModel (ZMat4* pModel) {if (MatCtx) MatCtx->shareModel(pModel);}
+    void shareView (ZMat4* pView);
+    void shareProjection (ZMat4* &&pProjection);
+    void shareNormal (ZMat4* &&pNormal);
+
+    void setDrawUserDefined(void (*pDrawFunction)()) {drawGLUserDefined=pDrawFunction;}
+
+    ZGLObjDescriptor* getGLDescriptor(const int pCtx);
+
+    void setMetaObject  (ZMetaObject* pFather) {Father.MTO=pFather; FatherType=ZObject::MetaObject;}
+    void setCandy       (ZMetaObject* pFather) {Father.MTO=pFather; FatherType=ZObject::Candy;}
+    void setSphere      (ZSphere* pFather) {Father.SPH=pFather;FatherType=ZObject::Sphere;}
+    bool isChild() {return Father.Void!=nullptr;}
+
+    ObjType getFatherType () {return FatherType;}
+
+    const char* getFatherName();
+
+public:
+    /* before glDraw sets up all matrices and copy it to current shader (must have been set previously) */
+    void _preprocessGLMatrices(ZShader *wShader);
+
+/* ---------------Data--------------------------------------*/
+public:
+
+    ZGLObjDescriptor*   GLDesc[MaxShaderContext] ;
+    ZShaderContext* ShaderContext[MaxShaderContext];
+    GLenum      DrawFigure[MaxShaderContext];
+
     const char*Name=nullptr;
 
+    const size_t verticeOffset  =   0;
+    const size_t normalOffset   =   offsetof(ZVertice,normal);
+    const size_t textureOffset  =   offsetof(ZVertice,texcoords);
 
-    size_t verticeOffset = 0;
-    size_t normalOffset=offsetof(ZVertice,normal);
-    size_t textureOffset = offsetof(ZVertice,texcoords);
+    ObjType                          Type=None;
 
-    zbs::ZArray<ZVertice>           vertices;
-    zbs::ZArray<const char*>        VName;
-    zbs::ZArray<unsigned int>       Indices;
+private:
+    ZMatCtx*    MatCtx=nullptr;
 
-    zbs::ZArray<NormalDirection>    VNormalDir; /* one rank per triangle : serie of 3 vertices*/
+    void (*drawGLUserDefined)() =nullptr; /* rendering user function for drawGL */
 
-    Color_type DefaultColor=cst_object_color_default;
-    float DefaultAlpha=1.0f;
-    unsigned int DrawFigure=GL_TRIANGLES;
-    /* position within model where object is initially positionned using first translation for model's origin */
-    Vertice_type DefaultPosition=Vertice_type(0.0f,0.0f,0.0f);
+    union {
+        void*        Void;
+        ZMetaObject* MTO;
+        ZSphere*     SPH;
+        ZObject*     OBJ;
+        }    Father;
 
-    bool                            ComputeNormals=true;
-    bool                            ComputeTexCoords=true;
-    float                           NormalVisuSize=0.04f;
-    zbs::ZArray<Vertice_type>       ZANormVisu;
-    zbs::ZArray<unsigned int>       ShapeIndices;
-    ObjType                         Type=None;
+    ZObject::ObjType    FatherType=ZObject::None;
+
 };
+
+
+void _preprocessGLMatrices(ZShader* wShader,
+                          ZMatCtx*     wMat);
+
+const char* decodeObjectType(ZObject::ObjType pType);
 
 #endif // ZOBJECT_H

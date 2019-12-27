@@ -31,11 +31,11 @@
 #include <zglunicode.h>
 
 
-#define __CANDY_SHADER__    colorShader
-#define __COLOR_SHADER__    colorShader
-#define __SPHERE_SHADER__   colorShader
+#define __CANDY_SHADER__    "ColorShader"
+#define __COLOR_SHADER__    "ColorShader"
+#define __SPHERE_SHADER__   "ColorShader"
 //#define __SPHERE_SHADER__   textureShader
-#define __PIPE_SHADER__     colorShader
+#define __PIPE_SHADER__     "ColorShader"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -100,7 +100,6 @@ int main()
  //   _linuxListFonts();
 
     GLResources->_linuxSearchFonts((const utf8_t*)"liberation");
-
 
 
     // glfw: initialize and configure
@@ -182,47 +181,88 @@ int main()
     glDebugMessageCallback( (GLDEBUGPROC) MessageCallback, &GLAbortOnFailure );
 
 
-//=================================Objects Vertices creation ============================================
-    const float wHigh=0.5f;
-    const float wWidth=0.5f;
-    const float wDepth=0.2f;
-
-
-    ZCandy wCandy = generateCandy(wHigh,wWidth,wDepth,true,"Candy");
-
-    Vertice_type wC1=Vertice_type(0.8f,0.9f,0.0f);
-
-    Vertice_type wC2=Vertice_type(0.8f,0.4f,0.0f);
-
-    Vertice_type wC3=Vertice_type(-0.8f,0.8f,0.0f);
-
-//    ZObject wCircle3=generate_Circle(ZGreyColor, wC3,0.2f,50,ZObject::Flat,ZObject::Top);
-
-    ZObject* wPipe = generateRegularCylinder(ZGreyColor,wC1,wC2,0.05f,50,ZObject::Flat,"Pipe");
-
-    ZSphere wSphere(0.10f,18,9,true, "Sphere");
-
-//    wSphere.print(20); /* list 20 max element of ZObject */
-
-//=============================================================================
 
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-//    glEnable( GL_POLYGON_SMOOTH );
+    glEnable( GL_POLYGON_SMOOTH );
 
+    glHint( GL_LINE_SMOOTH_HINT, GL_DONT_CARE );
+    glHint( GL_POLYGON_SMOOTH_HINT, GL_NICEST );
 
     // Define the viewport dimensions
     glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+
+//----------Shaders----------------------------------
+
+//   ZShader sphereShader("zsphere.vs", "zsphere.fs","SphereShader");
+ /*
+   ZShader textureShader("zlighting.vs", "ztexture.fs","TextureShader");
+
+   ZShader colorShader("zlighting.vs", "zcolor.fs","ColorShader");
+
+   ZShader materialShader("zlighting.vs", "zmaterial.fs","MaterialShader");
+   */
+   /* various shaders according lighting effects / texture / material as requested */
+
+   GLResources->loadShader("zlighting.vs", "ztexture.fs","TextureShader");
+   GLResources->loadShader("zlamp.vs", "zlamp.fs","LampShader");
+   GLResources->loadShader("zlighting.vs", "zcolor.fs","ColorShader");
+   GLResources->loadShader("zlighting.vs", "zmaterial.fs","MaterialShader");
+
+   /* for text & text boxes */
+   GLResources->loadShader("zgltext.vs", "zgltext.fs",__TEXT_SHADER__);
+   GLResources->loadShader("zlamp.vs", "zlamp.fs",__TEXTBOX_SHADER_SHAPE__);
+//   GLResources->loadShader("ztextboxtexture.vs", "ztextboxtexture.fs",__TEXTBOX_SHADER_FILL__);
+   GLResources->loadShader("zlighting.vs", "ztexture.fs",__TEXTBOX_SHADER_FILL__);
+
+
+//----------Textures---------------------------------
+
+    GLResources->loadTexture("wood.png","wood",GL_TEXTURE1);
+    GLResources->loadTexture("tissuegrey.jpeg","tissuegrey",GL_TEXTURE1);
+    GLResources->loadTexture("tissueblue.png","tissueblue",GL_TEXTURE1);
+    GLResources->loadTexture("tissuebrownbure.jpeg","tissuebrownbure",GL_TEXTURE1);
+    GLResources->loadTexture("metal.png","metal",GL_TEXTURE1);
+    GLResources->loadTexture("moon1024.bmp","moon",GL_TEXTURE1);
+    GLResources->loadTexture("earth2048.bmp","earth",GL_TEXTURE1);
+
+
+/*    ZTexture wTexWoodFloor("wood.png",GL_TEXTURE1);
+
+    ZTexture wTexTissueGrey("tissuegrey.jpeg",GL_TEXTURE1);
+    ZTexture wTexTissueBluePale("tissueblue.png",GL_TEXTURE1);
+    ZTexture wTexTissueBrown("tissuebrownbure.jpeg",GL_TEXTURE1);
+    ZTexture wTexMetal("metal.png",GL_TEXTURE1);
+
+    ZTexture wTexMoon("moon1024.bmp",GL_TEXTURE1);
+    ZTexture wTexEarth("earth2048.bmp",GL_TEXTURE1);
+*/
+//---------------Fonts-----------------------------------------------
 
     long wRet=GLResources->addFont("LiberationMono-Regular","LiberationMono",FLOC_Sytem);
     wRet=GLResources->addFont("Architex","Architex",FLOC_User);
     wRet=GLResources->addFont("UbuntuMono-R","UbuntuMono",FLOC_Sytem);
 
+/*-------------Text Objects-------------------------*/
 
     ZGLTextWriter wUWriter(GL_TEXTURE0);
+
+    wUWriter.newBoxShader(Draw,__TEXTBOX_SHADER_FILL__);
+    wUWriter.newBoxShader(Shape,__TEXTBOX_SHADER_SHAPE__);
+
+    wUWriter.setBoxShader(Draw)->setTextureByName("metal");
+    wUWriter.setBoxShader(Draw)->setLineWidth(1.5);
+    wUWriter.setBoxShader(Draw)->addFloat(__SHD_ALPHA_UN__,1.0);
+    wUWriter.setBoxShader(Draw)->addVec3("light.Position",&camera.LightPosition);
+    wUWriter.setBoxShader(Draw)->addVec3("viewPosition",&camera.CameraPosition);
+    wUWriter.setBoxShader(Draw)->addVec3("DefaultColor",&ZBlueColor);
+
+    wUWriter.setBoxShader(Shape)->setLineWidth(1.5);
+    wUWriter.setBoxShader(Shape)->addFloat(__SHD_ALPHA_UN__,1.0);
+
 
     ZGLUnicodeText* wUText=wUWriter.newText();
     wRet=wUText->setText((utf32_t*)U"Жди меня, и я вернусь.","LiberationMono",24);
@@ -254,14 +294,20 @@ int main()
 //     wBText->setBoxFill(false);
      wBText->setTextFlag((uint16_t)RBP_Center|(uint16_t)RBP_WordWrap);
 //     wBText->setBoxTexture("tissuegrey.jpeg");
-     wBText->setBoxTexture("wood.png");
-     wBText->setBoxFlag(RBP_Visible|RBP_Texture|RBP_Shape);
+
+     if (wBText->setBoxTextureByName("metal") < 0)
+            {
+            fprintf(stderr,"Failed to assign texture <%s> to text box \n","metal");
+            exit (EXIT_FAILURE);
+            }
+     wBText->setBoxFlag(RBP_BoxVisible|RBP_BoxTexture|RBP_BoxShape);
  //    wBText->setBoxFillColor(ZBlueColor);
      wBText->setPosition(-0.9f,0.5f,0.0f);  
 
-     _printfBoxFlag(wBText->getBoxFlag());
+     _printTextBoxFlag(wBText->getBoxFlag());
 
      wBText->setupGL();
+
 #ifdef __COMMENT__
      ZGLUnicodeText* wNLText=wUWriter.newText();
 
@@ -330,101 +376,231 @@ int main()
      w90Text->setupGL();
 #endif
 
-//    GLUnicodeText wUText((uint32_t*)U"Жди меня, и я вернусь.","FreeSans48",48,GL_TEXTURE0);
 
-    // build and compile our shader zprogram
-    // ------------------------------------
-//    ZShader lightingShader(Resources.getShaderPath("zbasic_lighting.vs").c_str(), Resources.getShaderPath("zbasic_lighting.fs").c_str());
+
+
+ //=================================Objects Vertices creation ============================================
+
+
+
+
+
+
+
+
+ //=============================================================================
+
+     ZSphere wSphere(0.10f,18,9,true, "Sphere"); /* generate object and its vertex data */
+
+     wSphere.createShaderContextByName(Draw,"ColorShader");
+//     wSphere.ShaderContext[Draw]->addBool("BlinnPhong",true);
+     wSphere.ShaderContext[Draw]->addVec3("light.Position",&camera.LightPosition);
+     wSphere.ShaderContext[Draw]->addVec3("viewPosition",&camera.CameraPosition);
+     wSphere.ShaderContext[Draw]->addVec3("DefaultColor",&ZBlueColor);
+     wSphere.ShaderContext[Draw]->addFloat("DefaultAlpha",0.5f);
+//     wSphere.ShaderContext[Draw]->addBool("UseDefaultAlpha",true);
+     wSphere.ShaderContext[Draw]->addMaterial(&ZGold);
+
+//     wSphere.setAction(Draw,setupVertices);
+
+     wSphere.DrawFigure[Draw]=GL_TRIANGLES;
+
+     wSphere.createAllMatrices();
+
+     wSphere.setPosition(glm::vec3(-0.5f,0.5f,0.2f));
+
+//     wSphere.setComputeNormals(Draw,false); /* normal coords are given by ZPhere generation and not computed during setupGL */
+//     wSphere.setComputeTexCoords(Draw,false); /* same for texture coordinates */
+
+     wSphere.setupGL(Draw,CSO_setupAll | CSO_DeleteDataAfter); /* Only set values to GL buffer NB: Normals and Textures coordinates are computed separately */
+
+ //    wSphere.print(20); /* list 20 max element of ZObject */
+
+/*------------Lamp (light) object -------------------___*/
+
+// Create vertices : vertices and indexes are created within boxSetup
+
+
     ZBoxComponents wLampComponents;
     ZObject* wLamp =boxSetup(0.05f,0.05f,0.05f,wLampComponents,"Lamp"); /* same shape as wBox (but scaled down ) */
-    wLampComponents.generateShape(*wLamp);
+
+// then Shape data is generated hereafter
+
+    wLampComponents.generateShape(*wLamp); /* update ZObject wLamp with Shape vertexes */
 
 //    wLamp->print(20);
-
-    ZShader lampShader("zlamp.vs", "zlamp.fs", "LampShader");
-    /* process lamp object */
-
-    wLamp->setDefaultColor(ZYellowBright);
-    wLamp->setDefaultAlpha(1.0f);
-    wLamp->setupGL(&lampShader,
-                   ZObject::setupVertices,
-                   GL_TRIANGLES);
-
-    lampShader.use();
-    lampShader.setVec3("DefaultColor",ZYellowBright);
-
-    wLamp->setupGLShape(&lampShader);
-
-
- //   ZShader sphereShader("zsphere.vs", "zsphere.fs","SphereShader");
-
-    ZShader textureShader("zlighting.vs", "ztexture.fs","TextureShader");
-
-    ZShader colorShader("zlighting.vs", "zcolor.fs","ColorShader");
-
-    ZShader materialShader("zlighting.vs", "zmaterial.fs","MaterialShader");
-
-    // lamp object
     camera.setLightPosition(glm::vec3(1.0f, 0.2f, 1.0f));
 
 
-//==============GL Objects setup======================================
+//--------Create and setup shader context rules per context-----------
 
-/* process box */
-//    unsigned int BoxVBO, BoxVAO, BoxNormVBO;/* Box GL identifiers */    glBindVertexArray(VAO);
+// Draw : main context
+    wLamp->createShaderContextByName(Draw,"LampShader");
+    wLamp->ShaderContext[Draw]->addFloat("DefaultAlpha",1.0f);
+    wLamp->ShaderContext[Draw]->addVec3("DefaultColor",&ZYellowBright);
 
-    ZTexture wTexWoodFloor("wood.png",GL_TEXTURE1);
+    wLamp->DrawFigure[Draw]=GL_TRIANGLES;
 
-    ZTexture wTexTissueGrey("tissuegrey.jpeg",GL_TEXTURE1);
-    ZTexture wTexTissueBluePale("tissueblue.png",GL_TEXTURE1);
-    ZTexture wTexTissueBrown("tissuebrownbure.jpeg",GL_TEXTURE1);
-    ZTexture wTexMetal("metal.png",GL_TEXTURE1);
+// Shape : only line enclosing the object
 
-    ZTexture wTexMoon("moon1024.bmp",GL_TEXTURE1);
-    ZTexture wTexEarth("earth2048.bmp",GL_TEXTURE1);
+    wLamp->createShaderContextByName(Shape,"LampShader");
+    wLamp->ShaderContext[Shape]->addFloat("DefaultAlpha",1.0f);
+    wLamp->ShaderContext[Shape]->addVec3("DefaultColor",&ZYellowAmbient);
 
-    wCandy.setupGL(&__CANDY_SHADER__,
-                   ZObject::setupAll,
-                   &wTexWoodFloor);
+    wLamp->DrawFigure[Shape]=GL_LINE_LOOP;
 
-    wCandy.setMaterialAll(ZChrome);
-    wCandy.setDefaultColorAll(ZBlueColor);
-    wCandy.setDefaultAlphaAll(0.5f);
+//  ---------Create matrices------------------
 
-    wCandy.setUseTextureAll(false);
+/* remark : no normal matrix for lampShader */
+//    wLamp->createAllMatrices();
+
+    wLamp->createMatrices(MAT_Model | MAT_View | MAT_Projection); /* creates matrix context and Model,View,Projection (Normal is not created)*/
+
+//    wLamp->setAction(Draw,setupVertices);   // not really necessary : setupVertices is default
+//    wLamp->setAction(Shape,setupVertices);  // not really necessary : setupVertices is default
+
+// create the GL buffers for both contexts Draw and Shape
+
+    wLamp->setupGL(Draw,CSO_setupVertices | CSO_DeleteDataAfter );
+    wLamp->setupGL(Shape,CSO_setupVertices | CSO_DeleteDataAfter);
+
+//==============Candy Object setup======================================
+    const float wHigh=0.5f;
+    const float wWidth=0.5f;
+    const float wDepth=0.2f;
 
 
-    wCandy.setupGLNormalVisu(&lampShader);
-    wCandy.setupGLShape(&lampShader);
+    ZCandy wCandy = generateCandy(wHigh,wWidth,wDepth,true,"Candy");
 
+    /* create shader uniform values context (Draw context) that will be triggered before glDraw() operation
+     * Remark: uniform values will be assigned to shader in this order
+    */
+    wCandy.createShaderContextByName(Draw,"ColorShader");
+
+//    wCandy.ShaderContext[Draw]->setTextureByName("wood");/* nb: texture is exclusive from material */
+    wCandy.ShaderContext[Draw]->addVec3("light.Position",&camera.LightPosition);
+    wCandy.ShaderContext[Draw]->addVec3("viewPosition",&camera.CameraPosition);
+//    wCandy.ShaderContext[Draw]->addBool("BlinnPhong",false);   // not used by ColorShader
+    wCandy.ShaderContext[Draw]->addVec3("DefaultColor",&ZBlueColor);
+    wCandy.ShaderContext[Draw]->addFloat("DefaultAlpha",0.5f);
+//    wCandy.ShaderContext[Draw]->addBool("UseDefaultAlpha",true);  // not used by ColorShader
+
+//    wCandy.setComputeNormals(Draw,true);
+//    wCandy.setComputeTexCoords(Draw,true);
+
+//    wCandy.DrawFigure[Draw]=GL_TRIANGLES;
+
+//    wCandy.ShaderContext[Draw]->addMaterial(&ZChrome); /* nb: texture is exclusive from material - Either texture OR material can be used */
+
+    wCandy.createShaderContextByName(Shape,"LampShader");
+
+//    wCandy.ShaderContext[Shape]->addVec3("DefaultColor",&ZBlue1Color);
+    wCandy.ShaderContext[Shape]->addVec3("DefaultColor",&ZYellowSpecular);
+    wCandy.ShaderContext[Shape]->addFloat("DefaultAlpha",1.0f);
+    wCandy.ShaderContext[Shape]->setLineWidth(1.5f);
+
+//    wCandy.ShaderContext[Shape]->addBool("UseDefaultAlpha",true);
+
+    wCandy.DrawFigure[Shape]=GL_LINE_LOOP;
+
+    wCandy.createShaderContextByName(NormVisu,"LampShader");
+    wCandy.ShaderContext[NormVisu]->addVec3("DefaultColor",&ZYellowAmbient);
+    wCandy.ShaderContext[NormVisu]->addFloat("DefaultAlpha",1.0f);
+    wCandy.ShaderContext[NormVisu]->setLineWidth(2.0f);
+
+    wCandy.DrawFigure[NormVisu]=GL_LINE;
+
+    wCandy.createMatrices(MAT_Model | MAT_View | MAT_Projection | MAT_Normal);
+
+    wCandy.setPosition(glm::vec3(0.2,0.2,0.2));
+
+    wCandy.setupGLByContext(Draw,CSO__setAndComputeAll);
+    wCandy.setupGLByContext(Shape,CSO_setupVertices);
+ //   wCandy.setupGLByContext(NormVisu,CSO_setupVertices);
+
+
+
+#ifdef __COMMENT__
 /* Pipe GL set-up */
-    wPipe->setDefaultPosition(Vertice_type(0.5f,0.5f,0.5f));
+    wPipe->setPosition(Vertice_type(0.5f,0.5f,0.5f));
     wPipe->setDefaultColor(ZGreyColor);
     wPipe->setDefaultAlpha(0.5f);
     wPipe->setComputeNormals(true);
     wPipe->setComputeTexCoords(true);
-    wPipe->setupGL(&__PIPE_SHADER__,
-                   ZObject::setupAll,
-                   GL_TRIANGLES,
-                  &wTexMetal);
+    wPipe->setTextureByName("metal");
 
-    wSphere.setDefaultPosition(Vertice_type(-0.8f,0.5f,0.0f));
+    wPipe->setDrawShaderByName("ColorShader");
+    wPipe->setupGL(ZObject::setupAll,
+                   GL_TRIANGLES);
+
+    wSphere.setPosition(Vertice_type(-0.8f,0.5f,0.0f));
     wSphere.setDefaultColor(ZBlueColor);
     wSphere.setDefaultAlpha(0.5f);
     wSphere.setMaterial(ZEmerald);
     wSphere.setComputeNormals(true); /* normals are given by creation algo */
     wSphere.setComputeTexCoords(false);/* texture coords are given by creation algo */
+    wSphere.setTextureByName("earth");
+    wSphere.setupGL(ZObject::setupAll,
+                    GL_TRIANGLES);
 
-    wSphere.setupGL(&__SPHERE_SHADER__,
-                    ZObject::setupAll,
-                    GL_TRIANGLES,
-                    &wTexEarth);
+#endif // __COMMENT__
 
+    Vertice_type wC1=Vertice_type(0.8f,0.9f,0.0f);
+
+//    Vertice_type wC2=Vertice_type(0.8f,0.4f,0.0f);
+
+    Vertice_type wC2=Vertice_type(-0.7f,-0.1f,0.7f);
+
+
+    Vertice_type wC3=Vertice_type(-0.8f,0.8f,0.0f);
+
+//    ZObject wCircle3=generate_Circle(ZGreyColor, wC3,0.2f,50,ZObject::Flat,ZObject::Top);
+
+//    ZObject* wPipe = generateRegularCylinder(wC1,wC2,0.05f,50,ZObject::Flat,"Pipe");
+
+    ZObject* wPipe = generateCylinderPointToPoint (wC1,wC2,0.05,50,"Pipe");
+
+    wPipe->createMatrices(MAT_All); // idem to MAT_Model | MAT_View | MAT_Projection | MAT_Normal
+
+    wPipe->createShaderContextByName(Draw,"TextureShader");
+//    wPipe->ShaderContext[Draw]->addBool("BlinnPhong",true);
+    wPipe->ShaderContext[Draw]->addVec3("light.Position",&camera.LightPosition);
+    wPipe->ShaderContext[Draw]->addVec3("viewPosition",&camera.CameraPosition);
+    wPipe->ShaderContext[Draw]->addVec3("DefaultColor",&ZBlueColor);
+    wPipe->ShaderContext[Draw]->addFloat("DefaultAlpha",1.0f);
+
+    wPipe->ShaderContext[Draw]->setTextureByName("metal");
+
+//    wPipe->ShaderContext[Draw]->addMaterial(&ZChrome);
+
+    wPipe->createShaderContextByName(Shape,"LampShader");
+
+//    wCandy.ShaderContext[Shape]->addVec3("DefaultColor",&ZBlue1Color);
+    wPipe->ShaderContext[Shape]->addVec3("DefaultColor",&ZYellowSpecular);
+    wPipe->ShaderContext[Shape]->addFloat("DefaultAlpha",1.0f);
+    wPipe->ShaderContext[Shape]->setLineWidth(1.5f);
+
+//    wPipe->setComputeNormals(Draw,true);
+//    wPipe->setComputeTexCoords(Draw,true);
+
+    wPipe->DrawFigure[Draw]=GL_TRIANGLES;
+
+    wPipe->setupGL(Draw,CSO_setupAll | CSO_DeleteDataAfter );
+
+    wPipe->setupGL(Shape,CSO_setupAll | CSO_DeleteDataAfter );
 
  //   wSphere.print(50); /* print 50 first data */
 
+
+
     // render loop
     // -----------
+
+    GLResources->listRegistratedShaders();
+
+
+
+
 
     while (!glfwWindowShouldClose(window))
     {
@@ -470,31 +646,16 @@ int main()
 //        w90Text->renderToBoxVertical(ZBlueColor);
 
         // render lamp object
-        lampShader.use();
 
-        glm::mat4 lampModel = glm::mat4(1.0f);
-        lampModel = glm::translate(lampModel, camera.LightPosition);
-        lampModel = glm::rotate(lampModel,(float)glfwGetTime(),glm::vec3(1.0f, 0.5f, 0.2f));
+/* Object position and matrices are not contextual to shader (not part of ZShaderContext) */
 
-        glm::mat4 lampView = camera.GetViewMatrix();
-        glm::mat4 lampProjection = glm::perspective(glm::radians(camera.Zoom),
-                                                    (float)SCR_WIDTH / (float)SCR_HEIGHT,
-                                                    0.1f,
-                                                    100.0f);
+        wLamp->setPosition(camera.LightPosition);
+        wLamp->setModelRotation((float)glfwGetTime(),glm::vec3(1.0f, 0.5f, 0.2f));
 
-        /* remark : no normal matrix for lampShader */
-        lampShader.setMat4("mProjection", lampProjection);
-        lampShader.setMat4("mView", lampView);
-        lampShader.setMat4("mModel", lampModel);
-        lampShader.setVec3("DefaultColor", ZYellowBright);
+        wLamp->drawGLByContext(Draw);
+        wLamp->drawGLByContext(Shape);
 
-        wLamp->drawGL(&lampShader,GL_TRIANGLES);
-
-        lampShader.setVec3("DefaultColor", ZGreySilver);
-
-        wLamp->drawGLShape(&lampShader);
-
-#define __TEXT_ONLY__
+//#define __TEXT_ONLY__
 
 #ifdef __TEXT_ONLY__
 
@@ -528,12 +689,12 @@ Per object matrix:
     Model matrix is computed object per object
 */
         // camera/view transformation
-        glm::mat4 mView = camera.GetViewMatrix();
+//        glm::mat4 mView = camera.GetViewMatrix();
         // pass projection matrix to shaders (note that in this case it could change every frame)
-        glm::mat4 mProjection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+//        glm::mat4 mProjection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         /* compute normal matrix */
-        glm::mat4 mNormal = camera.GetViewMatrix()*camera.getModel();
-        mNormal = glm::transpose(glm::inverse(mNormal));
+//        glm::mat4 mNormal = camera.GetViewMatrix()*camera.getModel();
+//        mNormal = glm::transpose(glm::inverse(mNormal));
 
 /* light color parameters */
  //       __COLOR_SHADER__.setLight(ZLight(ZYellowAmbient,ZYellowDiffuse,ZYellowSpecular));
@@ -551,34 +712,11 @@ Per object matrix:
 //        if (camera.RotationAngle > 0.0f) /* if any rotation requested */
 //                model = glm::rotate(model, (float)camera.RotationAngle, camera.RotationAxis);
 
+        wCandy.drawGLByContext(Draw);
+//        wCandy.drawGLByContext(Shape);
 
-        glm::mat4 mModel = glm::translate(camera.getModel(), wCandy.DefaultPosition);
 
-        __CANDY_SHADER__.use();
-
-        __CANDY_SHADER__.setInt("TextureSampler",wCandy.getTexture()->getTextureEngineNumber());
-        __CANDY_SHADER__.setBool ("BlinnPhong",false);
-
-        __CANDY_SHADER__.setMat4("mProjection", mProjection);
-        __CANDY_SHADER__.setMat4("mNormal", mNormal);
-        __CANDY_SHADER__.setMat4("mView", mView);
-
-        __CANDY_SHADER__.setMat4("mModel", mModel);
-
-        __CANDY_SHADER__.setVec3("light.Position",camera.LightPosition);
-
-        __CANDY_SHADER__.setVec3("viewPosition", camera.CameraPosition);
-
-        __CANDY_SHADER__.setVec3("DefaultColor", ZBlueColor);
-        __CANDY_SHADER__.setFloat("DefaultAlpha", 0.2f);
-        __CANDY_SHADER__.setBool("UseDefaultAlpha", true);
-
-        __CANDY_SHADER__.setMaterial(ZSilver);
-
-        wTexWoodFloor.bind();
- //       wCandy.drawGL(&__CANDY_SHADER__);
-
-        lampShader.use();
+/*        lampShader.use();
         lampShader.setMat4("mModel", mModel);
         lampShader.setMat4("mProjection", mProjection);
 //        lampShader.setMat4("mNormal", mNormal);
@@ -587,55 +725,38 @@ Per object matrix:
 //        wCandy.drawGLShape(&lampShader);
 
  //       wText.renderText("This is a new sample text",-0.6f,-0.6f,ZBlueColor,0);
-
+*/
 
         if (camera.useNormalVectors)
             {
-            lampShader.setVec3("DefaultColor",ZYellowSpecular);
-            wCandy.drawGLNormalVisu(&lampShader);
+
+//            wCandy.NormVisuShader->setVec3("DefaultColor",ZYellowSpecular);
+//            wCandy.setDefaultColor(ZYellowSpecular);
+//            lampShader.setVec3("DefaultColor",ZYellowSpecular);
+
+            /* Everything is already parametrized within ShaderContext rules & Matrices for [NormVisu] */
+            wCandy.drawGLByContext(NormVisu);
             }
 
 
-        __PIPE_SHADER__.use();
-        mModel = glm::translate(camera.getModel(), wPipe->DefaultPosition);
-        __PIPE_SHADER__.setMat4("mModel", mModel);
-
-        __PIPE_SHADER__.setMat4("mProjection", mProjection);
-        __PIPE_SHADER__.setMat4("mNormal", mNormal);
-        __PIPE_SHADER__.setMat4("mView", camera.GetViewMatrix());
-
-        __PIPE_SHADER__.setVec3("light.Position",camera.LightPosition);
-
-        __PIPE_SHADER__.setVec3("viewPosition", camera.CameraPosition);
-
-        __PIPE_SHADER__.setVec3("DefaultColor", ZGreyColor);
-        __PIPE_SHADER__.setFloat("DefaultAlpha", 0.5f);
-
-        wPipe->setUseTexture(false);
-        wPipe->setUseDefaultColor(true);
-        wPipe->setUseDefaultAlpha(true);
-        wPipe->setDefaultColor(ZGreyColor);
-        wPipe->setDefaultAlpha(0.5f);
-
-//        wPipe->drawGL(&__PIPE_SHADER__,GL_TRIANGLES);
-
 /* sphere */
+        wPipe->drawGLByContext(Draw);
 
-        __SPHERE_SHADER__.use();
+  //      __SPHERE_SHADER__.use();
 
-        glm::mat4 mSphereModel=glm::translate(camera.getModel(), wSphere.DefaultPosition);
+  //      glm::mat4 mSphereModel=glm::translate(camera.getModel(), wSphere.Position);
  //       mSphereModel=glm::rotate(mSphereModel,(float)glm::radians(270.0f),glm::vec3(1.0,0.0,0.0));
 
  //       mSphereModel=glm::rotate(mSphereModel,(float)glfwGetTime(),glm::vec3(0.0,0.0,1.0));
 
-        __SPHERE_SHADER__.setMat4("mModel", mSphereModel);
+ //       __SPHERE_SHADER__.setMat4("mModel", mSphereModel);
 
-        __SPHERE_SHADER__.setMat4("mProjection", mProjection);
+ //       __SPHERE_SHADER__.setMat4("mProjection", mProjection);
 
  //       mNormal=glm::rotate(mNormal,(float)glfwGetTime(),glm::vec3(0.0,0.0,1.0));
 
 
-        __SPHERE_SHADER__.setMat4("mNormal", mNormal);
+ /*       __SPHERE_SHADER__.setMat4("mNormal", mNormal);
         __SPHERE_SHADER__.setMat4("mView", camera.GetViewMatrix());
 
         __SPHERE_SHADER__.setVec3("light.Position",camera.LightPosition);
@@ -647,28 +768,29 @@ Per object matrix:
 
         __SPHERE_SHADER__.setMaterial(ZGold);
 
-        __SPHERE_SHADER__.setInt("TextureSampler",wSphere.getTexture()->getTextureEngineNumber());
-        __SPHERE_SHADER__.setBool ("BlinnPhong",false);
+        __SPHERE_SHADER__.setupTexSampler(wSphere.getTexture());
 
+        __SPHERE_SHADER__.setBool ("BlinnPhong",false);
+*/
 //        __SPHERE_SHADER__.setFloat("material.DiffuseAlpha",1.0f);
 
 
 //        wSphere.setupShaderMaterial(&__COLOR_SHADER__);
 
-        wSphere.setUseTexture(false);
+/*        wSphere.setUseTexture(false);
         wSphere.setUseDefaultColor(false);
         wSphere.setUseDefaultAlpha(false);
-        wTexEarth.bind();
-//        wSphere.drawGL(&__SPHERE_SHADER__,GL_TRIANGLES);
 
+        wSphere.drawGL(&__SPHERE_SHADER__,GL_TRIANGLES);
+*/
+        wSphere.drawGLByContext(Draw);
 
-
-        glBindVertexArray(0);
+/*        glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
         glBindTexture(GL_TEXTURE_2D, 0);
-
+*/
   //      wText.RenderText("This is sample text", 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -692,6 +814,14 @@ Per object matrix:
     glDeleteBuffers(1, &lampVBO);
     glDeleteBuffers(1, &lampEBO);
 */
+
+
+
+    GLResources->listTextures();
+
+    GLResources->listShaders();
+
+    GLResources->listObjects();
 
     delete wLamp;
     delete wPipe;

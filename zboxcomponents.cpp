@@ -45,76 +45,84 @@ void ZBoxComponents::setup(const float pHigh,
 void ZBoxComponents::setupRawVertices(ZObject& pObject)
 {
 
-    pObject.addVertice( FLR,"FLR");
+    pObject.addVec3(Draw, FLR,"FLR");
     FLRIdx= (GLuint)pObject.lastVertexIdx();
 
-    pObject.addVertice( FTR,"FTR");
+    pObject.addVec3(Draw, FTR,"FTR");
     FTRIdx= (GLuint)pObject.lastVertexIdx();
 
-    pObject.addVertice( FTL,"FTL");
+    pObject.addVec3(Draw, FTL,"FTL");
     FTLIdx= (GLuint)pObject.lastVertexIdx();
 
-    pObject.addVertice( FLL,"FLL");
+    pObject.addVec3(Draw, FLL,"FLL");
     FLLIdx= (GLuint)pObject.lastVertexIdx();
 
 
-    pObject.addVertice( BLR,"BLR");
+    pObject.addVec3(Draw, BLR,"BLR");
     BLRIdx= (GLuint)pObject.lastVertexIdx();
 
-    pObject.addVertice( BTR,"BTR");
+    pObject.addVec3(Draw, BTR,"BTR");
     BTRIdx= (GLuint)pObject.lastVertexIdx();
 
-    pObject.addVertice( BTL,"BTL");
+    pObject.addVec3(Draw, BTL,"BTL");
     BTLIdx= (GLuint)pObject.lastVertexIdx();
 
-    pObject.addVertice( BLL,"BLL");
+    pObject.addVec3(Draw, BLL,"BLL");
     BLLIdx= (GLuint)pObject.lastVertexIdx();
 }//setupRawVertices
 
-void ZBoxComponents::generateShape(ZObject& pObject)
+int ZBoxComponents::generateShape(ZObject& pObject,const char*pShaderName)
 {
+
+    zbs::ZArray<GLuint>       ShapeIndices;
+
     /* front face counter-clockwise */
 
     /* for GL_LINE_LOOP */
     //#ifdef __COMMENT__
-        pObject.ShapeIndices << FTRIdx;
-        pObject.ShapeIndices << FTLIdx;
-        pObject.ShapeIndices << FLLIdx;
-        pObject.ShapeIndices << FLRIdx;
-        pObject.ShapeIndices << FTRIdx;
+        ShapeIndices << FTRIdx;
+        ShapeIndices << FTLIdx;
+        ShapeIndices << FLLIdx;
+        ShapeIndices << FLRIdx;
+        ShapeIndices << FTRIdx;
 
        /* closing the figure back to FTR point */
     //#endif
     /* Top face counter-clockwise  starting from wFTRIdx*/
 
-        pObject.ShapeIndices << FTRIdx;
-        pObject.ShapeIndices << BTRIdx;
-        pObject.ShapeIndices << BTLIdx;
-        pObject.ShapeIndices << FTLIdx;
-        pObject.ShapeIndices << FTRIdx;
+        ShapeIndices << FTRIdx;
+        ShapeIndices << BTRIdx;
+        ShapeIndices << BTLIdx;
+        ShapeIndices << FTLIdx;
+        ShapeIndices << FTRIdx;
         /* closing the figure back to FTRpoint */
 
     /* Low Face */
-        pObject.ShapeIndices << FLRIdx;
-        pObject.ShapeIndices << FLLIdx;
-        pObject.ShapeIndices << BLLIdx;
-        pObject.ShapeIndices << BLRIdx;
-        pObject.ShapeIndices << FLRIdx;
+        ShapeIndices << FLRIdx;
+        ShapeIndices << FLLIdx;
+        ShapeIndices << BLLIdx;
+        ShapeIndices << BLRIdx;
+        ShapeIndices << FLRIdx;
 
     /* Back Face */
-        pObject.ShapeIndices << BLRIdx;
-        pObject.ShapeIndices << BTRIdx;
-        pObject.ShapeIndices << BTLIdx;
-        pObject.ShapeIndices << BLLIdx;
-        pObject.ShapeIndices << BLRIdx;
+        ShapeIndices << BLRIdx;
+        ShapeIndices << BTRIdx;
+        ShapeIndices << BTLIdx;
+        ShapeIndices << BLLIdx;
+        ShapeIndices << BLRIdx;
 
-        pObject.ShapeIndices << BTRIdx; /* closing the volume loop */
-        pObject.ShapeIndices << FTRIdx;
+        ShapeIndices << BTRIdx; /* closing the volume loop */
+        ShapeIndices << FTRIdx;
 
         /* closing the figure back to BTR point */
 
         /* OK */
 
+        pObject.GLDesc[Shape]=new ZGLObjDescriptor(pObject.GLDesc[Draw]->VertexData,&ShapeIndices);
+
+        if (pShaderName)
+                return pObject.createShaderContextByName(Shape,pShaderName);
+        return 0;
 } // ZBoxComponents::generateShape
 
 

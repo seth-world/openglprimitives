@@ -44,50 +44,340 @@ ZGLResource::deregisterObject(ZObject* pObject)
         if (pObject==Objects[wi])
         {
             Objects[wi]->deleteGLContext();
-            Objects.erase(wi);
+            Objects.erase((size_t)wi);
             return;
         }
     return;
 }
-void ZGLResource::deregisterShader(ZShader* pObject)
+
+
+long ZGLResource::registerTextureBase(_TextureBase* pTexture)
 {
-    for (long wi=0;wi<Shaders.count();wi++)
-        if (pObject==Shaders[wi])
-        {
-            Shaders[wi]->deleteGLContext();
-            Shaders.erase(wi);
-            return;
-        }
-    return;
-}
-void ZGLResource::deregisterTexture(ZTexture* pObject)
-{
+    /* texture must not already exist within registrated textures */
     for (long wi=0;wi<Textures.count();wi++)
-        if (pObject==Textures[wi])
+            if (Textures[wi]==pTexture)
+                    {
+                    fprintf (stdout,"ZGLResource::registerTextureBase-W-DBL Double texture registration for <%s> \n",
+                             pTexture->Name);
+                    return wi; /* already existing : return actual rank */
+                    }
+    /* else create */
+    return Textures.push(pTexture);
+}
+#ifdef __COMMENT__
+long ZGLResource::registerTextTextureBase(_TextureBase* pTexture)
+{
+    /* shader must not already exist */
+    for (long wi=0;wi<Textures.count();wi++)
+            if (Textures[wi]==pTexture)
+                    return wi; /* already existing : return actual rank */
+    /* else create */
+    char* wName=(char*)malloc(25);
+    memset(wName,0,25);
+    sprintf(wName,"TextTexture-%ld",Textures.lastIdx()+1);
+    pTexture->Name=wName;
+    return Textures.push(pTexture);
+}
+#endif // __COMMENT__
+
+long ZGLResource::registerShaderBase(_ShaderBase* pShader)
+{
+    /* shader must not already exist */
+    for (long wi=0;wi<Shaders.count();wi++)
+            if (Shaders[wi]==pShader)
+                    return wi; /* already existing : return actual rank */
+    /* else create */
+    return Shaders.push(pShader);
+}
+
+void ZGLResource::deregisterShader(ZShader &pShader)
+{
+    deregisterShaderBase(pShader.ShaderBase);
+    pShader.ShaderBase=nullptr;
+    return;
+}
+
+void ZGLResource::deregisterShaderBase(_ShaderBase* pShader)
+{
+    if (pShader==nullptr)
+            return;
+    for (long wi=0;wi<Shaders.count();wi++)
+        if (pShader==Shaders[wi])
         {
-            Textures[wi]->deleteGLContext();
-            Textures.erase(wi);
+            if (Shaders[wi]->unShare())/* unshare returns true if no more references exist*/
+                    {
+                    delete Shaders[wi];
+                    Shaders.erase(wi);
+                    }
+
             return;
         }
+    return;
+}
+void ZGLResource::deregisterTextureBase(_TextureBase* pTexture)
+{
+    if (pTexture==nullptr)
+            return;
+    for (long wi=0;wi<Textures.count();wi++)
+        if (pTexture==Textures[wi])
+        {
+            if (Textures[wi]->unShare()) /* unshare returns true if no more references exist*/
+                    {
+                    delete Textures[wi];
+                    Textures.erase(wi);
+                    }
+            return;
+        }
+    return;
+}
+void ZGLResource::listTextures(FILE* pOutput)
+{
+    fprintf (pOutput,
+             "--------Registrated textures------------------\n"
+             "Rank  GLId Shared            Name\n");
+    for (long wi=0;wi < Textures.count();wi++)
+        {
+        fprintf (pOutput,
+                 "%3ld> <%3u> <%4d> <%25s>\n",
+                 wi,
+                 Textures[wi]->GLId,
+                 Textures[wi]->Shared,
+                 Textures[wi]->Name);
+        }
+    fprintf (pOutput,
+             "-----------------------------------------------\n");
+}
+void ZGLResource::listShaders(FILE* pOutput)
+{
+    fprintf (pOutput,
+             "--------Registrated Shaders ---------------------------------------------------\n"
+             "Rank  GLId Shared            Name                         Matrices             \n");
+    for (long wi=0;wi < Shaders.count();wi++)
+        {
+        fprintf (pOutput,
+                 "%3ld> <%3u> <%4d> <%25s> | ",
+                 wi,
+                 Shaders[wi]->GLId,
+                 Shaders[wi]->Shared,
+                 Shaders[wi]->Name);
+
+        fprintf (pOutput,"%s ",
+                 glGetUniformLocation(Shaders[wi]->GLId,__SHD_MODEL__)>=0?"Model":"--");
+        fprintf (pOutput,"%s ",
+                 glGetUniformLocation(Shaders[wi]->GLId,__SHD_VIEW__)>=0?"View":"--");
+        fprintf (pOutput,"%s ",
+                 glGetUniformLocation(Shaders[wi]->GLId,__SHD_PROJECTION__)>=0?"Projection":"--");
+        fprintf (pOutput,"%s ",
+                 glGetUniformLocation(Shaders[wi]->GLId,__SHD_NORMAL__)>=0?"Normal":"--");
+        fprintf (pOutput,"\n");
+        }
+    fprintf (pOutput,
+             "-----------------------------------------------\n");
+}
+
+void ZGLResource::listObjects(FILE* pOutput)
+{
+    fprintf (pOutput,
+             "--------Registrated Objects--------------------\n"
+             "Rank  Type            Name\n");
+    for (long wi=0;wi < Objects.count();wi++)
+        {
+        fprintf (pOutput,
+                 "%3ld> <%15s> <%25s> ",
+                 wi,
+                 decodeObjectType(Objects[wi]->Type),
+                 Objects[wi]->Name);
+        if  (Objects[wi]->isChild())
+        {
+          fprintf (pOutput,
+                   " belongs to %s <%s>",
+                   decodeObjectType(Objects[wi]->getFatherType()),
+                   Objects[wi]->getFatherName());
+        }
+        else
+        {
+            fprintf (pOutput,
+                     " Standalone\n");
+        }
+
+        fprintf (pOutput,"          Shader contexts ");
+        for (int wj=0;wj<MaxShaderContext;wj++)
+                {
+                if (Objects[wi]->ShaderContext[wj])
+                    {
+                        fprintf (pOutput,"[%s: <%s> rules<%ld>]",
+                                 decodeShdCtx(wj),
+                                 Objects[wi]->ShaderContext[wj]->getShaderName(),
+                                 Objects[wi]->ShaderContext[wj]->count());
+                    }
+                }
+        fprintf (pOutput,
+                 "\n          Descriptors     ");
+        for (int wj=0;wj<MaxShaderContext;wj++)
+                if (Objects[wi]->GLDesc[wj])
+                        fprintf (pOutput,"[%s: <%s> <%s>] ",
+                                 decodeShdCtx(wj),
+                                 Objects[wi]->GLDesc[wj]->VertexData?"Vertex":"--",
+                                 Objects[wi]->GLDesc[wj]->Indexes?"Indexes":"--");
+        fprintf (pOutput,"\n");
+        }
+    fprintf (pOutput,
+             "-----------------------------------------------\n");
+}
+void ZGLResource::deregisterTexture(ZTexture* pTexture)
+{
+    if (pTexture==nullptr)
+            return;
+    deregisterTextureBase(pTexture->TextureBase);
     return;
 }
 
 
 void ZGLResource::cleanAll()
 {
-    while (Textures.count())
-            Textures.popR()->deleteGLContext();
+
+    while (Shaders.count())
+            delete Shaders.popR();
     while (Objects.count())
             Objects.popR()->deleteGLContext();
+    while (Textures.count())
+            {
+//debug
+            _TextureBase* wT= Textures.popR();
+            delete wT;
+//            delete Textures.popR();
+            }
     return;
 }
 
-ZShader ZGLResource::loadShader(const char*pVPath,const char*pFPath, const char*pGPath, const char*pName)
+/*------------Shaders--------------------------------*/
+
+long ZGLResource::loadShader(const char*pVPath,const char*pFPath, const char*pGPath, const char*pIntlName)
 {
-    return ZShader(pVPath,pFPath,pGPath,pName);
+    _ShaderBase* wSh= _InitShaderGeometry(pVPath,pFPath,pGPath ,pIntlName);
+    if (!wSh)
+            return -1;
+    return registerShaderBase(wSh);
+ //   ZShader* wSh=new ZShader(pVPath,pFPath,pGPath,pIntlName);
+ //   return registerShader(wSh);
 }
 
+long ZGLResource::loadShader(const char*pVPath,const char*pFPath, const char*pIntlName)
+{
+    _ShaderBase* wSh= _InitShader(pVPath,pFPath ,pIntlName);
+    if (!wSh)
+            return -1;
+    return registerShaderBase(wSh);
 
+ //   ZShader* wSh=new ZShader(pVPath,pFPath,pIntlName);
+ //   return registerShader(wSh);
+}
+
+ZShader ZGLResource::getShaderByName(const char* pIntlName)
+{
+    for (long wi=0;wi<Shaders.count();wi++)
+            if (strcmp(Shaders[wi]->Name,pIntlName)==0)
+                        return ZShader(Shaders[wi]->share());
+
+    return ZShader(nullptr);
+}
+ZShader ZGLResource::getShaderByNameCase(const char* pIntlName)
+{
+    for (long wi=0;wi<Shaders.count();wi++)
+            if (strcasecmp(Shaders[wi]->Name,pIntlName)==0)
+                        return ZShader(Shaders[wi]->share());
+
+    return nullptr;
+}
+ZShader ZGLResource::getShaderByRank(const long pIdx)
+{
+    if (!Shaders.exists(pIdx))
+                    return nullptr;
+    return Shaders[pIdx]->share();
+}
+
+ZShader ZGLResource::getActiveShader()
+{
+GLint wCurShader=0;
+    glGetIntegerv(GL_CURRENT_PROGRAM,&wCurShader);
+    if (wCurShader==0)
+        {
+        fprintf (stderr,"ZGLResource::getActiveShader-E-NOSHD No current shader is active at this time\n");
+        return nullptr;
+        }
+    for (long wi=0;wi<Shaders.count();wi++)
+        {
+        if (Shaders[wi]->GLId==wCurShader)
+                return Shaders[wi]->share();
+        }
+    fprintf (stderr,"ZGLResource::getActiveShader-E-NOTRGTD Current shader id <%d> is not registrated within GL resources.\n",(int)wCurShader);
+    exit (EXIT_FAILURE);
+}//getActiveShader
+
+ZShader* ZGLResource::getShaderByNamePtr(const char* pIntlName)
+{
+    for (long wi=0;wi<Shaders.count();wi++)
+            if (strcmp(Shaders[wi]->Name,pIntlName)==0)
+                        return Shaders[wi]->sharePtr();
+
+    return nullptr;
+}
+ZShader* ZGLResource::getShaderByNameCasePtr(const char* pIntlName)
+{
+    for (long wi=0;wi<Shaders.count();wi++)
+            if (strcasecmp(Shaders[wi]->Name,pIntlName)==0)
+                        return Shaders[wi]->sharePtr();
+
+    return nullptr;
+}
+ZShader* ZGLResource::getShaderByRankPtr(const long pIdx)
+{
+    if (!Shaders.exists(pIdx))
+                    return nullptr;
+    return Shaders[pIdx]->sharePtr();
+}
+
+ZShader* ZGLResource::getActiveShaderPtr()
+{
+GLint wShID=0;
+    glGetIntegerv(GL_CURRENT_PROGRAM,&wShID);
+    if (wShID==0)
+        {
+        fprintf (stderr,"ZGLResource::getActiveShader-E-NOSHD No current shader is active at this time\n");
+        return nullptr;
+        }
+    for (long wi=0;wi<Shaders.count();wi++)
+        {
+        if (Shaders[wi]->GLId==wShID)
+                return Shaders[wi]->sharePtr();
+        }
+
+    fprintf (stderr,
+             "ZGLResource::getActiveShader-E-NOTRGTD Current shader id <%d> is not registrated within GL resources.\n",
+             (int)wShID);
+
+    listRegistratedShaders();
+
+    exit (EXIT_FAILURE);
+}//getActiveShaderPtr
+
+
+void ZGLResource::listRegistratedShaders(FILE*pOutput)
+{
+    fprintf (pOutput,
+             "\n List of registrated shaders\n"
+             " Rank GL-id Name\n");
+    for (long wi=0;wi<Shaders.count();wi++)
+        {
+        fprintf (pOutput,
+                 "<%3ld> <%3u> <%s>\n",
+                 wi,
+                 Shaders[wi]->GLId,
+                 Shaders[wi]->Name);
+        }
+}
+
+/*------------------Fonts-------------------------------*/
 
 long  ZGLResource::addFont(const char *pFontName,const char*pIntName, const FontLoc_type pLocFlag)
 {
@@ -349,8 +639,9 @@ void ZGLResource::registerZCamera (ZCamera* pCamera)
 {
     Camera=pCamera;
 }
+
 /* Root Paths for shaders and textures */
-std::string ZGLResource::getShaderPath (const char*pName)
+std::string ZGLResource::getShaderPath (const char*pFileName)
 {
     if (ShaderRootPath.empty())
     {
@@ -371,10 +662,14 @@ std::string ZGLResource::getShaderPath (const char*pName)
     }
     std::string wFullPath=ShaderRootPath ;
     _addConditionalDelimiter(wFullPath);
-    wFullPath += pName;
+    wFullPath += pFileName;
     return wFullPath;
-}
-std::string ZGLResource::getTexturePath (const char*pName)
+}//getShaderPath
+
+
+
+
+std::string ZGLResource::getTexturePath (const char*pFileName)
 {
     if (TextureRootPath.empty())
     {
@@ -396,12 +691,37 @@ std::string ZGLResource::getTexturePath (const char*pName)
     std::string wFullPath=TextureRootPath ;
     _addConditionalDelimiter(wFullPath);
 
-    wFullPath += pName;
+    wFullPath += pFileName;
     return wFullPath;
 }
 
+long ZGLResource::loadTexture(const char*pTextureName,const char* pIntlName,GLenum pEngine)
+{
+    _TextureBase* wT=loadTexture2D(pTextureName,pEngine);
+    if (!wT)
+            return -1;
+    wT->Name=pIntlName;
 
-/* Font local routines */
+    return Textures.push(wT);
+}
+
+ZTexture* ZGLResource::getTextureByName(const char* pIntlName)
+{
+    for (long wi=0;wi<Textures.count();wi++)
+            if (strcmp(Textures[wi]->Name,pIntlName)==0)
+                        return Textures[wi]->sharePtr();
+
+    return nullptr;
+}
+ZTexture* ZGLResource::getTextureByRank(const long pIdx)
+{
+    if (!Textures.exists(pIdx))
+                    return nullptr;
+    return Textures[pIdx]->sharePtr();
+}
+
+
+/* -----------Font local routines-------------------------- */
 
 void ZGLResource::_linuxListFonts(FILE* pOutput)
 {

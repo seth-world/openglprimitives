@@ -2,6 +2,35 @@
 #include <stb_image.h>
 #include <zglresource.h>
 
+ _TextureBase::_TextureBase(GLenum pTextureEngine)
+ {
+     glActiveTexture(pTextureEngine);
+
+     TextureEngine=pTextureEngine;
+     glGenTextures(1,&GLId);
+//     GLResources->registerTextureBase(this);
+ }
+
+_TextureBase::~_TextureBase()
+    {
+        glDeleteTextures(1,&GLId);
+    }
+
+
+
+
+ZTexture _TextureBase::share()
+{
+    Shared++;
+    return ZTexture(this);
+}
+ZTexture* _TextureBase::sharePtr()
+{
+    Shared++;
+    return new ZTexture(this);
+}
+
+/*
 ZTexture::ZTexture( GLenum pTextureEngine)
 {
     glActiveTexture(pTextureEngine);
@@ -9,27 +38,27 @@ ZTexture::ZTexture( GLenum pTextureEngine)
     TextureEngine=pTextureEngine;
     glGenTextures(1,&Id);
 }
-ZTexture::ZTexture(const char* pPath , GLenum pTextureEngine)
+ZTexture::ZTexture(const char* pPath , const char *pIntName, GLenum pTextureEngine)
 {
     glActiveTexture(pTextureEngine);
     GLResources->registerTexture(this);
     TextureEngine=pTextureEngine;
+    setName(pIntName);
 //    glGenTextures(1,&Id);  -- gentexture is made within load2D()
     load2D(pPath);
 }
-
-void ZTexture::bind()
+*/
+void ZTexture::bind() const
 {
 //    glEnable(GL_TEXTURE_2D);  // not allowed in opengl 3.3
-    glActiveTexture(TextureEngine);
-    glBindTexture(GL_TEXTURE_2D, Id);
+    glActiveTexture(TextureBase->TextureEngine);
+    glBindTexture(GL_TEXTURE_2D, TextureBase->GLId);
 }
 
 
 // utility function for loading a 2D texture from file
 // ---------------------------------------------------
-int
-ZTexture::load2D(char const * path)
+_TextureBase* loadTexture2D(char const * path, GLenum pTextureEngine)
 {
 //    unsigned int textureID;
     std::string wPath=GLResources->getTexturePath(path);
@@ -41,14 +70,16 @@ ZTexture::load2D(char const * path)
                                     0);
     if (!data)
         {
-        std::cout << "Texture failed to load at path: " << wPath << std::endl;
+        std::cerr << "Texture failed to load at path: " << wPath << std::endl;
         stbi_image_free(data);
-        Id=0;
-        return -1;
+        return nullptr;
         }
     printf ("texture <%s> has been successfully loaded \n",wPath.c_str());
-    glActiveTexture(TextureEngine);
-    glGenTextures(1, &Id);
+
+    _TextureBase* wTB=new _TextureBase(pTextureEngine);
+//    GLuint wId=0;
+//    glActiveTexture(pTextureEngine);
+//    glGenTextures(1, &wId);
 
     GLenum format=GL_RGB;
     if (nrComponents == 1)
@@ -58,7 +89,7 @@ ZTexture::load2D(char const * path)
     else if (nrComponents == 4)
         format = GL_RGBA;
 
-    glBindTexture(GL_TEXTURE_2D, Id);
+    glBindTexture(GL_TEXTURE_2D, wTB->GLId);
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -69,11 +100,12 @@ ZTexture::load2D(char const * path)
 
     stbi_image_free(data);
 
-    return 0;
+
+    return wTB;
 }//load2D
 
 
-
+#ifdef __COMMENT__
 // utility function for loading a 2D texture from file
 // ---------------------------------------------------
 unsigned int loadTexture(char const * path)
@@ -117,6 +149,7 @@ unsigned int loadTexture(char const * path)
 
     return textureID;
 }//loadTexture
+#endif // __COMMENT__
 ///////////////////////////////////////////////////////////////////////////////
 // load raw image as a texture
 ///////////////////////////////////////////////////////////////////////////////

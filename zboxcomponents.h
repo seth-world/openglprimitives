@@ -34,7 +34,7 @@ public:
 
     void setupRawVertices(ZObject& pObject);
 
-    void generateShape(ZObject& pObject);
+    int generateShape(ZObject& pObject, const char *pShaderName=nullptr);
 
     float TopY ;
     float LowY ;
