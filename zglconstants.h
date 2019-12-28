@@ -7,37 +7,197 @@
 #define Color_type glm::vec3
 #define TexCoords_type glm::vec2
 
-
+/* shaders standard internal names */
 #define __TEXT_SHADER__             "TextShader"
 #define __TEXTBOX_SHADER_SHAPE__    "BoxShaderShape"
 #define __TEXTBOX_SHADER_FILL__     "BoxShaderFill"
 
-#define __SHD_POSITION_ATTR__   "aPosition"
-#define __SHD_NORMAL_ATTR__     "aNormal"
-#define __SHD_TEXCOORDS_ATTR__  "aTexCoords"
+/* Shaders standard attribute names for coordinates */
+#define __SHD_POSITION_ATTR__       "aPosition"
+#define __SHD_NORMAL_ATTR__         "aNormal"
+#define __SHD_TEXCOORDS_ATTR__      "aTexCoords"
+/* attribute for text coordinates, vec4 <x,y> text coordinates - <s,t> texture coordinates */
+#define __SHD_TEXT_COORDS_ATTR__    "aTextCoords"
 
+/* Shaders standard uniform names */
 #define __SHD_TEXTURESAMPLER__  "TextureSampler"
 #define __SHD_USE_TEXTURE_UN__  "useTexture"
-#define __SHD_TEXTCOLOR_UN__    "TextColor"
-#define __SHD_DEFAULTCOLOR_UN__ "DefaultColor"
 
-#define __SHD_ALPHA_UN__        "Alpha"
+#define __SHD_USECOLOR_UN__     "useDefaultColor"
+#define __SHD_DEFAULTCOLOR_UN__ "defaultColor"
 
+#define __SHD_USE_ALPHA_UN__    "useDefaultAlpha"
+#define __SHD_ALPHA_UN__        "defaultAlpha"
+
+#define __SHD_VIEW_POSITION_UN__    "viewPosition"
+#define __SHD_LIGHT_POSITION_UN__   "lightPosition"
+
+
+#define __SHD_AMB_STRGTH_UN__       "ambientStrength"
+#define __SHD_USE_AMB_STRGTH_UN__   "useAmbientStrength"
+
+#define __SHD_BLINNPHONG_UN__       "blinnPhong"
+
+#define __SHD_MAT_AMBIENT_UN__      "material.Ambient"
+#define __SHD_MAT_DIFFUSE_UN__      "material.Diffuse"
+#define __SHD_MAT_SPECULAR_UN__     "material.Specular"
+#define __SHD_MAT_SHININESS_UN__    "material.Shininess"
+
+/* below uniform names are not currently used */
+#define __SHD_LIGHT_AMBIENT_UN__      "light.Ambient"
+#define __SHD_LIGHT_DIFFUSE_UN__      "light.Diffuse"
+#define __SHD_LIGHT_SPECULAR_UN__     "light.Specular"
+#define __SHD_LIGHT_SHININESS_UN__    "light.Shininess"
+
+/* text shader */
+#define __SHD_TEXTCOLOR_UN__    "textColor"
 /* z position (depth) for text : set to shader under this name as uniform */
-#define __SHD_TEXTPOSZ_UN__ "TextPosZ"
-#define __SHD_BOXPOSZ_UN__  "BoxPosZ"
+#define __SHD_TEXTPOSZ_UN__ "textPosZ"
+#define __SHD_BOXPOSZ_UN__  "boxPosZ"
 
+/* matrices */
 #define __SHD_MODEL__       "mModel"
 #define __SHD_VIEW__        "mView"
 #define __SHD_PROJECTION__  "mProjection"
 #define __SHD_NORMAL__      "mNormal"
+/*
+--------------------------------------------
+ Fragment shaders attributes and related uniform values
+--------------------------------------------
+   zlamp.fs :  (works with zlamp.vs)  basic shader
+   ----------
 
-/*static constexpr int Draw           = 0;
-static constexpr int Shape          = 1;
-static constexpr int NormVisu       = 2;
-static constexpr int UserDefined    = 3;
-static constexpr int MaxShaderContext=4;
-*/
+attributes (vertex shader):
+    __SHD_POSITION_ATTR__           vec3 <x,y,z>
+matrices:
+uses 3 matrices :
+    __SHD_MODEL__       mModel
+    __SHD_VIEW__        mView
+    __SHD_PROJECTION__  mProjection
+
+    (mNormal is not used and not defined)
+
+uniforms (fragment shader):
+    __SHD_DEFAULTCOLOR_UN__     mandatory
+
+    __SHD_USE_ALPHA_UN__        optional use of mentionned alpha value (opengl defaults to zero = false)
+    __SHD_ALPHA_UN__            optional alpha value    (opengl defaults to zero)
+
+
+    zcolor.fs : (works with zlighting.vs) use of mentionned color
+    -----------
+
+attributes (vertex shader):
+    __SHD_POSITION_ATTR__           vec3 <x,y,z>
+    __SHD_NORMAL_ATTR__             vec3 <x,y,z>
+    __SHD_TEXCOORDS_ATTR__          vec2 <s,t>
+
+matrices :
+    __SHD_MODEL__       mModel
+    __SHD_VIEW__        mView
+    __SHD_PROJECTION__  mProjection
+    __SHD_NORMAL__      mNormal
+
+uniforms (fragment shader):
+    __SHD_DEFAULTCOLOR_UN__     mandatory
+
+    __SHD_USE_ALPHA_UN__
+    __SHD_ALPHA_UN__
+
+
+    __SHD_VIEW_POSITION_UN__
+    __SHD_LIGHT_POSITION_UN__
+    __SHD_BLINNPHONG_UN__
+
+
+    ztexture.fs : (works with zlighting.vs) use of texture
+    -------------
+
+attributes (vertex shader):
+    __SHD_POSITION_ATTR__           vec3 <x,y,z>
+    __SHD_NORMAL_ATTR__             vec3 <x,y,z>
+    __SHD_TEXCOORDS_ATTR__          vec2 <s,t>
+
+matrices :
+    __SHD_MODEL__       mModel
+    __SHD_VIEW__        mView
+    __SHD_PROJECTION__  mProjection
+    __SHD_NORMAL__      mNormal
+
+uniforms (fragment shader):
+
+    __SHD_USECOLOR_UN__         if set to true will shade given default color with texture
+    __SHD_DEFAULTCOLOR_UN__     optional
+
+    __SHD_USE_ALPHA_UN__        optional, Alpha value is set to 1.0f by default
+    __SHD_ALPHA_UN__
+
+    __SHD_VIEW_POSITION_UN__    Mandatory
+    __SHD_LIGHT_POSITION_UN__   Mandatory
+    __SHD_BLINNPHONG_UN__       Optional ; if set to true Blinn effect, else Phong effect
+
+    __SHD_USE_AMB_STRGTH_UN__   Optional ; if set Ambient strength booster is applied. If not default applies.
+    __SHD_AMB_STRGTH_UN__       float : Ambient strenght booster. Defaulted to 0.4
+
+
+    __SHD_TEXTURESAMPLER__      Mandatory loaded with GL_TEXTUREx as int
+
+    zmaterial.fs : (works with zlighting.vs) use of material
+    --------------
+
+attributes (vertex shader):
+    __SHD_POSITION_ATTR__           vec3 <x,y,z>
+    __SHD_NORMAL_ATTR__             vec3 <x,y,z>
+    __SHD_TEXCOORDS_ATTR__          vec2 <s,t>
+matrices :
+    __SHD_MODEL__       mModel
+    __SHD_VIEW__        mView
+    __SHD_PROJECTION__  mProjection
+    __SHD_NORMAL__      mNormal
+
+uniforms (fragment shader):
+    __SHD_USECOLOR_UN__         if set to true will shade given default color with Material Ambient value
+    __SHD_DEFAULTCOLOR_UN__     optional, Mandatory if
+
+    __SHD_USE_ALPHA_UN__        optional, Alpha value is set to 1.0f by default
+    __SHD_ALPHA_UN__
+
+    __SHD_VIEW_POSITION_UN__    Mandatory
+    __SHD_LIGHT_POSITION_UN__   Mandatory
+    __SHD_BLINNPHONG_UN__       Optional ; if set to true Blinn effect, else Phong effect
+
+    __SHD_USE_AMB_STRGTH_UN__   Optional ; if set Ambient strength booster is applied. If not default applies.
+    __SHD_AMB_STRGTH_UN__       float : Ambient strenght booster. Defaulted to 0.7
+
+   material characteristics structure
+
+   __SHD_MAT_AMBIENT_UN__       Mandatory
+   __SHD_MAT_DIFFUSE_UN__       Mandatory
+   __SHD_MAT_SPECULAR_UN__      Mandatory
+   __SHD_MAT_SHININESS_UN__     Mandatory
+
+
+   ------------Text--------------------------
+
+   zgltext.fs : works with zgltext.vs
+   ------------
+attributes for vertex shader:
+    __SHD_TEXT_COORDS_ATTR__    vec4 <x,y> text coordinates - <s,t> texture coordinates
+
+uniforms:
+   __SHD_TEXTCOLOR_UN__         Mandatory
+   __SHD_TEXTPOSZ_UN__          Mandatory : text z position vs box (box is positionned with z=0.0)
+   __SHD_TEXTURESAMPLER__       Mandatory loaded with GL_TEXTUREx as int
+matrices:
+uses 3 matrices :
+    __SHD_MODEL__       mModel
+    __SHD_VIEW__        mView
+    __SHD_PROJECTION__  mProjection
+
+    (mNormal is not used and not defined)
+
+ */
+
 enum DrawContext_type : int
 {
     Draw  = 0,

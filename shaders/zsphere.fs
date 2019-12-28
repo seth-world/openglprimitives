@@ -1,9 +1,7 @@
-// GLSL version
 #version 330 core
 
 
 struct light_struct {
-    vec3 Position;             // should be in the eye space
     vec3 Ambient;              // light ambient color
     vec3 Diffuse;              // light diffuse color
     vec3 Specular;             // light specular color
@@ -25,9 +23,10 @@ uniform material_struct     material;
 
 uniform sampler2D TextureSampler;                 // texture map #1
 
+uniform vec3                lightPosition;
 uniform vec3                viewPosition;
-uniform vec3                DefaultColor;
-uniform float               DefaultAlpha;
+uniform vec3                defaultColor;
+uniform float               defaultAlpha;
 
 
 // -------Usage flags----------------
@@ -42,13 +41,13 @@ void main()
 {
     vec3 wNormal = normalize(esNormal);
     vec3 wLightDir;
- //   if(light.Position.w == 0.0)
+ //   if(lightPosition.w == 0.0)
  //   {
- //       wLightDir = normalize(light.Position.xyz);
+ //       wLightDir = normalize(lightPosition.xyz);
  //   }
  //   else
  //   {
-        wLightDir = normalize(light.Position.xyz - esVertex);
+        wLightDir = normalize(lightPosition.xyz - esVertex);
  //   }
     vec3 wView = normalize(-esVertex);
     vec3 wHalfv = normalize(wLightDir + wView);

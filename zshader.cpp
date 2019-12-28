@@ -252,14 +252,14 @@ int ZShader::setupTexSampler(const ZTexture* pTexture)
 
 int ZShader::setupMaterial(const ZMaterial* pMaterial)
 {
-    int wRet=setVec3("material.Ambient", pMaterial->Ambient);
+    int wRet=setVec3(__SHD_MAT_AMBIENT_UN__, pMaterial->Ambient);
     if (wRet<0)
             return wRet;
-    if ((wRet=setVec3("material.Diffuse", pMaterial->Diffuse))<0)
+    if ((wRet=setVec3(__SHD_MAT_DIFFUSE_UN__, pMaterial->Diffuse))<0)
                 return wRet;
-    if ((wRet=setVec3("material.Specular", pMaterial->Diffuse))<0)
+    if ((wRet=setVec3(__SHD_MAT_SPECULAR_UN__, pMaterial->Diffuse))<0)
                 return wRet;
-    return setFloat("material.Shininess", pMaterial->Shininess);
+    return setFloat(__SHD_MAT_SHININESS_UN__, pMaterial->Shininess);
 }
 int ZShader::setupLight(const ZLight* pLight)
 {

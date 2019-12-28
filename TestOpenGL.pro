@@ -158,14 +158,10 @@ SOURCES += \
 DISTFILES += \
     ./shaders/material.fs \
     ./shaders/zcolor.fs \
-    ./shaders/zbasic_lighting.vs \
-    ./shaders/zbasic_lighting_copy.fs \
-    ./shaders/zbasic_lighting_copy.vs \
     ./shaders/zlamp.fs \
     ./shaders/zlamp.vs \
     ./shaders/zlighting.fs \
     ./shaders/zlighting.vs \
-    ./shaders/zmaterial_lighting.fs \
     ./shaders/zsphere.fs \
     ./shaders/zsphere.vs \
     shaders/geometry.gs \
@@ -178,13 +174,10 @@ DISTFILES += \
     shaders/zgltext.fs \
     shaders/zgltext.vs \
     shaders/zmaterial.fs \
-    shaders/znormvisu.fs \
-    shaders/znormvisu.vs \
     shaders/ztextbox.fs \
     shaders/ztextbox.vs \
     shaders/ztextboxtexture.fs \
     shaders/ztextboxtexture.vs \
     shaders/ztextrenderer.fs \
     shaders/ztextrenderer.vs \
-    shaders/ztextrenderer_copy.fs \
     shaders/ztexture.fs

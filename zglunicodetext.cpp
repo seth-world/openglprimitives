@@ -441,7 +441,7 @@ unsigned int wCurrentHeight = 0;
 inline void ZGLUnicodeText::_textsetUpGLState(glm::vec3 pColor)
 {
     Writer->TextShader->use();
-    TextCoordsAttLocation=Writer->TextShader->getNamedAttributeLocation("TextCoords",true); /* abort on error option set*/
+    TextCoordsAttLocation=Writer->TextShader->getNamedAttributeLocation(__SHD_TEXT_COORDS_ATTR__,true); /* abort on error option set*/
 
     glBindVertexArray(VAO);
     glEnableVertexAttribArray(TextCoordsAttLocation);
@@ -1747,7 +1747,7 @@ int ZGLUnicodeText::replaceBoxShaderByRank(const int pCtx,const long pRank)
 }
 void ZGLUnicodeText::printBoxShaderContext(const int pCtx,FILE*pOutput)
 {
-    Box->ShaderContext[pCtx]->print(pOutput);
+    Box->ShaderContext[pCtx]->display(pOutput);
 }
 void _printTextBoxFlag (uint16_t pBoxFlag,FILE* pOutput)
 {

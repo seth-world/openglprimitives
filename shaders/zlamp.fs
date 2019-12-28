@@ -1,8 +1,12 @@
 #version 330 core
-out vec4 FragColor;
-uniform vec3 DefaultColor;
-uniform float DefaultAlpha;
+uniform vec3  defaultColor;
+uniform bool  useAlpha;
+uniform float defaultAlpha;
 void main()
 {
-    FragColor = vec4(DefaultColor,DefaultAlpha); // set all 4 vector values to 1.0
+    float wAlpha=1.0f;
+    if (useAlpha)
+            wAlpha=defaultAlpha;
+
+    gl_FragColor = vec4(defaultColor,wAlpha);
 }

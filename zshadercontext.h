@@ -244,7 +244,7 @@ public:
         push(wSU);
     }
 
-    void print(FILE*pOutput=stdout);
+    void display(FILE*pOutput=stdout);
 
     /* applies all existing rules to shader in the order they have been declared */
     int applyRules();

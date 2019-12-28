@@ -9,6 +9,10 @@
 
 #include <glm/glm.hpp>
 
+#include <stdio.h>  // for sprintf()
+
+static char wDB[200];
+
 class ZMaterial{
 private:
     inline void _cloneFrom(const ZMaterial& pIn)
@@ -17,10 +21,12 @@ private:
         Diffuse=pIn.Diffuse;
         Specular=pIn.Specular;
         Shininess=pIn.Shininess;
+        Name=pIn.Name;
     }
 public:
-    ZMaterial(const glm::vec3 pAmbient, const glm::vec3 pDiffuse,const glm::vec3 pSpecular,float pShininess)
+    ZMaterial(const glm::vec3 pAmbient, const glm::vec3 pDiffuse,const glm::vec3 pSpecular,float pShininess,const char*pName=nullptr)
     {
+        Name=pName;
         Ambient=pAmbient;
         Diffuse=pDiffuse;
         Specular=pSpecular;
@@ -40,18 +46,29 @@ public:
          _cloneFrom(pIn);
          return *this;
     }
-
-
-
     glm::vec3 Ambient;
     glm::vec3 Diffuse;
     glm::vec3 Specular;
     float Shininess;
+    const char* Name=nullptr;
+
+    char* display() const
+    {
+        sprintf (wDB,"<%10s>[Ambient<r:%4f g:%4f b:%4f> Diffuse<r:%4f g:%4f b:%4f> Specular<r:%4f g:%4f b:%4f> Shininess:%4f]",
+                 Name,
+                 Ambient.r,Ambient.g,Ambient.b,
+                 Diffuse.r,Diffuse.g,Diffuse.b,
+                 Specular.r,Specular.g,Specular.b,
+                 Shininess);
+        return wDB;
+    }
+
 };
 class ZLight{
 public:
-    ZLight(const glm::vec3 pAmbient, const glm::vec3 pDiffuse,const glm::vec3 pSpecular)
+    ZLight(const glm::vec3 pAmbient, const glm::vec3 pDiffuse,const glm::vec3 pSpecular,const char* pName)
     {
+        Name=pName;
         Ambient=pAmbient;
         Diffuse=pDiffuse;
         Specular=pSpecular;
@@ -61,17 +78,38 @@ public:
         Ambient=pIn.Ambient;
         Diffuse=pIn.Diffuse;
         Specular=pIn.Specular;
+        Name=pIn.Name;
     }
     ZLight(ZLight &&pIn)
     {
         Ambient=pIn.Ambient;
         Diffuse=pIn.Diffuse;
         Specular=pIn.Specular;
+        Name=pIn.Name;
     }
-
+    ZLight& operator=(const ZLight& pIn)
+    {
+        Ambient=pIn.Ambient;
+        Diffuse=pIn.Diffuse;
+        Specular=pIn.Specular;
+        Name=pIn.Name;
+         return *this;
+    }
     glm::vec3 Ambient;
     glm::vec3 Diffuse;
     glm::vec3 Specular;
+    const char* Name;
+
+    char* display() const
+        {
+        sprintf (wDB,"<%10s>[Ambient<r:%4f g:%4f b:%4f> Diffuse<r:%4f g:%4f b:%4f> Specular<r:%4f g:%4f b:%4f>]",
+                 Name,
+                 Ambient.r,Ambient.g,Ambient.b,
+                 Diffuse.r,Diffuse.g,Diffuse.b,
+                 Specular.r,Specular.g,Specular.b);
+        return wDB;
+        }
+
 };
 /*
  * http://devernay.free.fr/cours/opengl/materials.html
@@ -107,64 +145,75 @@ yellow rubber 	0.05 	0.05 	0.0 	0.5 	0.5 	0.4 	0.7 	0.7 	0.04 	.078125
 const ZMaterial ZEmerald = {glm::vec3(0.0215f,0.1745f,0.0215f),
                            glm::vec3(0.07568f,0.61424f,0.07568f),
                            glm::vec3(0.07568f,0.61424f,0.07568f),
-                           0.6*128.0
-                          };
+                           0.6*128.0,
+                          "ZEmerald"};
 const ZMaterial ZJade= {glm::vec3(0.135 ,	0.2225, 	0.1575),
                            glm::vec3(0.54    ,    0.89     ,   0.63  ),
                            glm::vec3(0.316228 ,	0.316228 ,	0.316228 ),
-                           0.1*128.0
+                           0.1*128.0,
+                           "ZJade"
                           };
 const ZMaterial ZPearl= {glm::vec3(0.25 ,	0.20725, 0.20725 ),
                            glm::vec3(1     ,      0.829    ,   0.829   ),
                            glm::vec3(0.296648 ,	0.296648 	,0.296648 ),
-                           0.088*128.0
+                           0.088*128.0,
+                         "ZPearl"
                           };
 const ZMaterial ZRuby= {glm::vec3( 0.1745 ,	0.01175 ,	0.01175 ),
                            glm::vec3(0.61424 , 0.04136 ,	0.04136  ),
                            glm::vec3(0.727811 ,	0.626959 ,	0.626959 ),
-                           0.6*128.0
+                           0.6*128.0,
+                        "ZRuby"
                           };
 const ZMaterial ZTurquoise ={glm::vec3( 0.1 ,	0.18725 ,	0.1745 ),
                            glm::vec3(0.396 ,	0.74151 ,	0.69102 ),
                            glm::vec3(0.297254 ,	0.30829 ,	0.306678  ),
-                           0.1*128.0
+                           0.1*128.0,
+                             "ZTurquoise"
                           };
 const ZMaterial ZBrass = {glm::vec3( 0.329412 ,	0.223529 ,	0.027451 ),
                            glm::vec3(0.780392 ,	0.568627 ,	0.113725 ),
                            glm::vec3(0.992157 ,	0.941176 ,	0.807843  ),
-                           0.21794872*128.0
+                           0.21794872*128.0,
+                          "ZBrass"
                           };
 const ZMaterial ZBronze = {glm::vec3(0.2125f,0.1275f,0.054f),
                          glm::vec3(0.714f,0.4284f,0.18144f),
                          glm::vec3(0.393548f,0.271906f,0.166721f),
-                         0.2*128.0
+                         0.2*128.0,
+                           "ZBronze"
                         };
 const ZMaterial ZChrome = {glm::vec3(0.25f,0.25f,0.25f),
                            glm::vec3(0.4f,0.4f,0.4f),
                            glm::vec3(0.774597f,0.774597f,0.774597f),
-                           0.6f
+                           0.6f,
+                           "ZChrome"
                           };
 const ZMaterial ZCopper = {glm::vec3(0.19125f,0.0735f,0.0225f),
                            glm::vec3(0.7038f,0.27048f,0.0828f),
                            glm::vec3(0.256777f,0.137622f,0.086014f),
-                           0.1*128.0
+                           0.1*128.0,
+                           "ZCopper"
                           };
 
 const ZMaterial ZGold = {glm::vec3(0.24725,	0.1995 ,	0.0745 ),
                            glm::vec3(0.75164 ,	0.60648 ,	0.22648 ),
                            glm::vec3(0.628281 ,	0.555802 ,	0.366065 ),
-                           0.4*128.0
+                           0.4*128.0,
+                         "ZGold"
                           };
 const ZMaterial ZSilver = {glm::vec3(0.19225 ,	0.19225 ,	0.19225 ),
                            glm::vec3(0.50754 ,	0.50754 ,	0.50754  ),
                            glm::vec3(0.508273 ,	0.508273 ,	0.508273  ),
-                           0.4*128.0
+                           0.4*128.0,
+                           "ZSilver"
                           };
 
 const ZMaterial ZSphereMaterial (glm::vec3(0.5f, 0.5f, 0.5f),
                                    glm::vec3(0.7f, 0.7f, 0.7f),
                                    glm::vec3(0.4f, 0.4f, 0.4f),
-                                   16.0
+                                   16.0,
+                                 "ZSphereMat"
                                   );
 
 #endif // ZMATERIAL_H

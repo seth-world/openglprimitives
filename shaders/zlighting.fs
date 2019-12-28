@@ -15,11 +15,9 @@ struct material_struct {
         };
 
 struct light_struct {
-    vec3 Position;
     vec3 Ambient;
     vec3 Diffuse;
     vec3 Specular;
-//        vec3 Color;
         };
 
 uniform sampler2D   TextureSampler;
@@ -32,12 +30,13 @@ uniform  material_struct    material;
 //uniform        vec3     materialSpecular;
 //uniform        float    materialShininess;
 
+uniform vec3                lightPosition;
 uniform vec3                viewPosition;
-uniform vec3                DefaultColor;
-uniform float               DefaultAlpha;
+uniform vec3                defaultColor;
+uniform float               defaultAlpha;
 
 //----------Blinn-Phong flag (true : Blinn-Phong - false : Phong )
-uniform bool        BlinnPhong;
+uniform bool        blinnPhong;
 // -------Usage flags----------------
 uniform bool useTexture;                // flag for texture
 uniform bool useDefaultColor;
@@ -51,7 +50,7 @@ void main()
         {
         wColor =    texture(TextureSampler, fs_in.TexCoords).rgb;
         if (useDefaultColor)
-            wColor *= DefaultColor;
+            wColor *= defaultColor;
 //            wColor *= material.Ambient;
 
         }
@@ -68,7 +67,7 @@ void main()
 //    vec3 wAmbient = light.Ambient * wColor; // new
 
 // diffuse
-    vec3 wLightDir = normalize(light.Position - fs_in.Position);
+    vec3 wLightDir = normalize(lightPosition - fs_in.Position);
     vec3 wNormal = normalize(fs_in.Normal);
     float wDiff = max(dot(wLightDir, wNormal), 0.0);
     vec3 wDiffuse = wDiff * wColor ;        // old

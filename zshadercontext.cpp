@@ -368,62 +368,62 @@ displayShaderRule(const ShaderUniform pSHU )
     switch (pSHU.Type)
     {
     case SHU_Bool:
-        sprintf(wSHO,"%20s <%20s> <%s>",
+        sprintf(wSHO,"%15s <%20s> <%s>",
                 "SHU_Bool",
                 pSHU.Name,
                 pSHU.Value.Bool?"true":"false");
 
         return wSHO;
     case SHU_Float:
-        sprintf(wSHO,"%20s  <%20s> <%f>",
+        sprintf(wSHO,"%15s  <%20s> <%f>",
                 "SHU_Float",
                 pSHU.Name,
                 pSHU.Value.Float);
         return wSHO;
     case SHU_Vec2:
-        sprintf(wSHO,"%20s  <%20s> <x:%f , y:%f>",
+        sprintf(wSHO,"%15s  <%20s> <x:%f , y:%f>",
                 "SHU_Vec2",
                 pSHU.Name,
                 pSHU.Value.Vec2->x,pSHU.Value.Vec2->y);
         return wSHO;
     case SHU_Vec3:
-        sprintf(wSHO,"%20s  <%20s> <x:%f , y:%f , z:%f>",
+        sprintf(wSHO,"%15s  <%20s> <x:%f , y:%f , z:%f>",
                 "SHU_Vec3",
                 pSHU.Name,
                 pSHU.Value.Vec3->x,pSHU.Value.Vec3->y,pSHU.Value.Vec3->z);
         return wSHO;
     case SHU_Vec4:
-        sprintf(wSHO,"%20s  <%20s> <x:%f , y:%f , z:%f , w:%f>",
+        sprintf(wSHO,"%15s  <%20s> <x:%f , y:%f , z:%f , w:%f>",
                 "SHU_Vec4",
                 pSHU.Name,
                 pSHU.Value.Vec4->x,pSHU.Value.Vec4->y,pSHU.Value.Vec4->z,pSHU.Value.Vec4->w);
         return wSHO;
     case SHU_Mat2:
-        sprintf(wSHO,"%20s <%20s> <%s>",
+        sprintf(wSHO,"%15s <%20s> <%s>",
                 "SHU_Mat2",
                 pSHU.Name,
                 "--glm::mat2--");
         return wSHO;
     case SHU_Mat3:
-        sprintf(wSHO,"%20s  <%20s> <%s>",
+        sprintf(wSHO,"%15s  <%20s> <%s>",
                 "SHU_Mat3",
                 pSHU.Name,
                 "--glm::mat3--");
         return wSHO;
     case SHU_Mat4:
-        sprintf(wSHO,"%20s  <%20s> <%s>",
+        sprintf(wSHO,"%15s  <%20s> <%s>",
                 "SHU_Mat4",
                 pSHU.Name,
                 "--glm::mat4--");
         return wSHO;
     case SHU_Mat4Transpose:
-        sprintf(wSHO,"%20s  <%20s> <%s>",
-                "SHU_Mat4Transpose",
+        sprintf(wSHO,"%15s  <%20s> <%s>",
+                "SHU_Mat4Transp.",
                 pSHU.Name,
                 "--glm::mat4--");
         return wSHO;
     case SHU_Texture:
-        sprintf(wSHO,"%20s  <%20s> <%s> GLid <%d> GL Engine <%d>",
+        sprintf(wSHO,"%15s  <%20s> <%s> GLid <%d> GL Engine <%d>",
                 "SHU_Texture",
                 pSHU.Name,
                 pSHU.Value.Texture->getName(),
@@ -432,52 +432,31 @@ displayShaderRule(const ShaderUniform pSHU )
         return wSHO;
 
     case SHU_Light:
-        sprintf(wSHO,"%20s  <%20s> [Ambient<r:%4f g:%4f b:%4f> Diffuse<r:%4f g:%4f b:%4f> Specular<r:%4f g:%4f]",
+        sprintf(wSHO,"%15s  <%20s> %s",
                 "SHU_Light",
                 pSHU.Name,
-                pSHU.Value.Light->Ambient.r,
-                pSHU.Value.Light->Ambient.g,
-                pSHU.Value.Light->Ambient.b,
-                pSHU.Value.Light->Diffuse.r,
-                pSHU.Value.Light->Diffuse.g,
-                pSHU.Value.Light->Diffuse.b,
-                pSHU.Value.Light->Specular.r,
-                pSHU.Value.Light->Specular.g,
-                pSHU.Value.Light->Specular.b);
+                pSHU.Value.Light->display());
         return wSHO;
     case SHU_LineWidth:
-        sprintf(wSHO,"%20s  <%20s> <%f> NB: followed by postprocess rule",
+        sprintf(wSHO,"%15s  <%20s> <%f>        NB: followed by postprocess rule",
                 "SHU_LineWidth",
                 pSHU.Name,
                 pSHU.Value.Float);
         return wSHO;
     case SHU_Material:
-        sprintf(wSHO,"%20s  <%20s> [Ambient<r:%4f g:%4f b:%4f> Diffuse<r:%4f g:%4f b:%4f> Specular<r:%4f g:%4f b:%4f> Shininess:%4f]",
+        sprintf(wSHO,"%15s  <%20s> %s",
                 "SHU_Material",
                 pSHU.Name,
-                pSHU.Value.Material->Ambient.r,
-                pSHU.Value.Material->Ambient.g,
-                pSHU.Value.Material->Ambient.b,
-                pSHU.Value.Material->Diffuse.r,
-                pSHU.Value.Material->Diffuse.g,
-                pSHU.Value.Material->Diffuse.b,
-                pSHU.Value.Material->Specular.r,
-                pSHU.Value.Material->Specular.g,
-                pSHU.Value.Material->Specular.b,
-                pSHU.Value.Material->Shininess);
+                pSHU.Value.Material->display()
+                );
         return wSHO;
-        sprintf(wSHO,"%20s  <%20s> <x:%f , y:%f , z:%f>",
-                "SHU_Vec3",
-                pSHU.Name,
-                pSHU.Value.Vec3->x,pSHU.Value.Vec3->y,pSHU.Value.Vec3->z);
-        return wSHO;
-    default:
+     default:
         sprintf(wSHO,"<--Unknown Shader rule code-->");
         return wSHO;
     }
 }//displayShaderRule
 
-void ZShaderContext::print(FILE*pOutput)
+void ZShaderContext::display(FILE*pOutput)
 {
     fprintf (pOutput,
              "Shader Context for shader <%s> id <%d>-- Number of rules <%ld>---\n",

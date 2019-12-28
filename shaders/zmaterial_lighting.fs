@@ -15,7 +15,6 @@ struct material_struct {
         };
 
 struct light_struct {
-    vec3 Position;
     vec3 Ambient;
     vec3 Diffuse;
     vec3 Specular;
@@ -32,6 +31,7 @@ uniform  material_struct    material;
 //uniform        vec3     materialSpecular;
 //uniform        float    materialShininess;
 
+uniform vec3                lightPosition;
 uniform vec3                viewPosition;
 uniform vec3                DefaultColor;
 uniform float               DefaultAlpha;
@@ -57,7 +57,7 @@ void main()
 //    vec3 wAmbient = light.Ambient * wColor; // new
 
 // diffuse
-    vec3 wLightDir = normalize(light.Position - fs_in.Position);
+    vec3 wLightDir = normalize(lightPosition - fs_in.Position);
 //    normalize(vec3(projection * vec4(normalMatrix * aNormal, 0.0)));
     vec3 wNormal = normalize(fs_in.Normal);
 
