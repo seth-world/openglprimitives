@@ -1,4 +1,4 @@
-#include <ztextbox.h>
+﻿#include <ztextbox.h>
 #include <zglresource.h>
 #include <zshader.h>
 #include <ztexture.h>
@@ -146,6 +146,32 @@ int ZTextBox::setTextureByRank (const long pIdx)
 }// setTextureByRank
 
 
+void ZTextBox::setBorderWidth (float pWidth)
+{
+    return ShaderContext[Shape]->setLineWidth(pWidth);
+}
+void ZTextBox::setBorderColor(glm::vec3 pColor)
+{
+    LineColor=pColor;
+    Flag |= RBP_BoxShape ;
+    return ShaderContext[Shape]->addVec3(__SHD_DEFAULTCOLOR_UN__,&LineColor);
+}
+void ZTextBox::setBorderAlpha(float pAlpha)
+{
+    return ShaderContext[Shape]->addFloat(__SHD_ALPHA_UN__,pAlpha);
+}
+
+void ZTextBox::setFillColor(glm::vec3 pColor)
+    {
+    FillColor = pColor;
+    return ShaderContext[Shape]->addVec3(__SHD_DEFAULTCOLOR_UN__,&FillColor);
+    Flag |= RBP_BoxFill ;
+    }
+void ZTextBox::setFillAlpha(float pAlpha)
+    {
+    return ShaderContext[Shape]->addFloat(__SHD_ALPHA_UN__,pAlpha);
+    Flag |= RBP_BoxFill ;
+    }
 
 void ZTextBox::setupGL ()
 {
@@ -223,25 +249,6 @@ void ZTextBox::setupGLFill ()
         wMaxY= 0.0f;
         }
     /* setup box coordinates */
-/*     float wTextBoxTriangles [18] =
-     {
-         0.0     , -BoxHeight   ,0.0,
-         BoxWidth, -BoxHeight   ,0.0,
-         BoxWidth, 0.0          ,0.0,
-         BoxWidth, 0.0          ,0.0,
-         0.0    , 0.0           ,0.0,
-         0.0    , -BoxHeight    ,0.0
-     };
-     float wTextBoxTriangles [12] =
-     {
-         wMinX  , wMinY   ,
-         wMaxX  , wMinY   ,
-         wMaxX  , wMaxY   ,
-         wMaxX  , wMaxY   ,
-         wMinX  , wMaxY   ,
-         wMinX  , wMinY
-     };*/
-
      float wTextBoxCoords [18] =
      {
          wMinX  , wMinY   , 0.0f,
@@ -406,19 +413,9 @@ void ZTextBox::_drawBackground ()
 
 */
 
-
-    /* DefaultColor because using ztextbox.fs shader*/
-
-//    glBindBuffer(GL_ARRAY_BUFFER, BoxVBOFill);
     glBindVertexArray(BoxVAOFill);
 
     glDrawArrays(GL_TRIANGLES, 0 , 6);
-
-//    glLineWidth(wLineWidth);/* restore line width to its previous value */
-
-    // unbind
-//    if (Flag&RBP_BoxTexture)
-//            Texture->unbind();
 
     ShaderContext[Draw]->postProcess();
 

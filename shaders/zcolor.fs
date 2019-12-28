@@ -21,21 +21,16 @@ uniform struct light_struct {
     vec3 Color;         // mandatory
     } light;
 
+uniform struct material_struct {
+    vec3 Ambient;
+    vec3 Diffuse;
+    vec3 Specular;
+    float Shininess;
+} material;
+
 uniform vec3    viewPosition;
 uniform vec3    DefaultColor;
 uniform float   DefaultAlpha;
-
-
-struct material_struct {
-    vec3 Ambient;           // material ambient color
-    vec3 Diffuse;           // material diffuse color
-    vec3 Specular;          // material specular color
-    float Shininess;        // material specular shininess
-    float DiffuseAlpha;
-};
-
-uniform material_struct material;
-
 // -------Usage flags----------------
 uniform bool useTexture;                // flag for texture
 uniform bool useDefaultColor;

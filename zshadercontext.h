@@ -78,6 +78,7 @@ public:
 
     void add(ShaderUniform_type pType, const char*pName, void* pValue);
 
+    void print(FILE*pOutput=stdout);
 };
 
 
@@ -243,8 +244,13 @@ public:
         push(wSU);
     }
 
+    void print(FILE*pOutput=stdout);
+
     /* applies all existing rules to shader in the order they have been declared */
     int applyRules();
+
+    inline int _applyShader(ShaderUniform pSHU );
+
     int setupShader(ZShader& pShader,zbs::ZArray<ShaderUniform>& pParams);
     /* applies post processing, and release shader */
     void postProcess();

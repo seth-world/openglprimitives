@@ -108,11 +108,17 @@ public:
         return getTextureEngineNumber(TextureBase->TextureEngine);
     }
 
-    const char* getName()
+    const char* getName() const
     {
         if (!TextureBase)
             return nullptr;
         return TextureBase->Name;
+    }
+    int getGLId() const
+    {
+        if (!TextureBase)
+            return -1;
+        return TextureBase->GLId;
     }
 //    void setName(const char* pName) {strncpy(Name,pName,sizeof(Name));}
 

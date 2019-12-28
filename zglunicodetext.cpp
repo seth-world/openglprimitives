@@ -1642,7 +1642,7 @@ void ZGLUnicodeText::setBox (int pBoxWidth,
 {
     setBoxDimensions(pBoxWidth,pBoxHeight);
     setBoxVisible( pVisible);
-    setBoxLineSize( pLineSize);
+    setBoxBorderWidth( pLineSize);
     setBoxFlag( pBoxFlag & RBP_BoxMask);
     TextFlag = pBoxFlag & ~RBP_BoxMask ;
     setBoxBorderColor( pColor);
@@ -1745,7 +1745,10 @@ int ZGLUnicodeText::replaceBoxShaderByRank(const int pCtx,const long pRank)
 {
     Box->replaceBoxShaderByRank(pCtx,pRank);
 }
-
+void ZGLUnicodeText::printBoxShaderContext(const int pCtx,FILE*pOutput)
+{
+    Box->ShaderContext[pCtx]->print(pOutput);
+}
 void _printTextBoxFlag (uint16_t pBoxFlag,FILE* pOutput)
 {
     bool wJ=false;

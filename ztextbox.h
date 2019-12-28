@@ -12,36 +12,36 @@
 #include <zglconstants.h>
 //#include <zmatrices.h>
 
-enum RBoxPos : uint16_t
+enum RBoxPos : uint32_t
 {
-    RBP_Nothing         = 0,
+    RBP_Nothing             = 0,
     /* for horizontal display only */
-    RBP_Center          = 0x01, /* centered either horizontally or vertically according diplay mode (vertical or horizontal)*/
-    RBP_LeftJust        = 0x04, /* text is horizontally left justified (default) */
-    RBP_RightJust       = 0x08, /* text is horizontally right justified */
+    RBP_Center              = 0x01, /* centered either horizontally or vertically according diplay mode (vertical or horizontal)*/
+    RBP_LeftJust            = 0x04, /* text is horizontally left justified (default) */
+    RBP_RightJust           = 0x08, /* text is horizontally right justified */
     /* for vertical text display only */
 //    RBP_VertCenter      = 0x02, /* vertically centered */
-    RBP_TopJust         = 0x10, /* text is vertically display starting at top of box (default) */
-    RBP_BotJust         = 0x20, /* text is vertically displayed to box bottom */
+    RBP_TopJust             = 0x10, /* text is vertically display starting at top of box (default) */
+    RBP_BotJust             = 0x20, /* text is vertically displayed to box bottom */
 
-    RBP_LineWrap        = 0x40, /* Text is cut where line/column ends without taking care of words*/
-    RBP_WordWrap        = 0x80, /* Text is wrapped by word if it does not fit into box boundary (default)*/
-    RBP_TruncChar       = 0x0100, /* Displays a truncate sign at the end of the truncated line */
+    RBP_LineWrap            = 0x40, /* Text is cut where line/column ends without taking care of words*/
+    RBP_WordWrap            = 0x80, /* Text is wrapped by word if it does not fit into box boundary (default)*/
+    RBP_TruncChar           = 0x0100, /* Displays a truncate sign at the end of the truncated line */
 //    RBP_FitVertical     = 0x80,          /* Text should fit into vertical box boundary  */
 
-    RBP_AdjustFSize     = 0x0200,/* Text should fit as it is adjusting font size if necessary :
+    RBP_AdjustFSize         = 0x0200,/* Text should fit as it is adjusting font size if necessary :
                                     This option must be set only if RBP_Wrap is not set
                                     to make text with fit into box maximum width */
 
-    RBP_TextMask        = 0x0FFF,
+    RBP_TextMask           =    0x00FFFF,
 
 /* box drawing flag */
-    RBP_BoxVisible         = 0x1000,
-    RBP_BoxShape           = 0x2000,
-    RBP_BoxFill            = 0x4000,
-    RBP_BoxTexture         = 0x8000,
+    RBP_BoxVisible         =    0x010000,
+    RBP_BoxShape           =    0x020000,
+    RBP_BoxFill            =    0x040000,
+    RBP_BoxTexture         =    0x080000,
 
-    RBP_BoxMask         = 0xF000,
+    RBP_BoxMask            =  0xFFFF0000,
 
 //    RBP_AdjustBestTry   = 0x0200,       /* Text size is being adjusted if it does not fit vertically after being cut (default) */
 
@@ -65,9 +65,6 @@ public:
     ~ZTextBox();
 
     void setDimensions (int pBoxWidth, int pBoxHeight);
-    void setLinesWidth (float pWidth) {LineSize=pWidth;}
-    void setBorderColor(glm::vec3 pColor) {LineColor=pColor;}
-
     void setMargins  (int pLeftMargin, int pRightMargin,int pTopMargin,int pBottomMargin)
         {
         RightMargin=pRightMargin;
@@ -83,21 +80,8 @@ public:
         BottomMargin=pMargin;
         }
 
-    void setFlag(uint16_t pFlag) {Flag=pFlag;}
 
-    void setVisible (bool pVisible)
-        {
-        if (pVisible)
-            Flag |= RBP_BoxVisible ;
-        else
-            Flag &= (uint16_t)~RBP_BoxVisible;
-        }
-
-    void setFillColor(glm::vec3 pColor)
-        {
-        FillColor = pColor;
-        Flag |= RBP_BoxFill ;
-        }
+    /* fill on/off */
     void setFill(bool pFill)
         {
         if (pFill)
@@ -105,6 +89,8 @@ public:
         else
             Flag &= (uint16_t)~RBP_BoxFill;
         }
+
+    /* view border line on/off */
     void setBorder(bool pBorder)
     {
         if (pBorder)
@@ -113,14 +99,34 @@ public:
             Flag &= (uint16_t)~RBP_BoxShape;
     }
 
-    void setAlpha(float pAlpha) {   Alpha= pAlpha; }
+
+    /* view box on/off */
+    void setVisible (bool pVisible)
+        {
+        if (pVisible)
+            Flag |= RBP_BoxVisible ;
+        else
+            Flag &= (uint16_t)~RBP_BoxVisible;
+        }
+
+    /* force box flag value */
+    void setFlag(uint32_t pFlag) {Flag=pFlag;}
+
+/* Shape context -- Border */
+    void setBorderWidth (float pWidth) ;
+    void setBorderColor(glm::vec3 pColor) ;
+    void setBorderAlpha(float pAlpha);
+/*----*/
+
+
+/* Fill context - (Draw)  ---*/
+    void setFillColor(glm::vec3 pColor);
+    void setFillAlpha(float pAlpha);
+
+/*    void setAlpha(float pAlpha) {   Alpha= pAlpha; }*/
 
     int setTextureByRank (const long pIdx);
     int setTextureByName (const char* pIntName);
-
-
- //   int loadTexture (const char* pTexFile, const char* pIntlName,GLenum pTextureEngine);
-
 
     void setupGLShape   ();
     void setupGLFill ();
@@ -130,6 +136,8 @@ public:
     void _drawBackground ();
 
     void setupGL ();
+
+    /* change / replace shader context  with a new specific one (shader context is inherited from ZGLTextWriter */
 
     int changeBoxShaderByName(const int pCtx,const char* pIntName);
     int replaceBoxShaderByName(const int pCtx,const char* pIntName);
@@ -143,13 +151,12 @@ public:
 
     ZGLUnicodeText* Father=nullptr;
 
-
     float Alpha=1.0f;
 
 /* End Text Box */
 
 /* text box */
-    uint16_t Flag=RBP_Default;
+    uint32_t Flag=RBP_Default;
     float Width=-1.0;
     float Height=-1.0;
     float RightMargin    = 0.0;

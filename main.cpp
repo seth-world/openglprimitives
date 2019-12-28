@@ -198,19 +198,13 @@ int main()
 //----------Shaders----------------------------------
 
 //   ZShader sphereShader("zsphere.vs", "zsphere.fs","SphereShader");
- /*
-   ZShader textureShader("zlighting.vs", "ztexture.fs","TextureShader");
 
-   ZShader colorShader("zlighting.vs", "zcolor.fs","ColorShader");
+    /* various shaders according lighting effects / texture / material as requested */
 
-   ZShader materialShader("zlighting.vs", "zmaterial.fs","MaterialShader");
-   */
-   /* various shaders according lighting effects / texture / material as requested */
-
-   GLResources->loadShader("zlighting.vs", "ztexture.fs","TextureShader");
-   GLResources->loadShader("zlamp.vs", "zlamp.fs","LampShader");
-   GLResources->loadShader("zlighting.vs", "zcolor.fs","ColorShader");
-   GLResources->loadShader("zlighting.vs", "zmaterial.fs","MaterialShader");
+   long wTextureShader=GLResources->loadShader("zlighting.vs", "ztexture.fs","TextureShader");
+   long wLampShader=GLResources->loadShader("zlamp.vs", "zlamp.fs","LampShader");
+   long wColorShader=GLResources->loadShader("zlighting.vs", "zcolor.fs","ColorShader");
+   long wMaterialShader=GLResources->loadShader("zlighting.vs", "zmaterial.fs","MaterialShader");
 
    /* for text & text boxes */
    GLResources->loadShader("zgltext.vs", "zgltext.fs",__TEXT_SHADER__);
@@ -250,22 +244,33 @@ int main()
 
     ZGLTextWriter wUWriter(GL_TEXTURE0);
 
-    wUWriter.newBoxShader(Draw,__TEXTBOX_SHADER_FILL__);
-    wUWriter.newBoxShader(Shape,__TEXTBOX_SHADER_SHAPE__);
+ //   wUWriter.newBoxShader(Draw,__TEXTBOX_SHADER_FILL__);
+    wUWriter.newBoxShaderByRank(Draw,wMaterialShader);
+    wUWriter.newBoxShader(Shape,"LampShader");
 
-    wUWriter.setBoxShader(Draw)->setTextureByName("metal");
+/*    wUWriter.setBoxShader(Draw)->setTextureByName("metal");
     wUWriter.setBoxShader(Draw)->setLineWidth(1.5);
     wUWriter.setBoxShader(Draw)->addFloat(__SHD_ALPHA_UN__,1.0);
     wUWriter.setBoxShader(Draw)->addVec3("light.Position",&camera.LightPosition);
     wUWriter.setBoxShader(Draw)->addVec3("viewPosition",&camera.CameraPosition);
     wUWriter.setBoxShader(Draw)->addVec3("DefaultColor",&ZBlueColor);
+*/
+    wUWriter.setBoxShader(Draw)->addMaterial(&ZCopper);
+    wUWriter.setBoxShader(Draw)->addBool(__SHD_USE_TEXTURE_UN__,false);
+//    wUWriter.setBoxShader(Draw)->setLineWidth(1.5);
+    wUWriter.setBoxShader(Draw)->addFloat(__SHD_ALPHA_UN__,1.0);
+    wUWriter.setBoxShader(Draw)->addVec3("light.Position",&camera.LightPosition);
+    wUWriter.setBoxShader(Draw)->addVec3("viewPosition",&camera.CameraPosition);
 
-    wUWriter.setBoxShader(Shape)->setLineWidth(1.5);
-    wUWriter.setBoxShader(Shape)->addFloat(__SHD_ALPHA_UN__,1.0);
+ //   wUWriter.setBoxShader(Draw)->addVec3("DefaultColor",&ZBlueColor);
+
+//    wUWriter.setBoxShader(Shape)->setLineWidth(1.5);
+//    wUWriter.setBoxShader(Shape)->addFloat(__SHD_ALPHA_UN__,1.0);
 
 
     ZGLUnicodeText* wUText=wUWriter.newText();
     wRet=wUText->setText((utf32_t*)U"Жди меня, и я вернусь.","LiberationMono",24);
+
 
     if (wRet<0)
             {
@@ -289,22 +294,35 @@ int main()
      wBText->setBoxDimensions(700,350);
      wBText->setBoxMarginsAll(5.0);
      wBText->setBoxBorderColor(ZYellowBright);
+     wBText->setBoxBorderAlpha(1.0);
+     wBText->setBoxBorderWidth(1.5);
      wBText->setBoxVisible(true);
+     wBText->setBoxFill(true);
      wBText->setBoxBorder(true);
+
+     wBText->setBoxFillAlpha(1.0);
+
 //     wBText->setBoxFill(false);
      wBText->setTextFlag((uint16_t)RBP_Center|(uint16_t)RBP_WordWrap);
 //     wBText->setBoxTexture("tissuegrey.jpeg");
 
-     if (wBText->setBoxTextureByName("metal") < 0)
+ /*    if (wBText->setBoxTextureByName("metal") < 0)
             {
             fprintf(stderr,"Failed to assign texture <%s> to text box \n","metal");
             exit (EXIT_FAILURE);
             }
      wBText->setBoxFlag(RBP_BoxVisible|RBP_BoxTexture|RBP_BoxShape);
+     */
+//     wBText->setBoxFlag(RBP_BoxVisible|RBP_BoxShape);
  //    wBText->setBoxFillColor(ZBlueColor);
      wBText->setPosition(-0.9f,0.5f,0.0f);  
 
      _printTextBoxFlag(wBText->getBoxFlag());
+
+     fprintf (stdout,"wBText -----Shader Context [Draw]----\n");
+     wBText->printBoxShaderContext(Draw);
+     fprintf (stdout,"wBText -----Shader Context [Shape]----\n");
+     wBText->printBoxShaderContext(Shape);
 
      wBText->setupGL();
 
@@ -377,17 +395,6 @@ int main()
 #endif
 
 
-
-
- //=================================Objects Vertices creation ============================================
-
-
-
-
-
-
-
-
  //=============================================================================
 
      ZSphere wSphere(0.10f,18,9,true, "Sphere"); /* generate object and its vertex data */
@@ -397,8 +404,8 @@ int main()
      wSphere.ShaderContext[Draw]->addVec3("light.Position",&camera.LightPosition);
      wSphere.ShaderContext[Draw]->addVec3("viewPosition",&camera.CameraPosition);
      wSphere.ShaderContext[Draw]->addVec3("DefaultColor",&ZBlueColor);
-     wSphere.ShaderContext[Draw]->addFloat("DefaultAlpha",0.5f);
-//     wSphere.ShaderContext[Draw]->addBool("UseDefaultAlpha",true);
+ //    wSphere.ShaderContext[Draw]->addFloat("DefaultAlpha",0.5f);
+//     wSphere.ShaderContext[Draw]->addBool("useDefaultAlpha",true);
      wSphere.ShaderContext[Draw]->addMaterial(&ZGold);
 
 //     wSphere.setAction(Draw,setupVertices);

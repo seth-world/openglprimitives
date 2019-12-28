@@ -73,7 +73,9 @@ public:
     ZShaderContext* getBoxShaderContext(const int pCtx);
 
     void _newDefaultBoxShader(const int pCtx);
+
     int newBoxShader(const int pCtx, const char* pIntName);
+    int newBoxShaderByRank(const int pCtx, const long pRank);
 
     glm::mat4 Model;
     glm::mat4 View;

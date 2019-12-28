@@ -180,7 +180,7 @@ public:
     void setPosition(glm::vec3 pPosition) {Position=pPosition;}
 
     void setBoxBorderColor(glm::vec3 pColor) {Box->setBorderColor(pColor);}
-    void setBoxLineSize (float pLineSize) {Box->setLinesWidth(pLineSize);}
+    void setBoxBorderWidth (float pLineSize) {Box->setBorderWidth(pLineSize);}
     void setBoxDimensions (int pBoxWidth, int pBoxHeight) {Box->setDimensions(pBoxWidth,pBoxHeight);}
 
     void setBoxMargins  (int pLeftMargin, int pRightMargin,int pTopMargin,int pBottomMargin)
@@ -193,10 +193,13 @@ public:
     void setBoxFill(bool pFill) {   Box->setFill(pFill);}
     void setBoxBorder(bool pBorder) { Box->setBorder(pBorder);}
 
-    void setBoxAlpha(float pAlpha) {Box->setAlpha(pAlpha);}
+    void setBoxFillAlpha(float pAlpha) {Box->setFillAlpha(pAlpha);}
+    void setBoxBorderAlpha(float pAlpha) {Box->setBorderAlpha(pAlpha);}
 
-    void setTextFlag (uint16_t pFlag) {TextFlag=  pFlag;}
-    void setBoxFlag (uint16_t pFlag) {Box->setFlag(pFlag);}
+    void printBoxShaderContext(const int pCtx,FILE*pOutput=stdout);
+
+    void setTextFlag (uint32_t pFlag) {TextFlag=  pFlag;}
+    void setBoxFlag (uint32_t pFlag) {Box->setFlag(pFlag);}
 
     uint16_t getBoxFlag() {return Box->Flag | TextFlag ;}
 
@@ -409,7 +412,7 @@ private:
     //zbs::ZArray<glm::vec3>* TextBoxCoords=nullptr;
 //    float TextBoxcoords[];
 
-    uint16_t TextFlag;
+    uint32_t TextFlag;
 
 };//GLUnicodeText
 

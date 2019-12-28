@@ -21,7 +21,7 @@ void ShaderUniform::addLight(const ZLight* pValue)
     }
 void ShaderUniform::addMaterial(const ZMaterial* pValue)
     {
-    Type = SHU_Light;
+    Type = SHU_Material;
     Name="Material_specific";
     Value.Material=pValue;
     }
@@ -264,16 +264,17 @@ int ZShaderContext::applyRules()
 
     Shader->use();
     for (long wi=0;wi<count();wi++)
-        {
-            if (Tab[wi].Type==SHU_LineWidth)
-                {
-                LineWidth_IsSet=true;
-                 glGetFloatv(GL_LINE_WIDTH,&LineWidth_restore); /* get current line width */
-                glLineWidth(Tab[wi].Value.Float);
-                continue;
-                }
-            _applyShader(Shader,Tab[wi]);
-        }
+                    _applyShader(Tab[wi]);
+//        {
+//            if (Tab[wi].Type==SHU_LineWidth)
+//                {
+//                LineWidth_IsSet=true;
+//                 glGetFloatv(GL_LINE_WIDTH,&LineWidth_restore); /* get current line width */
+//                glLineWidth(Tab[wi].Value.Float);
+//                continue;
+//                }
+//        _applyShader(Tab[wi]);
+//        }
     return 0;
 //    return _setupShader(Shader,(zbs::ZArray<ShaderUniform>*)this);
 }
@@ -290,35 +291,41 @@ void ZShaderContext::postProcess()
 }
 
 /* shader must be current (ZShader::use() ) */
-inline int _applyShader(ZShader* pShader,struct ShaderUniform pSHU )
+inline int
+ZShaderContext::_applyShader(struct ShaderUniform pSHU )
 {
     switch (pSHU.Type)
     {
     case SHU_Bool:
-        return pShader->setBool(pSHU.Name,pSHU.Value.Bool);
+        return Shader->setBool(pSHU.Name,pSHU.Value.Bool);
     case SHU_Float:
-        return pShader->setFloat(pSHU.Name,pSHU.Value.Float);
+        return Shader->setFloat(pSHU.Name,pSHU.Value.Float);
     case SHU_Vec2:
-        return pShader->setVec2(pSHU.Name,*pSHU.Value.Vec2);
+        return Shader->setVec2(pSHU.Name,*pSHU.Value.Vec2);
     case SHU_Vec3:
-        return pShader->setVec3(pSHU.Name,*pSHU.Value.Vec3);
+        return Shader->setVec3(pSHU.Name,*pSHU.Value.Vec3);
     case SHU_Vec4:
-        return pShader->setVec4(pSHU.Name,*pSHU.Value.Vec4);
+        return Shader->setVec4(pSHU.Name,*pSHU.Value.Vec4);
     case SHU_Mat2:
-        return pShader->setMat2(pSHU.Name,*pSHU.Value.Mat2);
+        return Shader->setMat2(pSHU.Name,*pSHU.Value.Mat2);
     case SHU_Mat3:
-        return pShader->setMat3(pSHU.Name,*pSHU.Value.Mat3);
+        return Shader->setMat3(pSHU.Name,*pSHU.Value.Mat3);
     case SHU_Mat4:
-        return pShader->setMat4(pSHU.Name,*pSHU.Value.Mat4);
+        return Shader->setMat4(pSHU.Name,*pSHU.Value.Mat4);
     case SHU_Mat4Transpose:
-        return pShader->setMat4Transpose(pSHU.Name,*pSHU.Value.Mat4);
+        return Shader->setMat4Transpose(pSHU.Name,*pSHU.Value.Mat4);
     case SHU_Texture:
         pSHU.Value.Texture->bind();
-        return pShader->setupTexSampler(pSHU.Value.Texture);
-    case SHU_Light:
-        return pShader->setupLight(pSHU.Value.Light);
+        return Shader->setupTexSampler(pSHU.Value.Texture);
+    case SHU_Material:
+        return Shader->setupMaterial(pSHU.Value.Material);
     case SHU_LineWidth:
-
+        this->LineWidth_IsSet=true;
+        glGetFloatv(GL_LINE_WIDTH,&LineWidth_restore); /* get current line width */
+        glLineWidth(pSHU.Value.Float);
+        return 0;
+    case SHU_Light:
+        return Shader->setupLight(pSHU.Value.Light);
     default:
         fprintf (stderr,"setShader-E-SHUUNKN SHU type id <%d> unkown \n",(int)pSHU.Type);
         return -1;
@@ -349,3 +356,142 @@ GLuint ZShaderContext::getTexCoordsAttribute()
 
     return wPosition;
 }
+
+
+
+
+char wSHO[300];
+char*
+displayShaderRule(const ShaderUniform pSHU )
+{
+    memset(wSHO,0,sizeof(wSHO));
+    switch (pSHU.Type)
+    {
+    case SHU_Bool:
+        sprintf(wSHO,"%20s <%20s> <%s>",
+                "SHU_Bool",
+                pSHU.Name,
+                pSHU.Value.Bool?"true":"false");
+
+        return wSHO;
+    case SHU_Float:
+        sprintf(wSHO,"%20s  <%20s> <%f>",
+                "SHU_Float",
+                pSHU.Name,
+                pSHU.Value.Float);
+        return wSHO;
+    case SHU_Vec2:
+        sprintf(wSHO,"%20s  <%20s> <x:%f , y:%f>",
+                "SHU_Vec2",
+                pSHU.Name,
+                pSHU.Value.Vec2->x,pSHU.Value.Vec2->y);
+        return wSHO;
+    case SHU_Vec3:
+        sprintf(wSHO,"%20s  <%20s> <x:%f , y:%f , z:%f>",
+                "SHU_Vec3",
+                pSHU.Name,
+                pSHU.Value.Vec3->x,pSHU.Value.Vec3->y,pSHU.Value.Vec3->z);
+        return wSHO;
+    case SHU_Vec4:
+        sprintf(wSHO,"%20s  <%20s> <x:%f , y:%f , z:%f , w:%f>",
+                "SHU_Vec4",
+                pSHU.Name,
+                pSHU.Value.Vec4->x,pSHU.Value.Vec4->y,pSHU.Value.Vec4->z,pSHU.Value.Vec4->w);
+        return wSHO;
+    case SHU_Mat2:
+        sprintf(wSHO,"%20s <%20s> <%s>",
+                "SHU_Mat2",
+                pSHU.Name,
+                "--glm::mat2--");
+        return wSHO;
+    case SHU_Mat3:
+        sprintf(wSHO,"%20s  <%20s> <%s>",
+                "SHU_Mat3",
+                pSHU.Name,
+                "--glm::mat3--");
+        return wSHO;
+    case SHU_Mat4:
+        sprintf(wSHO,"%20s  <%20s> <%s>",
+                "SHU_Mat4",
+                pSHU.Name,
+                "--glm::mat4--");
+        return wSHO;
+    case SHU_Mat4Transpose:
+        sprintf(wSHO,"%20s  <%20s> <%s>",
+                "SHU_Mat4Transpose",
+                pSHU.Name,
+                "--glm::mat4--");
+        return wSHO;
+    case SHU_Texture:
+        sprintf(wSHO,"%20s  <%20s> <%s> GLid <%d> GL Engine <%d>",
+                "SHU_Texture",
+                pSHU.Name,
+                pSHU.Value.Texture->getName(),
+                pSHU.Value.Texture->getGLId(),
+                pSHU.Value.Texture->getTextureEngineNumber());
+        return wSHO;
+
+    case SHU_Light:
+        sprintf(wSHO,"%20s  <%20s> [Ambient<r:%4f g:%4f b:%4f> Diffuse<r:%4f g:%4f b:%4f> Specular<r:%4f g:%4f]",
+                "SHU_Light",
+                pSHU.Name,
+                pSHU.Value.Light->Ambient.r,
+                pSHU.Value.Light->Ambient.g,
+                pSHU.Value.Light->Ambient.b,
+                pSHU.Value.Light->Diffuse.r,
+                pSHU.Value.Light->Diffuse.g,
+                pSHU.Value.Light->Diffuse.b,
+                pSHU.Value.Light->Specular.r,
+                pSHU.Value.Light->Specular.g,
+                pSHU.Value.Light->Specular.b);
+        return wSHO;
+    case SHU_LineWidth:
+        sprintf(wSHO,"%20s  <%20s> <%f> NB: followed by postprocess rule",
+                "SHU_LineWidth",
+                pSHU.Name,
+                pSHU.Value.Float);
+        return wSHO;
+    case SHU_Material:
+        sprintf(wSHO,"%20s  <%20s> [Ambient<r:%4f g:%4f b:%4f> Diffuse<r:%4f g:%4f b:%4f> Specular<r:%4f g:%4f b:%4f> Shininess:%4f]",
+                "SHU_Material",
+                pSHU.Name,
+                pSHU.Value.Material->Ambient.r,
+                pSHU.Value.Material->Ambient.g,
+                pSHU.Value.Material->Ambient.b,
+                pSHU.Value.Material->Diffuse.r,
+                pSHU.Value.Material->Diffuse.g,
+                pSHU.Value.Material->Diffuse.b,
+                pSHU.Value.Material->Specular.r,
+                pSHU.Value.Material->Specular.g,
+                pSHU.Value.Material->Specular.b,
+                pSHU.Value.Material->Shininess);
+        return wSHO;
+        sprintf(wSHO,"%20s  <%20s> <x:%f , y:%f , z:%f>",
+                "SHU_Vec3",
+                pSHU.Name,
+                pSHU.Value.Vec3->x,pSHU.Value.Vec3->y,pSHU.Value.Vec3->z);
+        return wSHO;
+    default:
+        sprintf(wSHO,"<--Unknown Shader rule code-->");
+        return wSHO;
+    }
+}//displayShaderRule
+
+void ZShaderContext::print(FILE*pOutput)
+{
+    fprintf (pOutput,
+             "Shader Context for shader <%s> id <%d>-- Number of rules <%ld>---\n",
+             Shader->getName(),
+             Shader->getShaderGLId(),
+             count());
+    for (long wi=0;wi < count();wi++)
+        {
+        fprintf (pOutput,
+                 "%3ld> %s\n",
+                 wi,
+                 displayShaderRule(Tab[wi]));
+        }
+    fprintf (pOutput,
+             "----------------------------------------------------------------------\n");
+    return;
+} // print

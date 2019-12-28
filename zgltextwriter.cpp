@@ -80,3 +80,16 @@ int ZGLTextWriter::newBoxShader(const int pCtx, const char* pIntName)
     return 0;
 }
 
+int ZGLTextWriter::newBoxShaderByRank(const int pCtx, const long pRank)
+{
+    ZShader* wSh=GLResources->getShaderByRankPtr(pRank);
+    if (wSh==nullptr)
+            {
+            fprintf (stderr,"ZGLTextWriter::newBoxShaderFill-F-SHDNULL  Shader of rank <%ld> has not be registrated as GL resource.\n",
+                     pRank);
+            return -1;
+            }
+
+    BoxShader[pCtx]=new ZShaderContext(wSh);
+    return 0;
+}

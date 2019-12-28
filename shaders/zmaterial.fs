@@ -22,12 +22,10 @@ struct light_struct {
 //        vec3 Color;
         };
 
-uniform sampler2D   TextureSampler; // not used
-
 //uniform vec3        lightPosition;
 uniform  light_struct       light;
 uniform  material_struct    material;
-//uniform        vec3     materialAmbient;
+//uniform        vec3     materialambient;
 //uniform        vec3     materialDiffuse;
 //uniform        vec3     materialSpecular;
 //uniform        float    materialShininess;
@@ -43,13 +41,15 @@ uniform bool useTexture;                // flag for texture
 uniform bool useDefaultColor;
 uniform bool useDefaultAlpha;
 
+uniform sampler2D   TextureSampler; // not used
+
 void main()
 {
     vec3 wColor = material.Ambient;
 
 
-    if (useDefaultColor)
-        wColor *= DefaultColor;
+//    if (useDefaultColor)
+//        wColor *= DefaultColor;
 
 // ambient
     vec3 wAmbient = 0.7 * wColor; // old
@@ -95,6 +95,5 @@ void main()
 //    }
 //    else
     gl_FragColor = vec4(wAmbient + wDiffuse + wSpecular, wAlpha);
-//    FragColor = vec4(wAmbient + wDiffuse + wSpecular, wAlpha);
 
 }
