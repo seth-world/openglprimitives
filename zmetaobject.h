@@ -192,6 +192,7 @@ public:
     void setDrawUserDefined(void (*pDrawFunction)()) {drawGLUserDefined=pDrawFunction;}
 
     void setPosition(Vertice_type pPosition);
+    glm::vec3 getPosition();
     void setRotate(float pAngle,glm::vec3 pAxis);
     void setRotateDeg(float pAngle,glm::vec3 pAxis);
 

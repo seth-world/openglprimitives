@@ -109,8 +109,6 @@ public:
    bool     ComputeNormVisu=false;
    bool     KeepVertices=false;
    float    LineSize=1.0f;
-   float    NormVisuHeight=0.4f;
-
 
    uint16_t Actions = CSO_setupVertices;//  CoordsSetupOpt
 
@@ -133,6 +131,7 @@ public:
    zbs::ZArray<GLuint>*                     Indexes=nullptr;
    zbs::ZArray<const char*>*                VName=nullptr;
    zbs::ZArray<NormalDirection>*            VNormalDir=nullptr; /* one rank per triangle : serie of 3 vertices*/
+   bool NormalComputed=false;
 };//ZGLObjDescriptor
 
 

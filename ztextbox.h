@@ -64,7 +64,8 @@ public:
     ZTextBox(ZGLUnicodeText* pFather);
     ~ZTextBox();
 
-    void setDimensions (int pBoxWidth, int pBoxHeight);
+    void setPixelDimensions (int pBoxWidth, int pBoxHeight);
+    void setGLDimensions (float pBoxWidth, float pBoxHeight);
     void setMargins  (int pLeftMargin, int pRightMargin,int pTopMargin,int pBottomMargin)
         {
         RightMargin=pRightMargin;

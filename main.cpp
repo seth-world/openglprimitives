@@ -30,6 +30,8 @@
 /* text rendering */
 #include <zglunicode.h>
 
+#include <zglconstants.h>
+
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -181,11 +183,12 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable( GL_POLYGON_SMOOTH );
 
+/*
+    glEnable( GL_POLYGON_SMOOTH );
     glHint( GL_LINE_SMOOTH_HINT, GL_DONT_CARE );
     glHint( GL_POLYGON_SMOOTH_HINT, GL_NICEST );
-
+*/
     // Define the viewport dimensions
     glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
@@ -259,12 +262,10 @@ int main()
 
     ZGLUnicodeText* wUText=wUWriter.newText();
     wRet=wUText->setText((utf32_t*)U"Жди меня, и я вернусь.","LiberationMono",24);
-
-
     if (wRet<0)
             {
             wUText->printLastError();
-            exit(1);
+            exit(EXIT_FAILURE);
             }
      ZGLUnicodeText* wBText=wUWriter.newText();
 
@@ -275,45 +276,10 @@ int main()
      if (wRet<0)
          {
           wBText->printLastError();
-         exit(1);
+          exit(EXIT_FAILURE);
          }
 
- //    wBText->setBox(700,350,ZYellowBright,RBP_Center|RBP_WordWrap, true,1.0,0.0);
 
-     wBText->setBoxDimensions(700,350);
-     wBText->setBoxMarginsAll(5.0);
-     wBText->setBoxBorderColor(ZYellowBright);
-     wBText->setBoxBorderAlpha(1.0);
-     wBText->setBoxBorderWidth(1.5);
-     wBText->setBoxVisible(true);
-     wBText->setBoxFill(true);
-     wBText->setBoxBorder(true);
-
-     wBText->setBoxFillAlpha(1.0);
-
-//     wBText->setBoxFill(false);
-     wBText->setTextFlag((uint16_t)RBP_Center|(uint16_t)RBP_WordWrap);
-//     wBText->setBoxTexture("tissuegrey.jpeg");
-
- /*    if (wBText->setBoxTextureByName("metal") < 0)
-            {
-            fprintf(stderr,"Failed to assign texture <%s> to text box \n","metal");
-            exit (EXIT_FAILURE);
-            }
-     wBText->setBoxFlag(RBP_BoxVisible|RBP_BoxTexture|RBP_BoxShape);
-     */
-//     wBText->setBoxFlag(RBP_BoxVisible|RBP_BoxShape);
- //    wBText->setBoxFillColor(ZBlueColor);
-     wBText->setPosition(-0.9f,0.5f,0.0f);  
-
-     _printTextBoxFlag(wBText->getBoxFlag());
-
-     fprintf (stdout,"wBText -----Shader Context [Draw]----\n");
-     wBText->printBoxShaderContext(Draw);
-     fprintf (stdout,"wBText -----Shader Context [Shape]----\n");
-     wBText->printBoxShaderContext(Shape);
-
-     wBText->setupGL();
 
 #ifdef __COMMENT__
      ZGLUnicodeText* wNLText=wUWriter.newText();
@@ -433,17 +399,13 @@ int main()
 
 // Draw : main context
     wLamp->createShaderContextByName(Draw,"LampShader");
-    wLamp->ShaderContext[Draw]->addFloat("DefaultAlpha",1.0f);
-    wLamp->ShaderContext[Draw]->addVec3("DefaultColor",&ZYellowBright);
-
-    wLamp->DrawFigure[Draw]=GL_TRIANGLES;
+    wLamp->ShaderContext[Draw]->addVec3(__SHD_DEFAULTCOLOR_UN__,&ZYellowBright);
+    wLamp->DrawFigure[Draw]=GL_TRIANGLES; // by default
 
 // Shape : only line enclosing the object
 
     wLamp->createShaderContextByName(Shape,"LampShader");
-    wLamp->ShaderContext[Shape]->addFloat("DefaultAlpha",1.0f);
-    wLamp->ShaderContext[Shape]->addVec3("DefaultColor",&ZYellowAmbient);
-
+    wLamp->ShaderContext[Shape]->addVec3(__SHD_DEFAULTCOLOR_UN__,&ZYellowAmbient);
     wLamp->DrawFigure[Shape]=GL_LINE_LOOP;
 
 //  ---------Create matrices------------------
@@ -479,16 +441,6 @@ int main()
     wCandy.ShaderContext[Draw]->addVec3(__SHD_VIEW_POSITION_UN__,&camera.CameraPosition);
     wCandy.ShaderContext[Draw]->addBool(__SHD_BLINNPHONG_UN__,false);
     wCandy.ShaderContext[Draw]->addVec3(__SHD_DEFAULTCOLOR_UN__,&ZBlueColor);
-//    wCandy.ShaderContext[Draw]->addBool(__SHD_USE_ALPHA_UN__,true);
-//    wCandy.ShaderContext[Draw]->addFloat(__SHD_ALPHA_UN__,0.5f);
-//    wCandy.ShaderContext[Draw]->addBool("UseDefaultAlpha",true);  // not used by ColorShader
-
-//    wCandy.setComputeNormals(Draw,true);
-//    wCandy.setComputeTexCoords(Draw,true);
-
-//    wCandy.DrawFigure[Draw]=GL_TRIANGLES;
-
-//    wCandy.ShaderContext[Draw]->addMaterial(&ZChrome); /* nb: texture is exclusive from material - Either texture OR material can be used */
 
     wCandy.createShaderContextByName(Shape,"LampShader");
 
@@ -499,46 +451,87 @@ int main()
 
     wCandy.DrawFigure[Shape]=GL_LINE_LOOP;
 
-    wCandy.createShaderContextByName(NormVisu,"LampShader");
-    wCandy.ShaderContext[NormVisu]->addVec3(__SHD_ALPHA_UN__,&ZYellowAmbient);
-    wCandy.ShaderContext[NormVisu]->setLineWidth(2.0f);
-
-    wCandy.DrawFigure[NormVisu]=GL_LINE;
-
     wCandy.createMatrices(MAT_Model | MAT_View | MAT_Projection | MAT_Normal);
 
     wCandy.setPosition(glm::vec3(0.2,0.2,0.2));
 
+    wCandy.createShaderContextByRank(NormVisu,wLampShader);
+    wCandy.ShaderContext[NormVisu]->addVec3(__SHD_DEFAULTCOLOR_UN__,&ZYellowSpecular);
+    wCandy.ShaderContext[NormVisu]->setLineWidth(2.0f);
+    wCandy.DrawFigure[NormVisu]=GL_LINE;
+
     wCandy.setupGLByContext(Draw,CSO__setAndComputeAll);
     wCandy.setupGLByContext(Shape,CSO_setupVertices);
- //   wCandy.setupGLByContext(NormVisu,CSO_setupVertices);
+    wCandy.setupGLByContext(NormVisu,CSO_setupVertices);
+
+    TextZone wTZ    = wCandy.getTextZone();
+/*    fprintf (stdout,"*** Center <x:%f y:%f z:%f>  Width <%f> Height <%f>ToTopLeft  <x:%f y:%f z:%f>  \n"
+                    " wCandy position <x:%f y:%f z:%f>  \n\n",
+             wTZ.Center.x,wTZ.Center.y,wTZ.Center.z,
+             wTZ.Width,
+             wTZ.Height,
+             wTZ.ToTopLeft.x,wTZ.ToTopLeft.y,wTZ.ToTopLeft.z,
+             wCandy.getPosition().x,wCandy.getPosition().y,wCandy.getPosition().z);
+*/
 
 
+    glm::vec3 wTPos = wCandy.getPosition() + wTZ.ToTopLeft;
 
-#ifdef __COMMENT__
-/* Pipe GL set-up */
-    wPipe->setPosition(Vertice_type(0.5f,0.5f,0.5f));
-    wPipe->setDefaultColor(ZGreyColor);
-    wPipe->setDefaultAlpha(0.5f);
-    wPipe->setComputeNormals(true);
-    wPipe->setComputeTexCoords(true);
-    wPipe->setTextureByName("metal");
+//    glm::vec3 wTPos = vAdd(wCandy.getPosition() , wTZ.ToTopLeft);
 
-    wPipe->setDrawShaderByName("ColorShader");
-    wPipe->setupGL(ZObject::setupAll,
-                   GL_TRIANGLES);
+//    fprintf (stdout,"*** wTpos <x:%f y:%f z:%f>  \n\n",
+//             wTPos.x,wTPos.y,wTPos.z);
 
-    wSphere.setPosition(Vertice_type(-0.8f,0.5f,0.0f));
-    wSphere.setDefaultColor(ZBlueColor);
-    wSphere.setDefaultAlpha(0.5f);
-    wSphere.setMaterial(ZEmerald);
-    wSphere.setComputeNormals(true); /* normals are given by creation algo */
-    wSphere.setComputeTexCoords(false);/* texture coords are given by creation algo */
-    wSphere.setTextureByName("earth");
-    wSphere.setupGL(ZObject::setupAll,
-                    GL_TRIANGLES);
 
-#endif // __COMMENT__
+    wBText->setBoxGLDimensions(wTZ.Width,wTZ.Height);
+    wBText->setBoxMarginsAll(5.0);
+    wBText->setBoxBorderColor(ZYellowBright);
+    wBText->setBoxBorderAlpha(1.0);
+    wBText->setBoxBorderWidth(1.5);
+    wBText->setBoxVisible(true);
+    wBText->setBoxFill(true);
+    wBText->setBoxBorder(true);
+
+    wTPos.z += 0.001;
+    wBText->setPosition(wTPos);
+
+    wBText->setBoxFillAlpha(1.0);
+
+//     wBText->setBoxFill(false);
+    wBText->setTextFlag((uint16_t)RBP_Center|(uint16_t)RBP_WordWrap);
+//     wBText->setBoxTexture("tissuegrey.jpeg");
+
+/*    if (wBText->setBoxTextureByName("metal") < 0)
+           {
+           fprintf(stderr,"Failed to assign texture <%s> to text box \n","metal");
+           exit (EXIT_FAILURE);
+           }
+    wBText->setBoxFlag(RBP_BoxVisible|RBP_BoxTexture|RBP_BoxShape);
+    */
+//     wBText->setBoxFlag(RBP_BoxVisible|RBP_BoxShape);
+//    wBText->setBoxFillColor(ZBlueColor);
+
+
+    _printTextBoxFlag(wBText->getBoxFlag());
+
+    fprintf (stdout,"wBText -----Shader Context [Draw]----\n");
+    wBText->printBoxShaderContext(Draw);
+    fprintf (stdout,"wBText -----Shader Context [Shape]----\n");
+    wBText->printBoxShaderContext(Shape);
+
+    wBText->setupGL();
+
+
+/*    fprintf (stdout,"*** Center <x:%f y:%f z:%f>  Width <%f> Height <%f> ToTopLeft  <x:%f y:%f z:%f>  \n"
+                    " wCandy position <x:%f y:%f z:%f>  wTpos <x:%f y:%f z:%f>  \n\n",
+             wTZ.Center.x,wTZ.Center.y,wTZ.Center.z,
+             wTZ.Width,
+             wTZ.Height,
+             wTZ.ToTopLeft.x,wTZ.ToTopLeft.y,wTZ.ToTopLeft.z,
+             wCandy.getPosition().x,wCandy.getPosition().y,wCandy.getPosition().z,
+             wTPos.x,wTPos.y,wTPos.z);
+*/
+
 
     Vertice_type wC1=Vertice_type(0.8f,0.9f,0.0f);
 
@@ -561,11 +554,6 @@ int main()
     wPipe->ShaderContext[Draw]->addBool(__SHD_BLINNPHONG_UN__,true);
     wPipe->ShaderContext[Draw]->addVec3(__SHD_LIGHT_POSITION_UN__,&camera.LightPosition);
     wPipe->ShaderContext[Draw]->addVec3(__SHD_VIEW_POSITION_UN__,&camera.CameraPosition);
-//    wPipe->ShaderContext[Draw]->addBool(__SHD_USECOLOR_UN__,true);
-//    wPipe->ShaderContext[Draw]->addVec3(__SHD_DEFAULTCOLOR_UN__,&ZBlueColor);
-
-//    wPipe->ShaderContext[Draw]->addBool(__SHD_USE_ALPHA_UN__,true);
-//    wPipe->ShaderContext[Draw]->addFloat(__SHD_ALPHA_UN__,1.0f);
 
     wPipe->ShaderContext[Draw]->setTextureByName("metal");
 
@@ -575,9 +563,6 @@ int main()
 
     wPipe->ShaderContext[Shape]->addVec3(__SHD_DEFAULTCOLOR_UN__,&ZYellowSpecular);
     wPipe->ShaderContext[Shape]->setLineWidth(1.5f);
-
-//    wPipe->setComputeNormals(Draw,true);
-//    wPipe->setComputeTexCoords(Draw,true);
 
     wPipe->DrawFigure[Draw]=GL_TRIANGLES;
 
@@ -592,7 +577,7 @@ int main()
     // render loop
     // -----------
 
-    GLResources->listRegistratedShaders();
+//    GLResources->listRegistratedShaders();
 
 
 
@@ -723,7 +708,7 @@ Per object matrix:
  //       wText.renderText("This is a new sample text",-0.6f,-0.6f,ZBlueColor,0);
 */
 
-        if (camera.useNormalVectors)
+        if (camera.drawNormalVectors)
             {
 
 //            wCandy.NormVisuShader->setVec3("DefaultColor",ZYellowSpecular);

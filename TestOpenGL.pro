@@ -110,6 +110,7 @@ HEADERS += \
     Bmp.h \
     zboxcomponents.h \
     zcandy.h \
+    zcandytext.h \
     zconfig.h \
     zfont.h \
     zglconstants.h \
@@ -136,6 +137,7 @@ SOURCES += \
         Bmp.cpp \
         zboxcomponents.cpp \
         zcandy.cpp \
+        zcandytext.cpp \
         zfont.cpp \
         zglobjdescriptor.cpp \
         zglresource.cpp \

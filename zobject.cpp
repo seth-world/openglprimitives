@@ -7,6 +7,7 @@
 #include <zobject.h>
 
 #include <zobjectfunctions.h>
+#include <zboxcomponents.h>
 
 #include <zmetaobject.h>
 #include <zsphere.h>
@@ -97,6 +98,9 @@ void ZObject::_cloneFrom(ZObject&&pIn)
     if (pIn.MatCtx)
             MatCtx=new ZMatCtx(*pIn.MatCtx);
 
+    NormVisuHeight=pIn.NormVisuHeight;
+    BoxComponents=pIn.BoxComponents;
+
 }
 
 ZObject::~ZObject( )
@@ -112,7 +116,10 @@ ZObject::~ZObject( )
 
     if (MatCtx)
             delete MatCtx;
+    if (BoxComponents)
+            delete BoxComponents;
 }
+
 void
 ZObject::clearArrays()
 {
@@ -126,6 +133,25 @@ if (GLDesc[wi])
     }
 }
 
+void ZObject::setBoxComponents(ZBoxComponents& pBoxComponents)
+{
+    BoxComponents=new ZBoxComponents(pBoxComponents);
+}
+
+TextZone ZObject::getTextZone()
+{
+    TextZone wTZ;
+
+    wTZ.Width = BoxComponents->FTR.x - BoxComponents->FTL.x;
+    wTZ.Height = BoxComponents->FTR.y - BoxComponents->FLR.y;
+
+    wTZ.Center= (BoxComponents->FLMid + BoxComponents->BRMid) / 2.0f;
+    wTZ.ToTopLeft = BoxComponents->FTL - wTZ.Center;
+
+
+
+    return wTZ;
+}
 
 ZObject&
 ZObject::addObject(ZObject &pIn)
@@ -308,7 +334,7 @@ ZObject::_setupGL_ObjectArray(const DrawContext_type pCtx, uint16_t pAction)
             return;
             }
 
-    if (!GLDesc[Draw])
+    if (!GLDesc[pCtx])
             GLDesc[pCtx]=new ZGLObjDescriptor;
 
      /* Normal coordinates may be computed but not set : we could need them for computing shape coordinate */
@@ -524,7 +550,10 @@ ZObject::_setupGL_ObjectElement(const DrawContext_type pCtx,uint16_t pAction)
 
     /* Normal coordinates may be computed but not set : we could need them for computing shape coordinate */
     if (pAction & CSO_ComputeNormals)
+            {
             this->computeNormals(GLDesc[pCtx]->VertexData,GLDesc[pCtx]->VNormalDir);
+            GLDesc[pCtx]->NormalComputed=true;
+            }
     if (pAction & CSO_ComputeTextures)
                 this->computeTexCoords(wVertexData);
 
@@ -614,13 +643,23 @@ ZObject::_setupGL_ObjectElement(const DrawContext_type pCtx,uint16_t pAction)
 void
 ZObject::setupGL(const DrawContext_type pCtx, uint16_t pAction)
 {
+
+
+
     if (!GLDesc[pCtx])
             GLDesc[pCtx]=new ZGLObjDescriptor; /* if exists : release GL internal resources before reallocating */
+
+    if (pCtx==NormVisu)
+        {
+        generateNormVisuFromCtx(NormVisuHeight,Draw);
+        DrawFigure[NormVisu]=GL_LINES;
+        }
 
     if (ShaderContext[pCtx])
         {
         ShaderContext[pCtx]->bindShader();
         }
+
     if (hasIndices(pCtx))
         _setupGL_ObjectElement(pCtx,pAction);
     else
@@ -645,7 +684,7 @@ ZObject::setupGLNormVisu(zbs::ZArray<ZVertice> *pVertex)
 //    if (!GLDesc[NormVisu])
 //            GLDesc[NormVisu]=new ZGLObjDescriptor;
 
-    generateNormVisu(GLDesc[NormVisu]->VertexData,GLDesc[NormVisu]->NormVisuHeight);
+    generateNormVisu(GLDesc[NormVisu]->VertexData,NormVisuHeight);
 
 
     glGenVertexArrays(1, &GLDesc[NormVisu]->VAO);
@@ -1313,7 +1352,7 @@ int ZObject::createNormVisuContextByRank(const long pShaderRank)
             delete ShaderContext[NormVisu];
     if (createShaderContextByRank(NormVisu,pShaderRank) < 0)
                         return -1;
-    zbs::ZArray<glm::vec3> * wNormVisu=generateNormVisu(GLDesc[Draw]->VertexData,GLDesc[Draw]->NormVisuHeight);
+    zbs::ZArray<glm::vec3> * wNormVisu=generateNormVisu(GLDesc[Draw]->VertexData,NormVisuHeight);
     if (wNormVisu==nullptr)
             return -1;
     if (GLDesc[NormVisu])
@@ -1327,7 +1366,7 @@ int ZObject::createNormVisuContextByName(const char* pShaderName)
             delete ShaderContext[NormVisu];
     if (createShaderContextByName(NormVisu,pShaderName) < 0)
                         return -1;
-    zbs::ZArray<glm::vec3> * wNormVisu=generateNormVisu(GLDesc[Draw]->VertexData,GLDesc[Draw]->NormVisuHeight);
+    zbs::ZArray<glm::vec3> * wNormVisu=generateNormVisu(GLDesc[Draw]->VertexData,NormVisuHeight);
     if (wNormVisu==nullptr)
             return -1;
     if (GLDesc[NormVisu])
@@ -1357,6 +1396,35 @@ zbs::ZArray<glm::vec3> * ZObject::generateNormVisu(zbs::ZArray<ZVertice>* pVerti
         }
     return wZANormVisu;
 }//generateNormVisu
+
+void ZObject::generateNormVisuFromCtx(const float pNormVisuHeight, const int pCtx)
+{
+    if (GLDesc[NormVisu]->VertexData)
+            delete GLDesc[NormVisu]->VertexData;
+
+    GLDesc[NormVisu]->VertexData= new zbs::ZArray<ZVertice>;
+
+    if (!GLDesc[pCtx]->NormalComputed)
+                this->computeNormals(GLDesc[pCtx]->VertexData,GLDesc[pCtx]->VNormalDir);
+ //   ZANormVisu.clear();
+
+ //   Vertice_type wTriangle[3];
+    glm::vec3 wCenter;
+    glm::vec3  wTarget;
+    for (long wi=0;wi<GLDesc[pCtx]->VertexData->count();wi+=3)
+        {
+        wCenter=calculateCenter(GLDesc[pCtx]->VertexData->Tab[wi].point,
+                                GLDesc[pCtx]->VertexData->Tab[wi+1].point,
+                                GLDesc[pCtx]->VertexData->Tab[wi+2].point);
+
+        GLDesc[NormVisu]->VertexData->push_back(wCenter);
+        wTarget = GLDesc[pCtx]->VertexData->Tab[wi].normal * pNormVisuHeight;
+        wTarget = wTarget + wCenter;
+        GLDesc[NormVisu]->VertexData->push_back(wTarget);
+        }
+    return ;
+}//generateNormVisu
+
 
 /* matrices see _preprocessGL */
 /*

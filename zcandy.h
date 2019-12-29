@@ -59,6 +59,7 @@ public:
             }
     }
 
+    TextZone getTextZone() {return Tab[0]->getTextZone();}
 
     long                        BackStart=0;
     long                        BackCount=0;

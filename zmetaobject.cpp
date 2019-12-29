@@ -226,7 +226,12 @@ void ZMetaObject::drawGLByContext(const DrawContext_type pCtx)
         }
 }
 
-
+glm::vec3 ZMetaObject::getPosition()
+{
+    if (!MatCtx)
+            return glm::vec3(0.0f);
+    return MatCtx->getPosition();
+}
 
 void ZMetaObject::setPosition(Vertice_type pPosition)
 {

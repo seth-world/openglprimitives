@@ -95,8 +95,13 @@ int wRet=0;
     }
 //    wFTerr=FT_Load_Char(Face, (FT_ULong)*p,FT_LOAD_RENDER);
 
+//    wFTerr = FT_Load_Glyph(Font->Face,          /* handle to face object */
+//                           wGlyph_index,        /* glyph index           */
+//                           FT_LOAD_MONOCHROME );
+
+
     wFTerr = FT_Load_Glyph(Font->Face,          /* handle to face object */
-                           wGlyph_index,   /* glyph index           */
+                           wGlyph_index,        /* glyph index           */
                            FT_LOAD_RENDER );
     if (wFTerr!=FT_Err_Ok)
         {
@@ -465,9 +470,12 @@ inline void ZGLUnicodeText::_textsetUpGLState(glm::vec3 pColor)
 
     /* if there is a box either filled or textured, advance z coords a bit for text */
     if (Box->Flag & (RBP_BoxFill | RBP_BoxTexture))
-        Writer->TextShader->setFloat(__SHD_TEXTPOSZ_UN__,Position.z + TextAdvanceWhenFilled);
+        Writer->TextShader->setFloat(__SHD_TEXTPOSZ_UN__,TextAdvanceWhenFilled);
+//        Writer->TextShader->setFloat(__SHD_TEXTPOSZ_UN__,Position.z + TextAdvanceWhenFilled);
     else
-        Writer->TextShader->setFloat(__SHD_TEXTPOSZ_UN__,Position.z);
+//        Writer->TextShader->setFloat(__SHD_TEXTPOSZ_UN__,Position.z);
+        Writer->TextShader->setFloat(__SHD_TEXTPOSZ_UN__,0.0f);
+
 
     Writer->TextShader->setVec3(__SHD_TEXTCOLOR_UN__,pColor);
 }//_textsetUpGLState
@@ -579,8 +587,8 @@ ZGLUnicodeText::_setupOneChar(float &wStartPosX,                /* starting posi
     float wX = wStartPosX + (pChar->bitmap.left * wSx);
     float wY= wStartPosY + (pChar->bitmap.top * wSy);
 
-    float w = pChar->bitmap.width * wSx;
-    float h = pChar->bitmap.height * wSy;
+    float w = (pChar->bitmap.width) * wSx;
+    float h = (pChar->bitmap.height) * wSy;
 
     float wMaxX =  wX + w ;
     float wMaxY = wY - h;
@@ -925,9 +933,9 @@ ZGLUnicodeText::_renderToBox(glm::vec3 pBoxPosition,
                             float     pBoxHeight,
                             glm::vec3 pColor,
                             float pSx, float pSy,
-                            uint16_t pTextFlag)
+                            uint32_t pTextFlag)
 {
-    _textsetUpGLState(pColor);
+    _textsetUpGLState(pColor); /* binds the VAO, buffer, texture, and setup GL stuff */
 
     float wSx=pSx;
     float wSy=pSy;
@@ -1618,6 +1626,7 @@ void ZGLUnicodeText::render(glm::vec3 pPosition,
             pColor,
             sx, sy);
 }
+
 void ZGLUnicodeText::renderVertical(glm::vec3 pPosition,
                                    const Color_type pColor)
 {
@@ -1640,7 +1649,7 @@ void ZGLUnicodeText::setBox (int pBoxWidth,
                             float pLineSize,
                             int pLeftMargin,int pRightMargin, int pTopMargin, int pBottomMargin)
 {
-    setBoxDimensions(pBoxWidth,pBoxHeight);
+    setBoxPixelDimensions(pBoxWidth,pBoxHeight);
     setBoxVisible( pVisible);
     setBoxBorderWidth( pLineSize);
     setBoxFlag( pBoxFlag & RBP_BoxMask);
@@ -1655,6 +1664,9 @@ void ZGLUnicodeText::setBox (int pBoxWidth,
 void ZGLUnicodeText::_setupMatrices ()
 {
     Model =  glm::translate(GLResources->Camera->getModel(), Position);
+    if (RotationAngle != 0.0f)
+            Model = glm::rotate(Model,RotationAngle,RotationAxis);
+
     View  =  GLResources->Camera->GetViewMatrix();
 
     Projection = glm::perspective(glm::radians(GLResources->Camera->Zoom),
@@ -1673,9 +1685,6 @@ void ZGLUnicodeText::renderToBox(glm::vec3 pTextColor)
 
     _setupMatrices ();
 
-    if (RotationAngle != 0.0f)
-            Model = glm::rotate(Model,RotationAngle,RotationAxis);
-
     Box->drawBox();
 
     Writer->TextShader->use();
@@ -1691,8 +1700,6 @@ void ZGLUnicodeText::renderToBox(glm::vec3 pTextColor)
                  SX,SY,
                  TextFlag
                  );
-
-
 
 } //renderToBox
 
@@ -1718,8 +1725,6 @@ void ZGLUnicodeText::renderToBoxVertical(glm::vec3 pTextColor)
     _renderToBoxVertical(pTextColor,
                  SX,SY,
                  TextFlag);
-
-
 
 } //renderToBox
 

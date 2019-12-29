@@ -192,7 +192,7 @@ void ZCandy::drawGLByContext(const DrawContext_type pCtx)
         if (ShaderContext[pCtx])
             {
             ShaderContext[pCtx]->applyRules();
-            ZShader* wSh=GLResources->getActiveShaderPtr();
+            wSh=GLResources->getActiveShaderPtr();
             if (MatCtx)
                 MatCtx->_preprocessGL(wSh);         /* need to reapply global matrices (if exist) before each object draw */
             }

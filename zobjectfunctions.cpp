@@ -1474,6 +1474,7 @@ ZBoxComponents pComponents;
 zbs::ZArray<glm::vec3> wCoords;
 
     ZObject* wOpenBox = openboxSetup(pHigh,pWidth,pDepth,pComponents,"OpenBox");
+    wOpenBox->setBoxComponents(pComponents);
     wCandy.add(wOpenBox);
 
     zbs::ZArray<glm::vec3> wVFL = perfect_arc_left_Front(pComponents.FLMid,wRadius,20);
@@ -2242,3 +2243,5 @@ glm::vec3 computeFaceNormalFloat(float x1, float y1, float z1,  // v1
 //    return normal;
     return wNormal;
 } //computeFaceNormalFloat
+
+

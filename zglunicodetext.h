@@ -181,7 +181,8 @@ public:
 
     void setBoxBorderColor(glm::vec3 pColor) {Box->setBorderColor(pColor);}
     void setBoxBorderWidth (float pLineSize) {Box->setBorderWidth(pLineSize);}
-    void setBoxDimensions (int pBoxWidth, int pBoxHeight) {Box->setDimensions(pBoxWidth,pBoxHeight);}
+    void setBoxGLDimensions (float pBoxWidth, float pBoxHeight) {Box->setGLDimensions(pBoxWidth,pBoxHeight);}
+    void setBoxPixelDimensions (int pBoxWidth, int pBoxHeight) {Box->setPixelDimensions(pBoxWidth,pBoxHeight);}
 
     void setBoxMargins  (int pLeftMargin, int pRightMargin,int pTopMargin,int pBottomMargin)
                 { Box->setMargins(pLeftMargin,pRightMargin,pTopMargin,pBottomMargin); }
@@ -286,7 +287,7 @@ private:
                       float     pBoxHeight,
                       glm::vec3 pColor,
                       float pSx, float pSy,
-                      uint16_t pTextFlag=RBP_Default); /* flag : text appearance and positionning */
+                      uint32_t pTextFlag=RBP_Default); /* flag : text appearance and positionning */
 
     void _renderToBoxVertical(glm::vec3 pTextColor, float pSx, float pSy, uint16_t pTextFlag=RBP_Default);
 
@@ -400,7 +401,7 @@ private:
 /* end text box */
 
 
-    float TextAdvanceWhenFilled = 0.01f;
+    float TextAdvanceWhenFilled = 0.001f;
 
     GLboolean   BlendEnabled=false;
     int         TextCoordsAttLocation;

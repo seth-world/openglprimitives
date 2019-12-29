@@ -90,15 +90,15 @@ public:
             {
             setPolygonLines(!usePolygonLines);
             }
-    bool        useNormalVectors=false;
+    bool        drawNormalVectors=false;
     inline void setNormalVectors(bool pOnOff)
             {
-            useNormalVectors=pOnOff;
+            drawNormalVectors=pOnOff;
             scheduleRedraw();
             }
     inline void toggleNormalVectors()
             {
-            setNormalVectors(!useNormalVectors);
+            setNormalVectors(!drawNormalVectors);
             }
     bool        useGammaCorrection=false;
     inline void setGammaCorrection(bool pOnOff)  /*generates glEnable(GL_FRAMEBUFFER_SRGB); or glDisable(GL_FRAMEBUFFER_SRGB); */

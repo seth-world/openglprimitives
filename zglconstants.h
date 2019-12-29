@@ -275,4 +275,26 @@ const Vertice_type ZModelOrigin=Vertice_type(0.0,0.0,0.0);
 #define __REPLACEMENT_CHAR__ 0x3F
 
 
+#include <glm/glm.hpp>
+
+inline glm::vec3 vAdd(glm::vec3 pV1,glm::vec3 pV2)
+{
+    return glm::vec3(pV1.x+pV2.x,pV1.y+pV2.y,pV1.z+pV2.z);
+}
+
+inline glm::vec3 vSubst(glm::vec3 pV1,glm::vec3 pV2)
+{
+    return glm::vec3(pV1.x-pV2.x,pV1.y-pV2.y,pV1.z-pV2.z);
+}
+
+inline glm::vec3 vMult(glm::vec3 pV1,glm::vec3 pV2)
+{
+    return glm::vec3(pV1.x*pV2.x,pV1.y*pV2.y,pV1.z*pV2.z);
+}
+
+inline glm::vec3 vDiv(glm::vec3 pV1,glm::vec3 pV2)
+{
+    return glm::vec3(pV1.x/pV2.x,pV1.y/pV2.y,pV1.z/pV2.z);
+}
+
 #endif // ZGLCONSTANTS_H

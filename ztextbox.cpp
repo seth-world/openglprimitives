@@ -43,13 +43,21 @@ ZTextBox::~ZTextBox()
             delete ShaderContext[1];
 }
 
-void ZTextBox::setDimensions (int pBoxWidth, int pBoxHeight)
+void ZTextBox::setPixelDimensions (int pBoxWidth, int pBoxHeight)
 {
     glm::vec2 wSCDim=GLResources->getGLWindowSize();
     IWidth = pBoxWidth;
     IHeight = pBoxHeight;
     Width= (float)pBoxWidth*2.0f/wSCDim.x;
     Height=(float)pBoxHeight*2.0f/wSCDim.y;
+}
+void ZTextBox::setGLDimensions (float pBoxWidth, float pBoxHeight)
+{
+    Width=pBoxWidth;
+    Height=pBoxHeight;
+    glm::vec2 wSCDim=GLResources->getGLWindowSize();
+    IWidth = int((pBoxWidth*wSCDim.x)/2.0f);
+    IHeight = int((pBoxHeight*wSCDim.y)/2.0f);
 }
 
 int ZTextBox::changeBoxShaderByName(const int pCtx,const char* pIntName)

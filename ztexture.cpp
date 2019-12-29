@@ -63,15 +63,16 @@ _TextureBase* loadTexture2D(char const * path, GLenum pTextureEngine)
 //    unsigned int textureID;
     std::string wPath=GLResources->getTexturePath(path);
     int width, height, nrComponents;
-    unsigned char *data = stbi_load(wPath.c_str(),
+    unsigned char *wImageData=nullptr;
+    wImageData = stbi_load(wPath.c_str(),
                                     &width,
                                     &height,
                                     &nrComponents,
                                     0);
-    if (!data)
+    if (!wImageData)
         {
         std::cerr << "Texture failed to load at path: " << wPath << std::endl;
-        stbi_image_free(data);
+        stbi_image_free(wImageData);
         return nullptr;
         }
     printf ("texture <%s> has been successfully loaded \n",wPath.c_str());
@@ -90,7 +91,7 @@ _TextureBase* loadTexture2D(char const * path, GLenum pTextureEngine)
         format = GL_RGBA;
 
     glBindTexture(GL_TEXTURE_2D, wTB->GLId);
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, wImageData);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -98,7 +99,7 @@ _TextureBase* loadTexture2D(char const * path, GLenum pTextureEngine)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    stbi_image_free(data);
+    stbi_image_free(wImageData);
 
 
     return wTB;

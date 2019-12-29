@@ -41,7 +41,7 @@ ZGLObjDescriptor::~ZGLObjDescriptor()
     ComputeNormVisu=pIn.ComputeNormVisu;
     KeepVertices=pIn.KeepVertices;
     LineSize=pIn.LineSize;
-    NormVisuHeight=pIn.NormVisuHeight;
+
 
     if (VertexData)
             delete VertexData;

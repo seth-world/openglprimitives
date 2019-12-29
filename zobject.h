@@ -31,6 +31,26 @@ static constexpr glm::vec3 NDirRight = glm::vec3(1.0f,0.0f,0.0f);
 
 
 
+struct TextZone
+{
+    TextZone()=default;
+    TextZone(TextZone& pIn) {_cloneFrom(pIn);}
+
+    TextZone& operator=(TextZone& pIn) {_cloneFrom(pIn); return *this;}
+
+    void _cloneFrom(TextZone& pIn)
+    {
+        Center=pIn.Center;
+        Width=pIn.Width;
+        Height=pIn.Height;
+    }
+
+    glm::vec3   Center;
+    glm::vec3   ToTopLeft;
+    float       Width;
+    float       Height;
+};
+
 
 
 
@@ -38,6 +58,7 @@ static constexpr glm::vec3 NDirRight = glm::vec3(1.0f,0.0f,0.0f);
 class ZTexture;
 class ZMetaObject;
 class ZSphere;
+class ZBoxComponents;
 
 class ZObject
 {
@@ -226,7 +247,8 @@ public:
         return GLDesc[pCtx]->VertexData->lastIdx();
         }
 
-
+    void setBoxComponents(ZBoxComponents& pBoxComponents);
+    TextZone getTextZone();
 
     ZObject & operator << (ZVertice pInput) {addVertex(Draw,pInput); return *this;}
 
@@ -322,6 +344,7 @@ public:
     void _setupGL_ObjectArray_old(const DrawContext_type pCtx);
     void _setupGL_ObjectElement(const DrawContext_type pCtx,uint16_t pAction);
 
+
     /* prepares and sets up vertices data and set GL buffers and vertex arrays */
     void setupGL(const DrawContext_type pCtx, uint16_t pAction);
 
@@ -356,6 +379,8 @@ public:
             DrawFigure[wi]=pMode;
     }
 
+
+    void generateNormVisuFromCtx( const float pNormVisuHeight,const int pCtx=Draw);
 
     int setShaderByName(const DrawContext_type pCtx,const char* pShader)
          {
@@ -397,36 +422,7 @@ public:
             }*/
         }
 
-/*    void setComputeNormals(const DrawContext_type pCtx,bool pOnOff)
-    {
-        if (!GLDesc[pCtx])
-                return;
-        GLDesc[pCtx]->ComputeNormals=pOnOff;
- //       GLDesc[pCtx]->Actions |= setupNormals;
-    }
-    bool havetoComputeNormals(const DrawContext_type pCtx=Draw)
-    {
-        if (!GLDesc[pCtx])
-                return false;
-        return GLDesc[pCtx]->ComputeNormals;
-//        return GLDesc[pCtx]->Actions & setupNormals;
-    }
 
-    void setComputeTexCoords(const DrawContext_type pCtx,bool pOnOff)
-    {
-        if (!GLDesc[pCtx])
-                return;
-        GLDesc[pCtx]->ComputeTexCoords=pOnOff;
-//        GLDesc[pCtx]->Actions |= setupTextures;
-    }
-    bool havetoComputeTexCoords(const DrawContext_type pCtx=Draw)
-    {
-        if (!GLDesc[pCtx])
-                return false;
-        return GLDesc[pCtx]->ComputeTexCoords;
-//        return GLDesc[pCtx]->Actions & setupTextures;
-    }
-*/
     int createNormVisuContextByRank (const long pShaderRank);
     int createNormVisuContextByName (const char* pShaderName);
 protected:
@@ -515,6 +511,7 @@ public:
     ZGLObjDescriptor*   GLDesc[MaxShaderContext] ;
     ZShaderContext* ShaderContext[MaxShaderContext];
     GLenum      DrawFigure[MaxShaderContext];
+    float    NormVisuHeight=0.10f;
 
     const char*Name=nullptr;
 
@@ -537,6 +534,9 @@ private:
         }    Father;
 
     ZObject::ObjType    FatherType=ZObject::None;
+
+    ZBoxComponents*  BoxComponents=nullptr;
+
 
 };
 
