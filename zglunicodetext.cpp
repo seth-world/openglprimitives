@@ -24,7 +24,7 @@ const char* getFTErrorString(const FT_Error error_code)
 #include <zshader.h>
 #include <zfont.h>
 
-#include <zgltextwriter.h>
+#include <zgltextprofile.h>
 #include <camera.h>
 
 #include <ztoolset/utfutils.h> // for utfStrstr

@@ -117,7 +117,7 @@ HEADERS += \
     zglconstants.h \
     zglobjdescriptor.h \
     zglresource.h \
-    zgltextwriter.h \
+    zgltextprofile.h \
     zglunicode.h \
     zglunicodechar.h \
     zglunicodetext.h \
@@ -144,7 +144,7 @@ SOURCES += \
         zglconstants.cpp \
         zglobjdescriptor.cpp \
         zglresource.cpp \
-        zgltextwriter.cpp \
+        zgltextprofile.cpp \
         zglunicodechar.cpp \
         zglunicodetext.cpp \
         zmatrices.cpp \

@@ -11,7 +11,7 @@
 
 #include <zglunicodechar.h>
 #include <zglunicodetext.h>
-#include <zgltextwriter.h>
+#include <zgltextprofile.h>
 
 
 #endif //ZGLUNICODE_H

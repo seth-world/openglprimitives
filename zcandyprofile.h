@@ -1,7 +1,7 @@
 ﻿#ifndef ZCANDYPROFILE_H
 #define ZCANDYPROFILE_H
 
-#include <zgltextwriter.h>
+#include <zgltextprofile.h>
 #include <zshadercontext.h>
 
 

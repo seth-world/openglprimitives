@@ -1,4 +1,4 @@
-#include <zgltextwriter.h>
+#include <zgltextprofile.h>
 
 #include <zshader.h>
 #include <zglunicodetext.h>
