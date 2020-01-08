@@ -13,26 +13,7 @@
 #include <zglconstants.h>
 #include <zshader.h>
 
-enum ShaderUniform_type:uint16_t {
-    SHU_Nothing         = 0,
-    SHU_Bool            = 1,
-    SHU_Float           = 2,
-    SHU_Vec2            = 0x1004,
-    SHU_Vec3            = 0x1008,
-    SHU_Vec4            = 0x1010,
-    SHU_Mat2            = 0x1020,
-    SHU_Mat3            = 0x1040,
-    SHU_Mat4            = 0x1080,
-    SHU_Mat4Transpose   = 0x1100,
 
-    SHU_Texture         = 0x3000,
-    SHU_Material        = 0x5000,
-    SHU_Light           = 0x9000,
-
-    SHU_LineWidth        = 0x1400, /* special case for glLineSize() */
-
-    SHU_IsPointer       = 0x1000
-};
 
 class ZTexture;
 class ZLight;
@@ -84,7 +65,7 @@ public:
 
 
 //class ZShader;
-int _applyShader(ZShader* Shader,struct ShaderUniform pSHU );
+int _applyShader(ZShader* Shader,ShaderUniform pSHU );
 int setupShader(ZShader& pShader,zbs::ZArray<ShaderUniform>& pParams);
 
 
@@ -118,7 +99,7 @@ class ZShaderContext: public zbs::ZArray<ShaderUniform>
     friend class ZMetaObject;
     friend class ZObject;
     friend class ZGLUnicodeText;
-    friend class ZGLTextWriter;
+    friend class ZGLTextProfile;
     friend class ZTextBox;
 private:
     typedef zbs::ZArray<ShaderUniform> _Base;
@@ -268,6 +249,8 @@ public:
     GLuint getNormalAttribute();
     GLuint getTexCoordsAttribute();
 
+    std::string exportXML();
+    
     const char* getShaderName()
     {
         if (Shader==nullptr)
@@ -293,5 +276,8 @@ private:
 };// ZShaderContext
 
 const char* decodeShdCtx(const int pCtx);
+int encodeShdCtx(const char*pIn);
+const char* decodeSHU(const ShaderUniform_type pSHU );
+ShaderUniform_type encodeSHU(const char* pSHUCtx);
 
 #endif // ZSHADERCONTEXT_H

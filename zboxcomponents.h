@@ -84,6 +84,11 @@ public:
     GLuint BLLIdx;
 
 
+    glm::vec3 getCenter()
+    {
+        return glm::vec3 ( (FRMid + BLMid) / 2.0f);  /* hopefully 0.0,0.0,0.0 */
+    }
+
 };
 
 

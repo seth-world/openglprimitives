@@ -12,56 +12,37 @@
 #include <zglconstants.h>
 //#include <zmatrices.h>
 
-enum RBoxPos : uint32_t
-{
-    RBP_Nothing             = 0,
-    /* for horizontal display only */
-    RBP_Center              = 0x01, /* centered either horizontally or vertically according diplay mode (vertical or horizontal)*/
-    RBP_LeftJust            = 0x04, /* text is horizontally left justified (default) */
-    RBP_RightJust           = 0x08, /* text is horizontally right justified */
-    /* for vertical text display only */
-//    RBP_VertCenter      = 0x02, /* vertically centered */
-    RBP_TopJust             = 0x10, /* text is vertically display starting at top of box (default) */
-    RBP_BotJust             = 0x20, /* text is vertically displayed to box bottom */
-
-    RBP_LineWrap            = 0x40, /* Text is cut where line/column ends without taking care of words*/
-    RBP_WordWrap            = 0x80, /* Text is wrapped by word if it does not fit into box boundary (default)*/
-    RBP_TruncChar           = 0x0100, /* Displays a truncate sign at the end of the truncated line */
-//    RBP_FitVertical     = 0x80,          /* Text should fit into vertical box boundary  */
-
-    RBP_AdjustFSize         = 0x0200,/* Text should fit as it is adjusting font size if necessary :
-                                    This option must be set only if RBP_Wrap is not set
-                                    to make text with fit into box maximum width */
-
-    RBP_TextMask           =    0x00FFFF,
-
-/* box drawing flag */
-    RBP_BoxVisible         =    0x010000,
-    RBP_BoxShape           =    0x020000,
-    RBP_BoxFill            =    0x040000,
-    RBP_BoxTexture         =    0x080000,
-
-    RBP_BoxMask            =  0xFFFF0000,
-
-//    RBP_AdjustBestTry   = 0x0200,       /* Text size is being adjusted if it does not fit vertically after being cut (default) */
-
-    RBP_Default         = RBP_LeftJust | RBP_TopJust | RBP_LineWrap | RBP_BoxVisible | RBP_BoxShape,
-
-};
-
-
 
 
 class ZTexture;
 class ZShader;
 class ZShaderContext;
-class ZGLTextWriter;
-class ZGLUnicodeText;
+class ZGLTextProfile;
+class ZGLText;
+
+
+struct TextAttributes
+{
+    glm::vec3   TextColor;
+    glm::vec3   BoxBorderColor;
+
+    glm::vec3*  BoxFillColor=nullptr;
+    ZTexture*   BoxFillTexture=nullptr;
+    float       BoxBorderWidth;
+    float RightMargin    = 0.0;
+    float LeftMargin     = 0.0;
+    float TopMargin      =0.0;
+    float BottomMargin   = 0.0;
+    uint32_t Flag=RBP_Default;
+    float Width=-1.0;
+    float Height=-1.0;
+};
+
 class ZTextBox
 {
 public:
     ZTextBox()=delete;
-    ZTextBox(ZGLUnicodeText* pFather);
+    ZTextBox(ZGLText* pFather);
     ~ZTextBox();
 
     void setPixelDimensions (int pBoxWidth, int pBoxHeight);
@@ -150,7 +131,7 @@ public:
     GLuint BoxVAOShape=0, BoxVBOShape=0 , BoxVAOFill=0, BoxVBOFill=0 ,BoxVBOTexture=0,BoxVBONormal=0 ;
 //    ZTexture*   Texture=nullptr;
 
-    ZGLUnicodeText* Father=nullptr;
+    ZGLText* Father=nullptr;
 
     float Alpha=1.0f;
 

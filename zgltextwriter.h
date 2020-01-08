@@ -20,32 +20,32 @@
 
 class ZShader;
 
-class ZGLUnicodeText;
+class ZGLText;
 
 class ZTextBox;
 
 class ZShaderContext;
 
-/** For all dependent GLTextWriter generated, this object holds
+/** For all dependent ZGLTextProfile generated, this object holds
  *   shader (generated)
  *   texture engine
- *   RFFU : matrices (view, model, projection)
+ *   specific text matrices (view, model, projection)
  *
  *
  *  holds GLUnicodeText objects list and deletes it when GLFontWriter object is destroyed.
  *
  */
-class ZGLTextWriter
+class ZGLTextProfile
 {
 public:
 
 
     // Constructor
-    ZGLTextWriter(GLenum pTexture=GL_TEXTURE0);
+    ZGLTextProfile(GLenum pTexture=GL_TEXTURE0);
 
-    ~ZGLTextWriter();
+    ~ZGLTextProfile();
 
-    ZGLUnicodeText* newText();
+    ZGLText* newText();
 
     // Shader used for text rendering : text shader is used in standalone without shader context & rules
     ZShader* TextShader=nullptr;
@@ -84,7 +84,7 @@ public:
 private:
     GLenum      TextureEngine=GL_TEXTURE0;
 
-    zbs::ZArray<ZGLUnicodeText*> TextList;
+    zbs::ZArray<ZGLText*> TextList;
 
 }; // GLTextWriter
 

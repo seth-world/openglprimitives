@@ -256,6 +256,20 @@ const char* decodeShdCtx(const int pCtx)
         return "UserDefined";
     }
 }
+int encodeShdCtx(const char*pIn)
+{
+    int wRet=0;
+
+    if (strcasestr(pIn , "Draw"))
+            return Draw;
+    if (strcasestr(pIn , "Shape"))
+            return Shape;
+    if (strcasestr(pIn , "NormVisu"))
+            return NormVisu;
+    if (strcasestr(pIn , "UserDefined"))
+            return UserDefined;
+}
+
 
 int ZShaderContext::applyRules()
 {
@@ -292,7 +306,7 @@ void ZShaderContext::postProcess()
 
 /* shader must be current (ZShader::use() ) */
 inline int
-ZShaderContext::_applyShader(struct ShaderUniform pSHU )
+ZShaderContext::_applyShader(ShaderUniform pSHU )
 {
     switch (pSHU.Type)
     {
@@ -330,7 +344,7 @@ ZShaderContext::_applyShader(struct ShaderUniform pSHU )
         fprintf (stderr,"setShader-E-SHUUNKN SHU type id <%d> unkown \n",(int)pSHU.Type);
         return -1;
     }
-}//setShader
+}//_applyShader
 
 GLuint ZShaderContext::getPositionAttribute()
 {
@@ -356,6 +370,8 @@ GLuint ZShaderContext::getTexCoordsAttribute()
 
     return wPosition;
 }
+
+
 
 
 
@@ -474,3 +490,136 @@ void ZShaderContext::display(FILE*pOutput)
              "----------------------------------------------------------------------\n");
     return;
 } // print
+
+
+
+
+
+
+
+char*
+exportXMLSHURule(const ShaderUniform pSHU )
+{
+    memset(wSHO,0,sizeof(wSHO));
+
+    switch (pSHU.Type)
+    {
+    case SHU_Bool:
+        sprintf(wSHO,
+                "<shutype>%s</shutype>\n"
+                "<shuname>%s</shuname>\n"
+                "<shuvalue>%s</shuvalue>\n",
+                decodeSHU(pSHU.Type),
+                pSHU.Name,
+                pSHU.Value.Bool?"true":"false");
+
+        return wSHO;
+    case SHU_Float:
+        sprintf(wSHO,"%15s  <%20s> <%f>",
+                "SHU_Float",
+                pSHU.Name,
+                pSHU.Value.Float);
+        return wSHO;
+    case SHU_Vec2:
+        sprintf(wSHO,"%15s  <%20s> <x:%f , y:%f>",
+                "SHU_Vec2",
+                pSHU.Name,
+                pSHU.Value.Vec2->x,pSHU.Value.Vec2->y);
+        return wSHO;
+    case SHU_Vec3:
+        sprintf(wSHO,"%15s  <%20s> <x:%f , y:%f , z:%f>",
+                "SHU_Vec3",
+                pSHU.Name,
+                pSHU.Value.Vec3->x,pSHU.Value.Vec3->y,pSHU.Value.Vec3->z);
+        return wSHO;
+    case SHU_Vec4:
+        sprintf(wSHO,"%15s  <%20s> <x:%f , y:%f , z:%f , w:%f>",
+                "SHU_Vec4",
+                pSHU.Name,
+                pSHU.Value.Vec4->x,pSHU.Value.Vec4->y,pSHU.Value.Vec4->z,pSHU.Value.Vec4->w);
+        return wSHO;
+    case SHU_Mat2:
+        sprintf(wSHO,"%15s <%20s> <%s>",
+                "SHU_Mat2",
+                pSHU.Name,
+                "--glm::mat2--");
+        return wSHO;
+    case SHU_Mat3:
+        sprintf(wSHO,"%15s  <%20s> <%s>",
+                "SHU_Mat3",
+                pSHU.Name,
+                "--glm::mat3--");
+        return wSHO;
+    case SHU_Mat4:
+        sprintf(wSHO,"%15s  <%20s> <%s>",
+                "SHU_Mat4",
+                pSHU.Name,
+                "--glm::mat4--");
+        return wSHO;
+    case SHU_Mat4Transpose:
+        sprintf(wSHO,"%15s  <%20s> <%s>",
+                "SHU_Mat4Transp.",
+                pSHU.Name,
+                "--glm::mat4--");
+        return wSHO;
+    case SHU_Texture:
+        sprintf(wSHO,"%15s  <%20s> <%s> GLid <%d> GL Engine <%d>",
+                "SHU_Texture",
+                pSHU.Name,
+                pSHU.Value.Texture->getName(),
+                pSHU.Value.Texture->getGLId(),
+                pSHU.Value.Texture->getTextureEngineNumber());
+        return wSHO;
+
+    case SHU_Light:
+        sprintf(wSHO,"%15s  <%20s> %s",
+                "SHU_Light",
+                pSHU.Name,
+                pSHU.Value.Light->display());
+        return wSHO;
+    case SHU_LineWidth:
+        sprintf(wSHO,"%15s  <%20s> <%f>        NB: followed by postprocess rule",
+                "SHU_LineWidth",
+                pSHU.Name,
+                pSHU.Value.Float);
+        return wSHO;
+    case SHU_Material:
+        sprintf(wSHO,"%15s  <%20s> %s",
+                "SHU_Material",
+                pSHU.Name,
+                pSHU.Value.Material->display()
+                );
+        return wSHO;
+     default:
+        sprintf(wSHO,"<--Unknown Shader rule code-->");
+        return wSHO;
+    }
+}//displayShaderRule
+
+
+std::string
+ZShaderContext::exportXML()
+{
+    std::string wXml="          <shadercontext>\n";
+
+    wXml += "           <shadername>\n";
+    wXml += Shader->getName();
+    wXml += "</shadername>";
+
+    wXml += "           <rules>\n";
+    for (long wi=0;wi<count();wi++)
+        {
+        wXml += exportXMLSHURule(Tab[wi]);
+        }
+
+    wXml += "           </rules>\n";
+    wXml += "       </ShaderContext>\n";
+    return wXml;
+}
+
+
+
+
+
+
+

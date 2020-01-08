@@ -18,9 +18,9 @@
 
 class ZMetaObject : public zbs::ZArray<ZObject*>
 {
-private:
+protected:
     void _cloneFrom(ZMetaObject& pIn);
-
+    ZMetaObject():ZMetaObject(nullptr) {}
 public:
     ZMetaObject(const char*pName);
 

@@ -6,7 +6,7 @@
 #include <zglconstants.h>
 
 
-ZGLTextWriter::ZGLTextWriter(GLenum pTextureEngine)
+ZGLTextProfile::ZGLTextProfile(GLenum pTextureEngine)
 {
     TextureEngine=pTextureEngine;
 
@@ -20,7 +20,7 @@ ZGLTextWriter::ZGLTextWriter(GLenum pTextureEngine)
 }
 
 
-ZGLTextWriter::~ZGLTextWriter()
+ZGLTextProfile::~ZGLTextProfile()
 {
     while (TextList.count())
                 delete TextList.popR();
@@ -35,21 +35,21 @@ ZGLTextWriter::~ZGLTextWriter()
 
 
 
-ZShaderContext* ZGLTextWriter::getBoxShaderContext(const int pCtx)
+ZShaderContext* ZGLTextProfile::getBoxShaderContext(const int pCtx)
 {
     if (!BoxShader[pCtx])
                 _newDefaultBoxShader(pCtx);
     return BoxShader[pCtx];
 }
 
-ZGLUnicodeText* ZGLTextWriter::newText()
+ZGLText* ZGLTextProfile::newText()
 {
-    ZGLUnicodeText* wT=new ZGLUnicodeText(this,TextureEngine);
+    ZGLText* wT=new ZGLText(this,TextureEngine);
     TextList.push(wT);
     return wT;
 }
 
-void ZGLTextWriter::_newDefaultBoxShader(const int pCtx)
+void ZGLTextProfile::_newDefaultBoxShader(const int pCtx)
 {
     const char* wShName=__TEXTBOX_SHADER_FILL__;
     if (pCtx==Shape)
@@ -66,7 +66,7 @@ void ZGLTextWriter::_newDefaultBoxShader(const int pCtx)
     BoxShader[pCtx]=new ZShaderContext(wSh);
 }
 
-int ZGLTextWriter::newBoxShader(const int pCtx, const char* pIntName)
+int ZGLTextProfile::newBoxShader(const int pCtx, const char* pIntName)
 {
     ZShader* wSh=GLResources->getShaderByNamePtr(pIntName);
     if (wSh==nullptr)
@@ -80,7 +80,7 @@ int ZGLTextWriter::newBoxShader(const int pCtx, const char* pIntName)
     return 0;
 }
 
-int ZGLTextWriter::newBoxShaderByRank(const int pCtx, const long pRank)
+int ZGLTextProfile::newBoxShaderByRank(const int pCtx, const long pRank)
 {
     ZShader* wSh=GLResources->getShaderByRankPtr(pRank);
     if (wSh==nullptr)

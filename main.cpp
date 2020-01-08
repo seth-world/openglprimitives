@@ -25,6 +25,8 @@
 
 #include <zcandy.h>
 
+#include <zcandytext.h>
+
 #include <zsphere.h>
 #include <ztexture.h>
 /* text rendering */
@@ -239,7 +241,7 @@ int main()
 
 /*-------------Text Objects-------------------------*/
 
-    ZGLTextWriter wUWriter(GL_TEXTURE0);
+    ZGLTextProfile wUWriter(GL_TEXTURE0);
 
  //   wUWriter.newBoxShader(Draw,__TEXTBOX_SHADER_FILL__);
     wUWriter.newBoxShaderByRank(Draw,wTextureShader);
@@ -260,14 +262,14 @@ int main()
 //    wUWriter.setBoxShader(Shape)->addFloat(__SHD_ALPHA_UN__,1.0);
 
 
-    ZGLUnicodeText* wUText=wUWriter.newText();
+    ZGLText* wUText=wUWriter.newText();
     wRet=wUText->setText((utf32_t*)U"Жди меня, и я вернусь.","LiberationMono",24);
     if (wRet<0)
             {
             wUText->printLastError();
             exit(EXIT_FAILURE);
             }
-     ZGLUnicodeText* wBText=wUWriter.newText();
+     ZGLText* wBText=wUWriter.newText();
 
      wRet=wBText->setText((utf32_t*)U"Жди меня, и я вернусь.Только очень жди, Жди, когда наводят грусть Желтые дожди, Жди, когда снега метут, Жди, когда жара,\
 Жди, когда других не ждут,Позабыв вчера.Жди, когда из дальних мест Писем не придет, Жди, когда уж надоест Всем, кто вместе ждет.","LiberationMono",24);
@@ -464,7 +466,8 @@ int main()
     wCandy.setupGLByContext(Shape,CSO_setupVertices);
     wCandy.setupGLByContext(NormVisu,CSO_setupVertices);
 
-    TextZone wTZ    = wCandy.getTextZone();
+    /* get text box dimensions according candy dimensions and desired text box shape */
+    TextZone wTZ    = wCandy.getTextZoneThin();
 /*    fprintf (stdout,"*** Center <x:%f y:%f z:%f>  Width <%f> Height <%f>ToTopLeft  <x:%f y:%f z:%f>  \n"
                     " wCandy position <x:%f y:%f z:%f>  \n\n",
              wTZ.Center.x,wTZ.Center.y,wTZ.Center.z,
@@ -472,8 +475,9 @@ int main()
              wTZ.Height,
              wTZ.ToTopLeft.x,wTZ.ToTopLeft.y,wTZ.ToTopLeft.z,
              wCandy.getPosition().x,wCandy.getPosition().y,wCandy.getPosition().z);
-*/
 
+*/
+    /* get textbox position from effective candy center position */
 
     glm::vec3 wTPos = wCandy.getPosition() + wTZ.ToTopLeft;
 
@@ -537,10 +541,10 @@ int main()
 
 //    Vertice_type wC2=Vertice_type(0.8f,0.4f,0.0f);
 
-    Vertice_type wC2=Vertice_type(-0.7f,-0.1f,0.7f);
+    Vertice_type wC2=Vertice_type(0.7f,-0.1f,0.7f);
 
 
-    Vertice_type wC3=Vertice_type(-0.8f,0.8f,0.0f);
+    Vertice_type wC3=Vertice_type(0.8f,0.8f,0.0f);
 
 //    ZObject wCircle3=generate_Circle(ZGreyColor, wC3,0.2f,50,ZObject::Flat,ZObject::Top);
 
@@ -571,6 +575,8 @@ int main()
     wPipe->setupGL(Shape,CSO_setupAll | CSO_DeleteDataAfter );
 
  //   wSphere.print(50); /* print 50 first data */
+
+
 
 
 

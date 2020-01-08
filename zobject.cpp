@@ -323,7 +323,7 @@ void ZObject::rotate270 ()
 //-------------Prepare (setup) GL data vertexes, indices and normals ---------
 
 void
-ZObject::_setupGL_ObjectArray(const DrawContext_type pCtx, uint16_t pAction)
+ZObject::_setupGL_ObjectArray(const DrawContext_type pCtx, CSO_type pAction)
 {
     int wVDataCtx=pCtx;
     ZShader* wShader=GLResources->getActiveShaderPtr();
@@ -524,7 +524,7 @@ ZObject::_setupGL_ObjectArray_old(const DrawContext_type pCtx )
 #endif // __COMMENT__
 
 void
-ZObject::_setupGL_ObjectElement(const DrawContext_type pCtx,uint16_t pAction)
+ZObject::_setupGL_ObjectElement(const DrawContext_type pCtx, CSO_type pAction)
 {
     ZShader* wShader=GLResources->getActiveShaderPtr();
     if (wShader==nullptr)
@@ -641,7 +641,7 @@ ZObject::_setupGL_ObjectElement(const DrawContext_type pCtx,uint16_t pAction)
 } // _setupGL_ObjectElement
 
 void
-ZObject::setupGL(const DrawContext_type pCtx, uint16_t pAction)
+ZObject::setupGL(const DrawContext_type pCtx, CSO_type pAction)
 {
 
 
@@ -711,7 +711,7 @@ ZObject::setupGLNormVisu(zbs::ZArray<ZVertice> *pVertex)
 }
 
 void
-ZObject::setupGLUserDefined(zbs::ZArray<ZVertice> *pVertex,uint16_t pAction)
+ZObject::setupGLUserDefined(zbs::ZArray<ZVertice> *pVertex, CSO_type pAction)
 {
 
 
@@ -1456,38 +1456,7 @@ ZObject::getGLDescriptor(const int pCtx)
             Name);
     exit(EXIT_FAILURE);
 }
-/*
-ZGLObjDescriptor*
-ZObject::getGLDescriptor()
-{
-    if (GLDesc[Draw]!=nullptr)
-            return GLDesc[Draw];
-    fprintf(stderr,"ZObject-F-GLDESCNULL Object descriptor for Draw context has not been initialized for object <%s>.\n"
-            "    invoke setupGL() prior using GLDescriptor.\n",Name);
-    exit(EXIT_FAILURE);
-//        exit (EXIT_FAILURE);
-}
-ZGLObjDescriptor*
-ZObject::getGLShapeDescriptor()
-{
-    if (GLDesc[Shape]!=nullptr)
-            return GLDesc[Shape];
-    fprintf(stderr,"ZObject-F-GLDESCNULL Object descriptor Shape context has not been initialized for object <%s>.\n"
-            "    invoke setupGLShape() prior using GLDescriptor.\n",Name);
-    exit(EXIT_FAILURE);
-//        exit (EXIT_FAILURE);
-}
-ZGLObjDescriptor*
-ZObject::getGLNormVisuDescriptor()
-{
-    if (GLDesc[NormVisu]!=nullptr)
-            return GLDesc[NormVisu];
-    fprintf(stderr,"ZObject-F-GLDESCNULL Object descriptor Normal visu  context has not been initialized for object <%s>.\n"
-            "    invoke setupGLNormalVisu() prior using GLDescriptor.\n",Name);
-    exit(EXIT_FAILURE);
-//        exit (EXIT_FAILURE);
-}
-*/
+
 
 /*---Matrices---------------*/
 

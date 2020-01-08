@@ -7,7 +7,7 @@
 #include <zshadercontext.h>
 #include <zglunicodetext.h>
 
-ZTextBox::ZTextBox(ZGLUnicodeText *pFather)
+ZTextBox::ZTextBox(ZGLText *pFather)
 {
     Father=pFather;
 

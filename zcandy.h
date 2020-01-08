@@ -13,14 +13,24 @@
 
 class ZCandy : public ZMetaObject
 {
-private:
+protected:
     void _cloneFrom(ZCandy& pIn)
     {
         for (long wi=0;wi<FrontShape.count();wi++)
                 FrontShape.push_back(pIn.FrontShape[wi]);
         for (long wi=0;wi<BackShape.count();wi++)
                 BackShape.push_back(pIn.BackShape[wi]);
+        ZMetaObject::_cloneFrom(pIn);
     }
+    void _cloneFrom(ZCandy&& pIn)
+    {
+        for (long wi=0;wi<FrontShape.count();wi++)
+                FrontShape.push_back(pIn.FrontShape[wi]);
+        for (long wi=0;wi<BackShape.count();wi++)
+                BackShape.push_back(pIn.BackShape[wi]);
+        ZMetaObject::_cloneFrom(pIn);
+    }
+    ZCandy()=default;
 public:
     ZCandy(const char* pName):ZMetaObject(pName) {}
     /* ToDo : register GL object Candy and release GL resources */
@@ -40,13 +50,13 @@ public:
     ZCandy& operator=(ZCandy pIn) {_cloneFrom(pIn); return *this;}
 
     /* Shape has a special processing with ZCandy */
-    void setupGLShape(uint16_t pAction);
+    void setupGLShape(CSO_type pAction);
     void computeShapeOp();
     void drawGLShape();
 
     /* 2 overloads for taking care of special Shape processing for ZCandy */
 
-    void setupGLByContext(const DrawContext_type pCtx,uint8_t    pAction=CSO_setupVertices);
+    void setupGLByContext(const DrawContext_type pCtx, CSO_type pAction=CSO_setupVertices);
     void drawGLByContext(const DrawContext_type pCtx);
 
     void TestShaderContext()
@@ -60,6 +70,12 @@ public:
     }
 
     TextZone getTextZone() {return Tab[0]->getTextZone();}
+     TextZone getTextZoneHigh( const float pMargin=0.01f) {        return _getTextZone(3.0,pMargin); }
+    TextZone getTextZoneNormal( const float pMargin=0.01f) {        return _getTextZone(5.0,pMargin); }
+    TextZone getTextZoneThin( const float pMargin=0.01f) {        return _getTextZone(8.0,pMargin); }
+
+
+    TextZone _getTextZone(double pDiv=5.0, const float pMargin=0.01f) ;
 
     long                        BackStart=0;
     long                        BackCount=0;

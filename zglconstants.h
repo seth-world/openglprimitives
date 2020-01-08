@@ -2,6 +2,7 @@
 #define ZGLCONSTANTS_H
 
 #include <glm/glm.hpp>
+#include <string> // for std::string
 
 #define Vertice_type glm::vec3
 #define Color_type glm::vec3
@@ -209,22 +210,26 @@ enum DrawContext_type : int
 };
 
 /* setupGL input : setup and computation rules for vertexes and indices */
-
-enum CoordsSetupOpt : uint16_t
+typedef uint16_t CSO_type ;
+enum CoordsSetupOpt : CSO_type
 {
-    CSO_setupVertices       =   0,/* set up vertices (default) and possibly indexes to GL Buffer : done each time setupGL is invoked */
-    CSO_setupNormals        =  0x01,/* set up normal coords to GL Buffer  : this does not trigger normal computation :  */
-    CSO_setupTextures       =  0x02,/* set up texture coords to GL Buffer : this does not trigger texture coordinates computation : texture coords are given */
+    /* note : normal and texture coordinates are always computed and setup within Draw context */
+    CSO_setupVertices           =   0,/* set up vertices (default) and possibly indexes to GL Buffer : done each time setupGL is invoked */
+    CSO_setupNormals            =  0x0001,/* set up normal coords to GL Buffer  : this does not trigger normal computation :  */
+    CSO_setupTextures           =  0x0002,/* set up texture coords to GL Buffer : this does not trigger texture coordinates computation : texture coords are given */
 
-    CSO_ComputeNormals      =  0x10, /* force Normal coordinates to be calculated and filled in Vertex Data */
-    CSO_ComputeTextures     =  0x20, /* force Texture coordinates to be calculated and filled in Vertex Data */
+    CSO_ComputeNormals          =  0x0100, /* force Normal coordinates to be calculated and filled in Vertex Data */
+    CSO_ComputeTextures         =  0x0200, /* force Texture coordinates to be calculated and filled in Vertex Data */
 
-    setupShape              =   4,
-    setupNormVisu           =   8,
+    /* contexts to setup (Draw,Shape, NormVisu, UserDefined */
+    /* note : Draw context is always set up */
+    CSO_setupShape              =  0x0004,
+    CSO_setupNormVisu           =  0x0008,
+    CSO_setupUser               =  0x0010,
 
-    CSO_DeleteDataAfter     =   0x1000,     /* if set, force all vertex data to be deleted after GL buffers are set up */
+    CSO_DeleteDataAfter         =  0x1000,  /* if set, force all vertex data & index to be deleted after GL buffers have been set up */
 
-    CSO_setupAll            =   CSO_setupVertices+CSO_setupNormals+CSO_setupTextures,/* set up vertices, normals and texture coordinates to GL Buffer */
+    CSO_setupAll                =   CSO_setupVertices+CSO_setupNormals+CSO_setupTextures,/* set up vertices, normals and texture coordinates to GL Buffer */
 
     CSO_setAndComputeNormals    = CSO_setupNormals | CSO_ComputeNormals,   /* compute normals fill them within vertex data and set them up  to GL Buffer */
     CSO_setAndComputeTextures   = CSO_setupTextures | CSO_ComputeTextures, /* compute normals fill them within vertex data and set them up  to GL Buffer */
@@ -232,13 +237,93 @@ enum CoordsSetupOpt : uint16_t
 
 };
 
-enum MatGen : uint8_t
+/* see CSO flag type */
+typedef uint8_t GDLC_type;
+enum GLDescCreation:GDLC_type
+{
+    GLDC_Draw       = 0,
+    GLDC_Shape      = 1,    /* CSO_setupShape */
+    GLDC_NormVisu   = 2,    /* CSO_setupNormVisu */
+    GLDC_User       = 4     /* CSO_setupUser */
+};
+
+typedef uint8_t     MatGen_Type;
+enum MatGen : MatGen_Type
 {
     MAT_Model       =      1,
     MAT_View        =   0x02,
     MAT_Projection  =   0x04,
     MAT_Normal      =   0x08,
     MAT_All         =   MAT_Model | MAT_View | MAT_Projection | MAT_Normal
+};
+
+typedef uint32_t SHU_type;
+enum ShaderUniform_type:SHU_type {
+    SHU_Nothing         =   0,
+    SHU_Bool            =   1,
+    SHU_Float           =   2,
+    SHU_Vec2            =   0x1004,
+    SHU_Vec3            =   0x1008,
+    SHU_Vec4            =   0x1010,
+    SHU_Mat2            =   0x1020,
+    SHU_Mat3            =   0x1040,
+    SHU_Mat4            =   0x1080,
+    SHU_Mat4Transpose   =   0x1100,
+
+    SHU_Model           = 0x021000,
+    SHU_View            = 0x041000,
+    SHU_Projection      = 0x081000,
+    SHU_Normal          = 0x101000,
+
+    SHU_Texture         = 0x3000,
+    SHU_Material        = 0x5000,
+    SHU_Light           = 0x9000,
+
+    SHU_LineWidth        = 0x1400, /* special case for glLineSize() */
+
+    SHU_IsPointer       = 0x1000
+};
+
+
+/* Text and text box attributes */
+
+typedef uint32_t RBP_type;
+enum RBoxPos : RBP_type
+{
+    RBP_Nothing             = 0,
+    /* for horizontal display only */
+    RBP_Center              = 0x01, /* centered either horizontally or vertically according diplay mode (vertical or horizontal)*/
+    RBP_LeftJust            = 0x04, /* text is horizontally left justified (default) */
+    RBP_RightJust           = 0x08, /* text is horizontally right justified */
+    /* for vertical text display only */
+//    RBP_VertCenter      = 0x02, /* vertically centered */
+    RBP_TopJust             = 0x10, /* text is vertically display starting at top of box (default) */
+    RBP_BotJust             = 0x20, /* text is vertically displayed to box bottom */
+
+    RBP_LineWrap            = 0x40, /* Text is cut where line/column ends without taking care of words*/
+    RBP_WordWrap            = 0x80, /* Text is wrapped by word if it does not fit into box boundary (default)*/
+    RBP_TruncChar           = 0x0100, /* Displays a truncate sign at the end of the truncated line */
+//    RBP_FitVertical     = 0x80,          /* Text should fit into vertical box boundary  */
+
+    RBP_AdjustFSize         = 0x0200,/* Text should fit as it is adjusting font size if necessary :
+                                    This option must be set only if RBP_Wrap is not set
+                                    to make text with fit into box maximum width */
+
+    RBP_TextMask           =    0x00FFFF,
+
+/* text box drawing flag */
+
+    RBP_BoxVisible         =    0x010000,
+    RBP_BoxShape           =    0x020000,
+    RBP_BoxFill            =    0x040000,
+    RBP_BoxTexture         =    0x080000,
+
+    RBP_BoxMask            =  0xFFFF0000,
+
+//    RBP_AdjustBestTry   = 0x0200,       /* Text size is being adjusted if it does not fit vertically after being cut (default) */
+
+    RBP_Default         = RBP_LeftJust | RBP_TopJust | RBP_LineWrap | RBP_BoxVisible | RBP_BoxShape,
+
 };
 
 
@@ -296,5 +381,20 @@ inline glm::vec3 vDiv(glm::vec3 pV1,glm::vec3 pV2)
 {
     return glm::vec3(pV1.x/pV2.x,pV1.y/pV2.y,pV1.z/pV2.z);
 }
+
+
+const char* decodeSHU(const ShaderUniform_type pSHU );
+ShaderUniform_type encodeSHU(const char* pSHUCtx);
+
+std::string decodeCSO(const CSO_type pFlag);
+CSO_type encodeCSO(const char* pIn);
+
+std::string decodeRBP(const RBP_type pFlag);
+RBP_type encodeRBP(const char* pIn);
+
+std::string decodeMatGen(const MatGen_Type pFlag);
+MatGen_Type encodeMatGen(const char* pIn);
+
+
 
 #endif // ZGLCONSTANTS_H

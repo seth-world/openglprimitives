@@ -20,6 +20,8 @@ const char* getFTErrorString(const FT_Error error_code);
 
 #define __SHADERROOTLOCATION__ "shaderroot"
 #define __TEXTUREROOTLOCATION__ "textureroot"
+#define __CANDYPROFILEROOTLOCATION__ "profileroot"
+
 
 #define __WINFONTSYSTEMROOTENV__ "WINDIR"
 #define __WINFONTLOCALROOTENV__ "USERPROFILE"
@@ -73,6 +75,7 @@ class ZObject;
 class ZShader;
 class _ShaderBase;
 class _TextureBase;
+class _ZCandyProfileBase;
 
 class ZFont;
 /**
@@ -119,9 +122,11 @@ public:
 #else
     static constexpr  const char * ShaderRootPath_Default ="/home/gerard/Development/TestOpenGl/shaders";
     static constexpr const char * TextureRootPath_Default ="/home/gerard/Development/TestOpenGl/textures";
+    static constexpr const char * CandyProfileRootPath_Default ="/home/gerard/Development/TestOpenGl/profiles";
 #endif
     std::string TextureRootPath;
     std::string ShaderRootPath;
+    std::string CandyProfileRootPath;
 
 //    static constexpr const char * FontCustomPath ="/home/gerard/Development/TestOpenGl/fonts/";
 
@@ -195,6 +200,13 @@ public:
 #endif
     }
 /* Textures */
+
+/*    std::string getTexturePath (const std::string pName)
+    {
+        std::string wFullPath=TextureRootPath ;
+        wFullPath += pName;
+        return wFullPath;
+    }*/
     std::string getTexturePath (const char*pFileName);
 
     /* loads a texture within resource base and returns its rank (not to be confused with gl texture id) returns -1 if not successfull */
@@ -214,24 +226,39 @@ public:
     void deregisterShader(ZShader &pShader);
     void deregisterShaderBase(_ShaderBase* pShader);
 
-    /* gets a shared pointer to ZShader corresponding to its given internal name pIntlName */
+    /* gets a shared pointer to ZShader corresponding to its given internal name pIntlName. */
     ZShader getShaderByName(const char* pIntlName);
     /* idem by case regardless */
     ZShader getShaderByNameCase(const char* pIntlName);
-    /* gets a shared pointer to ZShader corresponding to its given rank within resource base */
+    /* gets a shared pointer to ZShader corresponding to its given rank within resource base. */
     ZShader getShaderByRank(const long pIdx);
+
+    /* obtains the active shader and shares a ZShader object */
     ZShader getActiveShader();
 
    /* gets pointers to shaders */
-    /* gets a shared pointer to ZShader corresponding to its given internal name pIntlName */
+    /* gets a shared pointer to ZShader corresponding to its given internal name pIntlName.This object has to be deleted by callee. */
     ZShader* getShaderByNamePtr(const char* pIntlName);
     /* idem by case regardless */
     ZShader* getShaderByNameCasePtr(const char* pIntlName);
-    /* gets a shared pointer to ZShader corresponding to its given rank within resource base */
+    /* gets a shared pointer to ZShader corresponding to its given rank within resource base.This object has to be deleted by callee. */
     ZShader* getShaderByRankPtr(const long pIdx);
     ZShader* getActiveShaderPtr();
 
     void listRegistratedShaders(FILE*pOutput=stdout);
+
+    std::string getShaderPath (const std::string pName)
+    {
+        std::string wFullPath=ShaderRootPath ;
+        wFullPath += pName;
+        return wFullPath;
+    }
+
+
+/* Candy profiles */
+    std::string getCandyProfilePath (const char*pFileName);
+    long registerCandyProfile(_ZCandyProfileBase* pProfile);
+    void deregisterCandyProfileBase(_ZCandyProfileBase* pProfile);
 
 /* Fonts */
     static std::string getFontPath (const char* pCategory,const char*pFonName,const char*pName)
@@ -240,18 +267,7 @@ public:
         wFullPath += pName;
         return wFullPath;
     }
-    std::string getShaderPath (const std::string pName)
-    {
-        std::string wFullPath=ShaderRootPath ;
-        wFullPath += pName;
-        return wFullPath;
-    }
-    std::string getTexturePath (const std::string pName)
-    {
-        std::string wFullPath=TextureRootPath ;
-        wFullPath += pName;
-        return wFullPath;
-    }
+
     static std::string getLocalFontPath (const std::string pName)
     {
         std::string wFullPath=FontRootPath ;
@@ -274,6 +290,7 @@ public:
 
 
 
+/* GL objects */
     inline long registerObject(ZObject* pObject) {return Objects.push(pObject);}
     void deregisterObject(ZObject* pObject);
 
@@ -327,9 +344,10 @@ public:
     void setTruncateCharacter(utf32_t pChar) {TruncChar=pChar;}
 
 
-    zbs::ZArray <_TextureBase*> Textures;
-    zbs::ZArray <_ShaderBase*> Shaders;
-    zbs::ZArray <ZObject*> Objects;
+    zbs::ZArray <_TextureBase*>         Textures;
+    zbs::ZArray <_ShaderBase*>          Shaders;
+    zbs::ZArray <_ZCandyProfileBase*>   CandyProfiles;
+    zbs::ZArray <ZObject*>              Objects;
 
     GLFWwindow* GLWindow=nullptr;
     ZCamera*    Camera=nullptr;

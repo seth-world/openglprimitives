@@ -65,6 +65,9 @@ class ZObject
 public:
 
     friend class ZMetaObject;
+    friend class zbs::ZArray<ZObject>;
+    friend class ZCandyText;
+    friend class ZCandy;
 
     enum Direction : int
     {
@@ -98,7 +101,7 @@ public:
 
 
 protected:
-    friend class zbs::ZArray<ZObject>;
+
     ZObject()=delete;
     void _cloneFrom(ZObject&pObject);
     void _cloneFrom(ZObject&&pObject);
@@ -340,19 +343,19 @@ public:
 
  //   void setAction (const DrawContext_type pCtx,uint16_t pAction) {GLDesc[pCtx]->Actions=pAction;}
 
-    void _setupGL_ObjectArray(const DrawContext_type pCtx,uint16_t pAction);
+    void _setupGL_ObjectArray(const DrawContext_type pCtx, CSO_type pAction);
     void _setupGL_ObjectArray_old(const DrawContext_type pCtx);
-    void _setupGL_ObjectElement(const DrawContext_type pCtx,uint16_t pAction);
+    void _setupGL_ObjectElement(const DrawContext_type pCtx,CSO_type pAction);
 
 
     /* prepares and sets up vertices data and set GL buffers and vertex arrays */
-    void setupGL(const DrawContext_type pCtx, uint16_t pAction);
+    void setupGL(const DrawContext_type pCtx, CSO_type pAction);
 
     void setupGLDraw();
 
     void setupGLShape(zbs::ZArray<ZVertice> *pVertex);
     void setupGLNormVisu(zbs::ZArray<ZVertice> *pVertex);
-    void setupGLUserDefined(zbs::ZArray<ZVertice> *pVertex, uint16_t pAction);
+    void setupGLUserDefined(zbs::ZArray<ZVertice> *pVertex, CSO_type pAction);
 
     void drawGLByContext(const DrawContext_type pCtx);
 

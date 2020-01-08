@@ -1,5 +1,5 @@
-﻿#ifndef ZGLUNICODETEXT_H
-#define ZGLUNICODETEXT_H
+﻿#ifndef ZZGLText_H
+#define ZZGLText_H
 /**
 
 program must use GLResources to load fonts and make them available to application
@@ -46,7 +46,7 @@ USER-> | UnicodeText |   . application text with usable font sample : here are m
 
     wRet=GLResources->addFont("FreeSans.ttf","FreeSans",false);
     GLFontWriter wUWriter(GL_TEXTURE0);
-    GLUnicodeText* wUText=wUWriter.newText();
+    ZGLText* wUText=wUWriter.newText();
     wRet=wUText->setText((utf32_t*)U"Жди меня, и я вернусь.","FreeSans",24); //specify here font height in pixels
     if (wRet<0)
             fprintf (stderr," Font <%s> is not loaded \n","FreeSans");
@@ -82,7 +82,7 @@ USER-> | UnicodeText |   . application text with usable font sample : here are m
 
 class ZTexture;
 class ZTextTexture;
-class ZGLTextWriter;
+class ZGLTextProfile;
 class ZGLUnicodeChar;
 class ZGLUnicodeFont;
 
@@ -143,21 +143,21 @@ struct RefLine {
  *
  * After the constructor is run, you don't need to use any FreeType functions anymore.
  */
-class ZGLUnicodeText
+class ZGLText
 {
 private:
-    void _cloneFrom(ZGLUnicodeText&pIn);
+    void _cloneFrom(ZGLText&pIn);
 
 
 public:
-    ZGLUnicodeText()=delete;
- //   GLUnicodeText(const utf32_t* pText,const char* pFont, unsigned int pFontSize, GLenum pTextureEngine);
-    ZGLUnicodeText(ZGLUnicodeText&& pIn) {_cloneFrom(pIn);}
+    ZGLText()=delete;
+ //   ZGLText(const utf32_t* pText,const char* pFont, unsigned int pFontSize, GLenum pTextureEngine);
+    ZGLText(ZGLText&& pIn) {_cloneFrom(pIn);}
 
-    ZGLUnicodeText(ZGLTextWriter* pWriter, GLenum pTextureEngine);
-    ZGLUnicodeText& operator = (ZGLUnicodeText& pIn) {_cloneFrom(pIn); return *this;}
+    ZGLText(ZGLTextProfile* pWriter, GLenum pTextureEngine);
+    ZGLText& operator = (ZGLText& pIn) {_cloneFrom(pIn); return *this;}
 
-    ~ZGLUnicodeText();
+    ~ZGLText();
 
 
     void clear ();
@@ -222,7 +222,7 @@ public:
 
 /* text setup and rendering */
     /**
-     * @brief GLUnicodeText::setText prepares a unicode text (expressed in unicode codepoints) ready to be rendered by render() or renderVertical().
+     * @brief ZGLText::setText prepares a unicode text (expressed in unicode codepoints) ready to be rendered by render() or renderVertical().
      *  This routine formats a texture whose texture engine has been set within UnicodeWriter object according glyphs from font given by pFontName.
      *  pFonName must point to a font that must have been loaded within object UnicodeWriter.
      *
@@ -232,7 +232,7 @@ public:
      */
     int setText(const utf32_t* pUtf32Text, const char* pFontName, size_t pFontSize);
     /**
-     * @brief GLUnicodeText::setText prepares a unicode text (expressed in unicode codepoints) ready to be rendered by render() or renderVertical().
+     * @brief ZGLText::setText prepares a unicode text (expressed in unicode codepoints) ready to be rendered by render() or renderVertical().
      *  This routine formats a texture whose texture engine has been set within UnicodeWriter object according glyphs from font given by pFontName.
      *  pFonName must point to a font that must have been loaded within object UnicodeWriter.
      *
@@ -331,7 +331,7 @@ private:
     inline void _textpostGL();
 
 
-    ZGLTextWriter* Writer=nullptr;
+    ZGLTextProfile* Writer=nullptr;
 
     unsigned int TexSumWidth=0;     // texture width in pixels
     unsigned int TexSumHeight=0;	// texture height in pixels
@@ -415,8 +415,8 @@ private:
 
     uint32_t TextFlag;
 
-};//GLUnicodeText
+};//ZGLText
 
 void _printTextBoxFlag (uint16_t pBoxFlag,FILE* pOutput=stdout);
 
-#endif // ZGLUNICODETEXT_H
+#endif // ZZGLText_H

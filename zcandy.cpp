@@ -30,7 +30,7 @@ void ZCandy::computeShapeOp()
 
     NB: Only one Vertex buffer for both front and back shape design : offsets & sizes are positionned accordingly
 */
-void ZCandy::setupGLShape(uint16_t pAction)
+void ZCandy::setupGLShape(CSO_type pAction)
 {
     if (ShaderContext[Shape]==nullptr)
             {
@@ -161,7 +161,7 @@ void ZCandy::drawGLShape()
 }
 
 
-void ZCandy::setupGLByContext(const DrawContext_type pCtx,uint8_t pAction)
+void ZCandy::setupGLByContext(const DrawContext_type pCtx,CSO_type pAction)
 {
     if (pCtx==Shape)
         {
@@ -201,3 +201,105 @@ void ZCandy::drawGLByContext(const DrawContext_type pCtx)
             delete wSh;
         }
 }//drawGLByContext
+
+#include <zboxcomponents.h>
+
+
+
+TextZone ZCandy::_getTextZone(double pDiv,const float pMargin)
+{
+
+    if ((pDiv < 2.0)||(pDiv > 10.0))
+    {
+        fprintf (stderr,"ZCandy::getTextZoneNormal-E-IVDIV <%f> is an invalid divisor for angle calculation. Must be [2.0,10.0] \n",
+                 pDiv);
+        pDiv=4.0;
+    }
+
+    TextZone wTZ;
+
+    glm::vec3 wFTR=Tab[0]->BoxComponents->FTR;
+    glm::vec3 wFTL=Tab[0]->BoxComponents->FTL;
+    glm::vec3 wFLR=Tab[0]->BoxComponents->FLR;
+    glm::vec3 wFLL=Tab[0]->BoxComponents->FLL;
+
+    wTZ.Center =(Tab[0]->BoxComponents->FRMid - Tab[0]->BoxComponents->FLMid) / 2.0f;
+
+    float wHeight = wFTR.y - wFLR.y ;
+    float wWidth = wFTR.x - wFTL.x;
+    float wRadius = wHeight / 2.0f ;
+
+    glm::vec3 wTopLeft;
+    glm::vec3 wLowLeft;
+    glm::vec3 wTopRight;
+    glm::vec3 wLowRight;
+
+    wTZ.Center = Tab[0]->BoxComponents->getCenter(); /* hopefully 0.0,0.0,0.0 */
+
+/*    fprintf (stdout,
+             "----------------------------\n"
+             " FLMid <x:%f y:%f z:%f>\n"
+             " FRMid <x:%f y:%f z:%f>\n"
+             " Center <x:%f y:%f z:%f>\n"
+             " radius <%f>\n"
+             ,
+             Tab[0]->BoxComponents->FLMid.x, Tab[0]->BoxComponents->FLMid.y, Tab[0]->BoxComponents->FLMid.z,
+             Tab[0]->BoxComponents->FRMid.x, Tab[0]->BoxComponents->FRMid.y,Tab[0]->BoxComponents->FRMid.z,
+            wTZ.Center.x,wTZ.Center.y,wTZ.Center.z,
+            wRadius
+             );
+*/
+    double wAngle;
+    double wDiv;
+//    wDiv=4.0;
+    wDiv=pDiv;
+//    wAngle=double (M_PI)/ 4.0;
+    wAngle=double (M_PI)/ wDiv;
+    wTopRight.x = Tab[0]->BoxComponents->FRMid.x + (wRadius* cos(wAngle)) - pMargin;
+    wTopRight.y = Tab[0]->BoxComponents->FRMid.y + (wRadius* sin(wAngle)) - pMargin;
+    wTopRight.z = Tab[0]->BoxComponents->FRMid.z;
+
+//     wAngle=double (M_PI)*3.0 / 4.0;
+    wAngle=double (M_PI)*(wDiv-1.0)/ wDiv;
+    wTopLeft.x = Tab[0]->BoxComponents->FLMid.x + (wRadius* cos(wAngle)) + pMargin;
+    wTopLeft.y = Tab[0]->BoxComponents->FLMid.y + (wRadius* sin(wAngle)) - pMargin;
+    wTopLeft.z = Tab[0]->BoxComponents->FLMid.z;
+
+//    wAngle=double (M_PI)*5.0 / 4.0;
+    wAngle=double (M_PI)*(wDiv+1.0)/ wDiv;
+
+    wLowLeft.x = Tab[0]->BoxComponents->FLMid.x + (wRadius* cos(wAngle)) + pMargin;
+    wLowLeft.y = Tab[0]->BoxComponents->FLMid.y + (wRadius* sin(wAngle)) + pMargin;
+    wLowLeft.z = Tab[0]->BoxComponents->FLMid.z;
+
+
+//    wAngle=double (M_PI)*7.0 / 4.0;
+    wAngle=double (M_PI)*((2.0*wDiv)-1.0)/ wDiv;
+    wLowRight.x = Tab[0]->BoxComponents->FRMid.x + (wRadius* cos(wAngle)) - pMargin;
+    wLowRight.y = Tab[0]->BoxComponents->FRMid.y + (wRadius* sin(wAngle)) + pMargin;
+    wLowRight.z = Tab[0]->BoxComponents->FRMid.z;
+
+
+    wTZ.Height = float(wTopLeft.y - wLowLeft.y);
+    wTZ.Width = float(wTopRight.x - wTopLeft.x);
+
+
+
+    wTZ.ToTopLeft =   wTopLeft - wTZ.Center  ;
+
+
+    fprintf (stdout,
+             "----------------------------\n"
+             " TopLeft <x:%f y:%f z:%f>\n"
+             " LowLeft <x:%f y:%f z:%f>\n"
+             " TopRight <x:%f y:%f z:%f>\n"
+             " LowRight <x:%f y:%f z:%f>\n"
+             ,
+             wTopLeft.x, wTopLeft.y, wTopLeft.z,
+             wLowLeft.x, wLowLeft.y, wLowLeft.z,
+             wTopRight.x, wTopRight.y, wTopRight.z,
+             wLowRight.x, wLowRight.y, wLowRight.z
+             );
+
+    return wTZ;
+}

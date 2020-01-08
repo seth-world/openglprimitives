@@ -3,6 +3,7 @@
 #include <ztexture.h>
 #include <zobject.h>
 #include <zshader.h>
+#include <zcandyprofile.h>
 
 #include <zfont.h>
 #include <string.h> // for strcmp
@@ -10,6 +11,7 @@
 #include <camera.h>
 #include <ztoolset/utffixedstring.h>
 #include <ztoolset/uristring.h>
+
 
 ZGLResource _GLResources;
 ZGLResource* GLResources=&_GLResources;
@@ -64,6 +66,40 @@ long ZGLResource::registerTextureBase(_TextureBase* pTexture)
     /* else create */
     return Textures.push(pTexture);
 }
+
+long ZGLResource::registerCandyProfile(_ZCandyProfileBase* pProfile)
+{
+    /* texture must not already exist within registrated textures */
+    for (long wi=0;wi<CandyProfiles.count();wi++)
+            if (CandyProfiles[wi]==pProfile)
+                    {
+                    fprintf (stdout,"ZGLResource::registerCandyProfile-W-DBL Double candy profile registration for <%s> \n",
+                             pProfile->Name);
+                    return wi; /* already existing : return actual rank */
+                    }
+    /* else register */
+    return CandyProfiles.push(pProfile);
+}
+
+
+void ZGLResource::deregisterCandyProfileBase(_ZCandyProfileBase* pProfile)
+{
+    if (pProfile==nullptr)
+            return;
+    for (long wi=0;wi<CandyProfiles.count();wi++)
+        if (pProfile==CandyProfiles[wi])
+        {
+            if (CandyProfiles[wi]->unShare())/* unshare returns true if no more references exist*/
+                    {
+                    delete CandyProfiles[wi];
+                    CandyProfiles.erase(wi);
+                    }
+
+            return;
+        }
+    return;
+}
+
 #ifdef __COMMENT__
 long ZGLResource::registerTextTextureBase(_TextureBase* pTexture)
 {
@@ -247,8 +283,11 @@ void ZGLResource::cleanAll()
             delete wT;
 //            delete Textures.popR();
             }
+
+    while (CandyProfiles.count())
+            delete CandyProfiles.popR();
     return;
-}
+}//cleanAll
 
 /*------------Shaders--------------------------------*/
 
@@ -640,7 +679,34 @@ void ZGLResource::registerZCamera (ZCamera* pCamera)
     Camera=pCamera;
 }
 
-/* Root Paths for shaders and textures */
+
+/* Root Paths for candy profiles, shaders and textures */
+std::string ZGLResource::getCandyProfilePath (const char*pFileName)
+{
+    if (CandyProfileRootPath.empty())
+    {
+        const char* wProfileRootEnv=getenv(__CANDYPROFILEROOTLOCATION__);
+        if (wProfileRootEnv==nullptr)
+                {
+                CandyProfileRootPath=CandyProfileRootPath_Default;
+                }
+            else
+                {
+                CandyProfileRootPath=wProfileRootEnv;
+                }
+        fprintf (stdout,"GLResource-I-SHADERPATH Candy profile root path is set to <%s> \n",CandyProfileRootPath.c_str());
+        if (!ZGLResource::_testExist(CandyProfileRootPath))
+            {
+            fprintf (stderr,"GLResource-E-PATHNOTEXIST Candy profile path <%s> does NOT exist.\n",CandyProfileRootPath.c_str());
+            }
+    }
+    std::string wFullPath=CandyProfileRootPath ;
+    _addConditionalDelimiter(wFullPath);
+    wFullPath += pFileName;
+    return wFullPath;
+}//getCandyProfilePath
+
+
 std::string ZGLResource::getShaderPath (const char*pFileName)
 {
     if (ShaderRootPath.empty())
